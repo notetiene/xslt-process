@@ -472,7 +472,6 @@ public class Manager
         || (newGlobalVariables != null
             && !newGlobalVariables.equals(lastGlobalVariables))) {
       lastGlobalVariables = newGlobalVariables;
-      System.out.println("global variables changed: " + lastGlobalVariables);
       observer.globalVariablesChanged(lastGlobalVariables);      
     }
 
