@@ -244,11 +244,12 @@ public class EmacsObserver implements Observer
   public void processorStarted()
   {
     reportedExceptions.clear();
+    System.out.println("^(xslt-process-processing-started)$");
   }
 
   public void processorFinished()
   {
-    System.out.println("^(xslt-process-processor-finished)$");
+    System.out.println("^(xslt-process-processing-finished)$");
   }
 
   public void caughtException(Exception e)
