@@ -1,5 +1,10 @@
 2001-04-26  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Define the menu as a variable, so it can
+	be used with easy-menu-define under GNU Emacs. Fixed the
+	erase-buffer calls with an argument, that were causing errors on
+	GNU Emacs.
+
 	* lisp/xslt-process.el: Added the initial GNU Emacs compatibility
 	support:
 
