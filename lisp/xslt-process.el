@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <August 19, 2001 18:12:07 ovidiu>
+;; Time-stamp: <August 20, 2001 00:11:10 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -273,39 +273,6 @@ Each XML document will use the XSLT stylesheet declared as a value "
 		   :value default
 		   (const :tag "Associated stylesheet" default)
 		   (file :must-match t :tag "File name")))))
-
-(defcustom xslt-process-docbook-install-dir nil
-  "*Directory where the DocBook-XSL package is installed."
-  :group 'xslt-process
-  :type '(choice
-	  (const :tag "Not installed" nil)
-	  (directory :tag "Directory"))
-  :set
-  (lambda (sym val)
-    (let ((xsl-fo (file-truename (concat val "/fo/docbook.xsl")))
-	  (xsl-html (file-truename (concat val "/html/docbook.xsl"))))
-      ;; Before uninstalling DocBook, remove the old stylesheets from
-      ;; the registry, so that it doesn't become cluttered with
-      ;; garbage.
-      (if (and (null val) xslt-process-docbook-install-dir)
-	  (let ((old-xsl-fo
-		 (file-truename (concat xslt-process-docbook-install-dir
-					"/fo/docbook.xsl")))
-		(old-xsl-html
-		 (file-truename (concat xslt-process-docbook-install-dir
-					"/html/docbook.xsl"))))
-	    (xslt-process-unregister-stylesheet old-xsl-fo)
-	    (xslt-process-unregister-stylesheet old-xsl-html))
-      (unless (or (null val)
-		  (and (file-readable-p xsl-fo) (file-readable-p xsl-html)))
-	(setq xslt-process-docbook-install-dir nil)
-	(error "Directory doesn't point to a valid DocBook-XSL package!"))
-      (setq xslt-process-docbook-install-dir val)
-      ;; Register the DocBook-XSL stylesheets.
-      (if val
-	  (progn
-	    (xslt-process-register-stylesheet xsl-fo)
-	    (xslt-process-register-stylesheet xsl-html))))))
 
 ;;;
 ;;; Disable Cocoon for the moment until we figure out how to hook up
@@ -2041,6 +2008,20 @@ the modeline."
 ;;; Stylesheet management
 ;;;
 
+(defun xslt-process-register-stylesheet (filename)
+  "Registers a filename in the stylesheet registry."
+  (if (member filename xslt-process-registered-stylesheets)
+      (message "Filename already registered.")
+    (setq xslt-process-registered-stylesheets
+	  (cons filename xslt-process-registered-stylesheets))))
+
+(defun xslt-process-unregister-stylesheet (filename)
+  "Unregister a filename from the stylesheet registry."
+  (if (member filename xslt-process-registered-stylesheets)
+      (setq xslt-process-registered-stylesheets
+	    (delete filename xslt-process-registered-stylesheets))
+    (message "Filename not registered.")))
+
 (defun xslt-process-register-buffer (buffer-name)
   "*Registers the file visited by the current buffer in the stylesheet
 registry. The file visited by the buffer should be an XSLT file; no
@@ -2059,21 +2040,6 @@ case."
   (let* ((buffer (get-buffer buffer-name))
 	 (filename (urlize (buffer-file-name buffer))))
     (xslt-process-unregister-stylesheet filename)))
-
-(defun xslt-process-register-stylesheet (filename)
-  "Registers a filename in the stylesheet registry."
-  (if (member filename xslt-process-registered-stylesheets)
-      (message "Filename already registered.")
-    (setq xslt-process-registered-stylesheets
-	  (cons filename xslt-process-registered-stylesheets))))
-
-(defun xslt-process-unregister-stylesheet (filename)
-  "Unregister a filename from the stylesheet registry."
-  (if (member filename xslt-process-registered-stylesheets)
-      (setq xslt-process-registered-stylesheets
-	    (delete filename xslt-process-registered-stylesheets))
-    (message "Filename not registered.")))
-
 
 ;;; The following ugly code and global variables are needed to work
 ;;; around the lack of lexical scoping in Emacs Lisp. It would have
@@ -2186,6 +2152,39 @@ files. You can add or remove associations in the registry."
 ;;;
 ;;; DocBook support
 ;;;
+
+(defcustom xslt-process-docbook-install-dir nil
+  "*Directory where the DocBook-XSL package is installed."
+  :group 'xslt-process
+  :type '(choice
+	  (const :tag "Not installed" nil)
+	  (directory :tag "Directory"))
+  :set
+  (lambda (sym val)
+    (let ((xsl-fo (file-truename (concat val "/fo/docbook.xsl")))
+	  (xsl-html (file-truename (concat val "/html/docbook.xsl"))))
+      ;; Before uninstalling DocBook, remove the old stylesheets from
+      ;; the registry, so that it doesn't become cluttered with
+      ;; garbage.
+      (if (and (null val) xslt-process-docbook-install-dir)
+	  (let ((old-xsl-fo
+		 (file-truename (concat xslt-process-docbook-install-dir
+					"/fo/docbook.xsl")))
+		(old-xsl-html
+		 (file-truename (concat xslt-process-docbook-install-dir
+					"/html/docbook.xsl"))))
+	    (xslt-process-unregister-stylesheet old-xsl-fo)
+	    (xslt-process-unregister-stylesheet old-xsl-html))
+      (unless (or (null val)
+		  (and (file-readable-p xsl-fo) (file-readable-p xsl-html)))
+	(setq xslt-process-docbook-install-dir nil)
+	(error "Directory doesn't point to a valid DocBook-XSL package!"))
+      (setq xslt-process-docbook-install-dir val)
+      ;; Register the DocBook-XSL stylesheets.
+      (if val
+	  (progn
+	    (xslt-process-register-stylesheet xsl-fo)
+	    (xslt-process-register-stylesheet xsl-html)))))))
 
 ;;;###autoload
 (defun xslt-process-install-docbook (directory)
