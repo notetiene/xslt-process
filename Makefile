@@ -6,12 +6,16 @@ all: jar doc elc
 
 .PHONY: doc
 
+JAVA = $(shell find java/xslt/debugger -name '*.java' -type f -print)
+CLASSES = $(JAVA:.java=.class)
+
 jar: java/$(JAR)
 
-java/xslt.jar: $(wildcard java/xslt/*.java java/xslt/*/*.java java/xslt/*/*/*.java)
-	(cd java; \
-	 javac -classpath `pwd`/java:$$CLASSPATH `find . -name '*.java'`; \
-	 jar cf $(JAR) `find . -name '*.class'`)
+java/$(JAR): $(CLASSES)
+	jar cf java/$(JAR) $(CLASSES)
+
+$(CLASSES): $(JAVA)
+	javac -classpath `pwd`/java:$$CLASSPATH $(JAVA)
 
 doc:
 	(cd doc; make)
@@ -21,7 +25,7 @@ elc:
 clean:
 	(cd doc; make $@)
 	rm -f lisp/*.elc
-	rm -f java/xslt/*.class
+	find java -name '*.class' -exec rm -f {} \;
 
 distclean: clean
 	(cd doc; make $@)
