@@ -29,7 +29,9 @@ package xslt.debugger.xalan;
 
 import java.io.PrintWriter;
 import java.util.Stack;
-import org.apache.xalan.templates.ElemTemplateElement;
+import java.util.Vector;
+//import org.apache.xalan.templates.ElemTemplateElement;
+//import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.trace.GenerateEvent;
 import org.apache.xalan.trace.SelectionEvent;
 import org.apache.xalan.trace.EndSelectionEvent;
@@ -59,10 +61,15 @@ public class XalanTraceListener implements TraceListenerEx2
   SourceFrame sourceFrameToStop = null;
   StyleFrame styleFrameToStop = null;
   String previousFilename = null; // work around Xalan bug?
+  Vector localVariables = null;
+  Stack varSize = null;
 
   public XalanTraceListener(XSLTDebugger debugger) {
     this.debugger = debugger;
     manager = debugger.getManager();
+    currentFilename = debugger.getStylesheetId();
+    localVariables = new Vector();
+    varSize = new Stack();
   }
 
   public void generated(GenerateEvent ev) {
@@ -81,10 +88,10 @@ public class XalanTraceListener implements TraceListenerEx2
     }
 
     manager.debuggerStopped(filename, line, column, visitCount, message);
+
     currentFilename = filename;
     currentLine = line;
     currentColumn = column;
-
     switch (debugger.getAction()) {
     case AbstractXSLTDebugger.DO_NEXT:
       if (message.startsWith("leaving")) {
@@ -116,7 +123,6 @@ public class XalanTraceListener implements TraceListenerEx2
           styleFrameToStop = manager.peekStyleFrame();
         break;
     }
-
   }
 
   public void selected(SelectionEvent ev)
@@ -247,8 +253,7 @@ public class XalanTraceListener implements TraceListenerEx2
     String name = ev.m_styleNode.getNodeName();
     String filename = ev.m_styleNode.getSystemId();
     if (filename == null) {
-      filename = "";
-//      System.out.println("Null filename for " + name);
+      filename = currentFilename;
     } else {
       previousFilename = filename;
     }
@@ -258,9 +263,9 @@ public class XalanTraceListener implements TraceListenerEx2
     StyleFrame styleFrame
       = new XalanStyleFrame(debugger.getStylesheet(), debugger.getVarStack(),
 			    ev.m_styleNode,
-			    name, filename, line, column, manager);
+			    name, filename, line, column, manager, this);
     manager.pushStyleFrame(styleFrame);
-
+    varSize.push(new Integer(localVariables.size()));
     if (manager.isBreakpoint(filename, line)) {
       debuggerStopped(STYLE, filename, line, column, "entering: " + name);
     }
@@ -300,15 +305,12 @@ public class XalanTraceListener implements TraceListenerEx2
     String filename = ev.m_styleNode.getSystemId();
     if (filename == null) {
       filename = previousFilename;
-//      System.out.println("Null filename for " + name);
     } else {
       previousFilename = filename;
     }
     int line = ev.m_styleNode.getLineNumber();
     int column = ev.m_styleNode.getColumnNumber();
-
     debugger.checkRequestToStop();
-
     if (manager.isBreakpoint(filename, line)) {
       debuggerStopped(STYLE, filename, line, column, "leaving: " + name);
     }
@@ -345,6 +347,14 @@ public class XalanTraceListener implements TraceListenerEx2
       }
     }
     manager.popStyleFrame();
+    localVariables.setSize(((Integer)varSize.pop()).intValue());
+    if (name.equals("param") || name.equals("variable")) {
+	localVariables.addElement(ev.m_styleNode);
+    }
   }
+
+    public Vector getLocalVariables() {
+	return localVariables;
+    }
 
 }
