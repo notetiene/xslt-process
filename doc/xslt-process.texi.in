@@ -413,11 +413,21 @@ view the results either in a buffer or in Web browser.
 
 To run the XSLT processor and view the results in another Emacs buffer,
 you can enter @kbd{C-c C-x v}, while editing the XML
-document. Similarly, to view the results in a Web browser, type @kbd{C-c
-C-x n}. The Web browser used could be customized as described in
-@ref{Customizing the XSLT-process mode}. If you don't like the default
-key bindings described above, you can also customize them as described
-in the same chapter.
+document.
+
+If your stylesheet generates HTML as the result, you can view the
+results directly in a Web browser by typing @kbd{C-c C-x n}. If your
+stylesheet generates XML FO as output, @emph{XSLT-process} can translate
+it to PDF automatically using the @uref{http://xml.apache.org/fop,
+Apache FOP processor}. In this case just type @kbd{C-c C-x p} and
+@emph{XSLT-process} will take care of applying the XSLT stylesheet on
+your input XML document, and applying the FOP processor on the resulting
+XML FO document.
+
+You can customize the Web browser and PDF viewer to be used as described
+in @ref{Customizing the XSLT-process mode}. If you don't like the
+default key bindings described above, you can also customize them as
+described in the same chapter.
 
 If you choose to view the results in a buffer, they will be shown in the
 @code{*xslt results*} buffer. If any message are generated during the
@@ -931,6 +941,10 @@ the current line etc.
 @item
 Customize the key bindings used for invoking the processor and for the
 debugger.
+
+@item
+Customize the Web browser and PDF viewer to be used to directly view the
+results of the processing.
 
 @end itemize
 
