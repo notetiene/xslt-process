@@ -1,4 +1,35 @@
+2001-05-12  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Changed the order of xerces and saxon in
+	the classpath so xerces is picked first before aelfred as
+	parser. Need to add support for specifying the XML parser
+	explicitly.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Escape the string
+	passed as value of a variable as it may contain special characters
+	used as Emacs delimiters.
+
+	* java/xslt/debugger/cmdline/Controller.java
+	(getAbsoluteFilename): Return a URI identifier.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Added support for
+	reporting errors that can occur during parsing and transformation.
+
+2001-05-07  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/saxon/SaxonValue.java: Correctly determine
+	the value of a variable using the fingerprint for its name.
+
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Commented out
+	println messages.
+
+	* java/xslt/debugger/Value.java: Initialize the instance
+	variables.
+
 2001-05-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/Makefile: Updated the CLASSPATH to point to the new Saxon
+	jar file.
 
 	* lisp/xslt-speedbar.el: Display local variables in the speedbar.
 
