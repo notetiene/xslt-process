@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 12, 2001 23:26:21 ovidiu>
+;; Time-stamp: <April 14, 2001 01:27:04 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -43,9 +43,14 @@
 ;; processing as it happens
 ;;
 
-(require 'jde)
 (require 'cl)
 (require 'xslt-speedbar)
+
+;; Small function needed later during the customization phase
+(defun xslt-process-find-xslt-directory ()
+  "Return the path to the xslt-process directory."
+  (file-truename
+   (concat (file-name-directory (locate-library "xslt-process")) "../")))
 
 ;; From "custom" web page at http://www.dina.dk/~abraham/custom/
 (eval-and-compile
@@ -78,15 +83,23 @@
   :group 'xslt-process
   :type '(list
 	  (radio-button-choice
-	   (const :tag "Saxon" Saxon)
-	   (const :tag "Xalan 1.x" Xalan1)
-	   (const :tag "Generic TrAX processor (Saxon 6.1 and greater, Xalan2 etc.)" TrAX)
-	   (const :tag "Cocoon 1.x" Cocoon1))))
+	   (const :tag "Saxon 6.2.2" Saxon)
+	   (const :tag "Xalan 2.0.1" Xalan))))
 
-(defcustom xslt-process-cocoon1-properties-file ""
-  "*The location of the Cocoon 1.x properties file."
+;;;
+;;; Disable Cocoon for the moment until we figure out how to hook up
+;;; the debugger to it.
+;;;
+
+;(defcustom xslt-process-cocoon1-properties-file ""
+;  "*The location of the Cocoon 1.x properties file."
+;  :group 'xslt-process
+;  :type '(file :must-match t :tag "Properties file"))
+
+(defcustom xslt-process-java-program "java"
+  "*The name of the java program to invoke when starting the XSLT processor."
   :group 'xslt-process
-  :type '(file :must-match t :tag "Properties file"))
+  :type '(string :tag "Program"))
 
 (defcustom xslt-process-jvm-arguments nil
   "*Additional arguments to be passed to the JVM.
@@ -96,9 +109,13 @@ needed for the XSLT processor to function correctly."
   :type '(repeat (string :tag "Argument")))
 
 (defcustom xslt-process-additional-classpath nil
-  "*Additional Java classpath to be passed when invoking Bean Shell.
-Note that modifying this won't have any effect until you restart the
-Bean Shell. You can do this by killing the *bsh* buffer."
+  "*Additional Java classpath to be passed to the JVM that runs the
+XSLT processor. Note that modifying this won't have any effect until
+you restart the XSLT process. You can do this by explicitly quitting
+the XSLT process using the menubar.
+
+You need to setup this only if you plan on using extension functions
+which make use of your own Java classes."
   :group 'xslt-process
   :type '(repeat (file :must-match t :tag "Path")))
 
@@ -267,6 +284,11 @@ stopped last time.")
   "The state of the process. It can be either not-running, running or
 stopped.")
 
+(defvar xslt-process-debugger-running nil
+  "If the `xslt-process-process-state' is set to 'running, this
+indicates whether the XSLT debugger is running. If this value is nil,
+it indicates that a normal, no debug, XSLT processing is happening.")
+
 (defvar xslt-process-source-frames-stack nil
   "The stack of source frames, an array of entries consisting of a
 display name, a file name and a line number, among other things.")
@@ -306,6 +328,21 @@ on which the XSLT results come from the XSLT processor.")
 (defvar xslt-process-exit-glyph "<="
   "Graphic indicator for entering inside an element.")
 
+(defvar xslt-process-external-java-libraries
+  (mapcar (lambda (f)
+	    (concat (xslt-process-find-xslt-directory) "java/" f))
+	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
+	    "xalanj1compat.jar" "xerces.jar" "xslt.jar"))
+  "Defines the classpath to the XSLT processors that do the real work
+of processing an XML document. Be sure you know what you're doing when
+you modify this.")
+
+(defvar xslt-process-current-processor xslt-process-default-processor
+  "The current XSLT processor being used to do the
+processing. Changing the default processor through customization has
+effect on this variable only the next time the processor starts a new
+job.")
+
 (defvar xslt-process-breakpoint-set-hooks nil
   "List of functions to be called after a breakpoint is set.")
 
@@ -338,10 +375,6 @@ filename line) that indicate the new style frame stack.")
 (define-key xslt-process-debug-mode-map
   xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
 (define-key xslt-process-debug-mode-map
-  xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
-(define-key xslt-process-debug-mode-map
-  xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
-(define-key xslt-process-debug-mode-map
   xslt-process-quit-debug 'xslt-process-quit-debug)
 (define-key xslt-process-debug-mode-map
   xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
@@ -369,26 +402,52 @@ filename line) that indicate the new style frame stack.")
 (defun xslt-process-mode (&optional arg)
   "Minor mode to invoke an XSLT processor on the current buffer.
 
-This mode spawns off a Java Bean Shell process in the background to
-run an XSLT processor of your choice. This minor mode makes use of
-Emacs-Lisp functionality defined in JDE, the Java Development
-Environment for Emacs.
+The XSLT processor can be run either to process the file and show the
+results in a different buffer, or it can be run in debug mode. In this
+mode you can actually see what the XSLT processor is doing, you can
+setup breakpoints, look at local and global variables, essentially all
+the operations a debugger can do.
 
 With no argument, this command toggles the xslt-process mode. With a
 prefix argument ARG, turn xslt-process minor mode on iff ARG is
 positive.
 
 Bindings:
+
+\\[xslt-process-mode]: Toggle the XSLT minor mode on the current buffer.
+\\[xslt-process-toggle-debug-mode]: Toggle the debug mode on the current buffer.
+
 \\[xslt-process-invoke]: Invoke the XSLT processor on the current buffer.
+\\[xslt-process-do-run]: Start the XSLT debugger on the current buffer.
+
+\\[xslt-process-set-breakpoint]: Set a breakpoint at the current line.
+\\[xslt-process-delete-breakpoint]: Delete breakpoint at the current line.
+\\[xslt-process-enable/disable-breakpoint]: Disable or enable breakpoint.
+
+\\[xslt-process-do-step]: Step into the current element.
+\\[xslt-process-do-next]: Step over the current element.
+\\[xslt-process-do-finish]: Exit from the current xsl:template.
+\\[xslt-process-do-continue]: Continue the XSLT processing until the
+next breakpoint, or until the processing ends.
+\\[xslt-process-do-stop]: Stop the XSLT processor while it is
+running. This may be useful for long processings in which you forgot
+to setup breakpoints.
+\\[xslt-process-do-quit]: Exit the XSLT processor.
 
 Hooks:
-xslt-process-hook is run after the xslt-process minor mode is entered.
+`xslt-process-hook' is run after the xslt-process minor mode is entered.
+`xslt-process-breakpoint-set-hooks' is run each time a breakpoint is set.
+`xslt-process-breakpoint-removed-hooks' is run each time a breakpoint
+is removed.
+`xslt-process-breakpoint-enabled/disabled-hooks' is run each time a
+breakpoint is enabled or disabled.
+`xslt-process-source-frames-changed-hooks' is run when the XML
+document element path changes.
+`xslt-process-style-frames-changed-hooks' is run when the XSLT frames change.
 
 For more information please check:
 
 xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
-Emacs JDE:       http://sunsite.dk/jde/
-Java Bean Shell: http://www.beanshell.org/
 "
   (interactive "P")
   (setq xslt-process-mode
@@ -487,124 +546,36 @@ different actions for faster operations."
   (xslt-process-toggle-debug-mode 0))
 
 (put 'Saxon 'additional-params 'xslt-saxon-additional-params)
-(put 'Xalan1 'additional-params 'xslt-xalan1-additional-params)
-(put 'TrAX 'additional-params 'xslt-trax-additional-params)
-(put 'Cocoon1 'additional-params 'xslt-cocoon1-additional-params)
+(put 'Xalan 'additional-params 'xslt-xalan-additional-params)
+;(put 'Cocoon1 'additional-params 'xslt-cocoon1-additional-params)
 
 (defun xslt-saxon-additional-params ())
-(defun xslt-xalan1-additional-params ())
-(defun xslt-trax-additional-params ())
+(defun xslt-xalan-additional-params ())
 
-(defun xslt-cocoon1-additional-params ()
-  (if (or (null xslt-process-cocoon1-properties-file)
-	  (equal xslt-process-cocoon1-properties-file ""))
-      (error "No Cocoon properties file specified."))
-  (bsh-eval (concat "xslt.Cocoon1.setPropertyFilename(\""
-		    xslt-process-cocoon1-properties-file "\");"))
-  (setq cocoon-user-agent
-	(if (and
-	     (local-variable-p 'user-agent (current-buffer))
-	     (boundp 'user-agent))
-	    (if (stringp user-agent)
-		user-agent
-	      (symbol-name user-agent))
-	  nil))
-  (bsh-eval (concat "xslt.Cocoon1.setUserAgent(\""
-		    cocoon-user-agent "\");"))
-  (makunbound 'user-agent))
+;; Disable Cocoon support for now
 
-(defun xslt-process-find-xslt-directory ()
-  "Return the path to the xslt-process directory."
-  (file-truename
-   (concat (file-name-directory (locate-library "xslt-process")) "../")))
+;(defun xslt-cocoon1-additional-params ()
+;  (if (or (null xslt-process-cocoon1-properties-file)
+;	  (equal xslt-process-cocoon1-properties-file ""))
+;      (error "No Cocoon properties file specified."))
+;  (bsh-eval (concat "xslt.Cocoon1.setPropertyFilename(\""
+;		    xslt-process-cocoon1-properties-file "\");"))
+;  (setq cocoon-user-agent
+;	(if (and
+;	     (local-variable-p 'user-agent (current-buffer))
+;	     (boundp 'user-agent))
+;	    (if (stringp user-agent)
+;		user-agent
+;	      (symbol-name user-agent))
+;	  nil))
+;  (bsh-eval (concat "xslt.Cocoon1.setUserAgent(\""
+;		    cocoon-user-agent "\");"))
+;  (makunbound 'user-agent))
 
 (defun xslt-process-invoke ()
-  "This is the main function which invokes the XSLT processor of your
-choice on the current buffer."
+  "*Invokes the XSLT processor of your choice on the current buffer."
   (interactive)
-  (let* ((temp-directory
-	  (or (if (fboundp 'temp-directory) (temp-directory))
-	      (if (boundp 'temporary-file-directory) temporary-file-directory)))
-	 (classpath
-	  (if (boundp 'jde-global-classpath)
-	      jde-global-classpath
-	    nil))
-	 (classpath-env (if (getenv "CLASSPATH")
-			    (split-string (getenv "CLASSPATH")
-					  jde-classpath-separator)
-			  nil))
-	 (out-buffer (get-buffer-create xslt-process-results-process-name))
-	 (msg-buffer (get-buffer-create "*xslt messages*"))
-	 (filename (if (buffer-file-name)
-		       (expand-file-name (buffer-file-name))
-		     (error "No filename associated with this buffer.")))
-	 (xslt-jar (concat
-		    (xslt-process-find-xslt-directory) "java/xslt.jar"))
-	 (tmpfile (make-temp-name (concat temp-directory "/xsltout")))
-	 ; Set the name of the XSLT processor. This is either specified
-	 ; in the local variables of the file or is the default one.
-	 (xslt-processor
-	  (progn
-	    ; Force evaluation of local variables
-	    (hack-local-variables t)
-	    (or
-	     (if (and
-		  (local-variable-p 'processor (current-buffer))
-		  (boundp 'processor))
-		 (if (stringp processor)
-		     processor
-		   (symbol-name processor)))
-	     (symbol-name (car xslt-process-default-processor))))))
-    (save-excursion
-      ; Reset any local variables in the source buffer so the next
-      ; time we execute we correctly pick up the default processor
-      ; even if the user decides to remove the local variable
-      (makunbound 'processor)
-      ; Prepare to invoke the Java method to process the XML document
-      (setq jde-global-classpath
-	    (mapcar 'expand-file-name
-		    (union (append jde-global-classpath (list xslt-jar))
-			   (union xslt-process-additional-classpath
-				  classpath-env))))
-      ; Append the additional arguments to the arguments passed to bsh
-      (setq bsh-vm-args (union xslt-process-jvm-arguments bsh-vm-args))
-      ; Setup additional arguments to the processor
-      (setq func (get (intern-soft xslt-processor) 'additional-params))
-      (if (not (null func)) (funcall func))
-      ; Prepare the buffers
-      (save-some-buffers)
-      (set-buffer msg-buffer)
-      (erase-buffer)
-      (set-buffer out-buffer)
-      (erase-buffer)
-      ; Invoke the processor, displaying the result in a buffer and
-      ; any error messages in an additional buffer
-      (condition-case nil
-	  (progn
-	    (setq messages (bsh-eval
-			    (concat "xslt." xslt-processor ".invoke(\""
-				    filename "\", \"" tmpfile
-				    "\");")))
-	    (setq jde-global-classpath classpath)
-	    (if (file-exists-p tmpfile)
-		(progn
-		  (set-buffer out-buffer)
-		  (insert-file-contents tmpfile)
-		  (delete-file tmpfile)
-		  (display-buffer out-buffer)
-		  (if (not (string= messages ""))
-		      (xslt-process-display-messages messages
-						     msg-buffer out-buffer))
-		  (message "Done invoking %s." xslt-processor))
-	      (message (concat "Cannot process "
-			       (file-name-nondirectory filename) "."))
-	      (xslt-process-display-messages messages msg-buffer out-buffer)))
-	(error (progn
-		 (message
-		  (concat "Could not process file, most probably "
-			  xslt-processor
-			  " could not be found!"))
-		 (setq jde-global-classpath classpath)))))))
+  (xslt-process-do-run t))
 
 (defun xslt-process-display-messages (messages msg-buffer out-buffer)
   (set-buffer msg-buffer)
@@ -786,25 +757,35 @@ on its state."
 ;;; Debugger commands
 ;;;
 
-(defun xslt-process-do-run ()
-  "*Send the run command to the XSLT debugger."
+(defun xslt-process-do-run (&optional no-debug)
+  "*Send the run command to the command line interpreter to start
+either a normal, no debug, XSLT processing, or a debugging session."
   (interactive)
   (block nil
-    (if (not (eq xslt-process-process-state 'not-running))
-	(if (yes-or-no-p-maybe-dialog-box
-	     "The XSLT debugger is already running, restart it? ")
-	    (xslt-process-do-quit t)
-	  (return)))
-    (let ((filename (buffer-file-name)))
-      (setq xslt-process-process-state 'running)
-      (xslt-process-send-command (concat "debug " filename))
-      (setq xslt-process-execution-context-error-function
-	    (lambda ()
-	      (setq xslt-process-process-state 'not-running)))
-      (speedbar-with-writable
-	(let ((buffer (get-buffer xslt-process-results-buffer-name)))
-	  (if buffer (erase-buffer buffer))))
-      (message "Running the XSLT debugger..."))))
+    (let ((proc-type (if no-debug "processor" "debugger")))
+      (if (not (eq xslt-process-process-state 'not-running))
+	  (if (yes-or-no-p-maybe-dialog-box
+	       (format "The XSLT %s is already running, restart it? "
+		       proc-type))
+	      (xslt-process-do-quit t)
+	    (return)))
+      (let ((filename (buffer-file-name)))
+	;; Prepare the buffers
+	(save-some-buffers)
+	;; Set the XSLT processor to be used
+	(xslt-process-set-processor)
+	(setq xslt-process-process-state 'running)
+	(setq xslt-process-debugger-running (not no-debug))
+	(xslt-process-send-command (concat "debug " filename))
+	(setq xslt-process-execution-context-error-function
+	      (lambda ()
+		(setq xslt-process-process-state 'not-running)))
+	(speedbar-with-writable
+	  (let ((buffer (get-buffer xslt-process-results-buffer-name)))
+	    (if buffer (erase-buffer buffer))))
+	(message "Running the %s %s..."
+		 xslt-process-current-processor
+		 proc-type)))))
 
 (defun xslt-process-do-step ()
   "*Send a STEP command to the XSLT debugger."
@@ -982,6 +963,33 @@ highlights the line."
 ;;; The interaction with the debugger
 ;;;
 
+(defun xslt-process-set-processor ()
+  "Sets the XSLT processor to be used for further processings if
+needed. The user can change the XSLT processor either through
+customization or by explicitly setting up the `processor' local
+variable in the XML buffer."
+  (let ((filename (if (buffer-file-name)
+		      (expand-file-name (buffer-file-name))
+		    (error "No filename associated with this buffer.")))
+	;; Set the name of the XSLT processor. This is either specified
+	;; in the local variables of the file or is the default one.
+	(xslt-processor
+	 (progn
+	   ;; Force evaluation of local variables
+	   (hack-local-variables t)
+	   (or (if (and
+		    (local-variable-p 'processor (current-buffer))
+		    (boundp 'processor))
+		   (if (stringp processor)
+		       processor
+		     (symbol-name processor)))
+	       (symbol-name (car xslt-process-default-processor))))))
+    (if (equal xslt-processor xslt-process-current-processor)
+	nil
+      (setq xslt-process-current-processor xslt-processor)
+      (xslt-process-send-command
+       (message "set processor %s" xslt-processor)))))
+
 (defun xslt-process-send-command (string &optional dont-start-process?)
   "Sends a command to the XSLT process. Start this process if not
 already started."
@@ -1013,22 +1021,39 @@ already started."
 
 (defun xslt-process-start-debugger-process ()
   "*Start the XSLT debugger process."
-  (setq xslt-process-comint-buffer
-	(make-comint xslt-process-comint-process-name
-		     "java" nil "xslt.debugger.cmdline.Controller" "-emacs"))
-  (message "Starting XSLT process...")
-  (setq xslt-process-comint-process
-	(get-buffer-process xslt-process-comint-buffer))
-  (save-excursion
-    (set-buffer xslt-process-comint-buffer)
-    (make-variable-buffer-local 'kill-buffer-hook)
-   (add-hook 'kill-buffer-hook 'xslt-process-debugger-buffer-killed)
-    ;; Set our own process filter, so we get a chance to remove Emacs
-    ;; commands from the output sent to the buffer
-    (set-process-filter xslt-process-comint-process
-			(function xslt-process-output-from-process))
-    (setq comint-prompt-regexp "^xslt> ")
-    (setq comint-delimiter-argument-list '(? ))))
+  (let* ((classpath-separator (if (eq system-type 'windows-nt) ";" ":"))
+	 (classpath (mapconcat (lambda (x) x)
+			       xslt-process-external-java-libraries
+			       classpath-separator)))
+    (if xslt-process-additional-classpath
+	(setq classpath
+	      (concat
+	       (mapconcat (lambda (x) x)
+			  xslt-process-additional-classpath
+			  classpath-separator)
+	       classpath-separator classpath)))
+    (message (concat
+		       xslt-process-java-program nil " "
+		       "-classpath" " " classpath " "
+		       "xslt.debugger.cmdline.Controller" " " "-emacs"))
+    (setq xslt-process-comint-buffer
+	  (make-comint xslt-process-comint-process-name
+		       xslt-process-java-program nil
+		       "-classpath" classpath
+		       "xslt.debugger.cmdline.Controller" "-emacs"))
+    (message "Starting XSLT process...")
+    (setq xslt-process-comint-process
+	  (get-buffer-process xslt-process-comint-buffer))
+    (save-excursion
+      (set-buffer xslt-process-comint-buffer)
+      (make-variable-buffer-local 'kill-buffer-hook)
+      (add-hook 'kill-buffer-hook 'xslt-process-debugger-buffer-killed)
+      ;; Set our own process filter, so we get a chance to remove Emacs
+      ;; commands from the output sent to the buffer
+      (set-process-filter xslt-process-comint-process
+			  (function xslt-process-output-from-process))
+      (setq comint-prompt-regexp "^xslt> ")
+      (setq comint-delimiter-argument-list '(? )))))
 
 (defun xslt-process-results-process-filter (process string)
   "Function called whenever the XSLT processor sends results to its
@@ -1161,7 +1186,7 @@ the output to the XSLT process buffer."
   (run-hooks 'xslt-process-style-frames-changed-hooks)
   (setq xslt-process-style-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running)
-  (message "XSLT processing finished."))
+  (message "Done invoking %s." xslt-process-current-processor))
 
 (defun xslt-process-report-error (message)
   "Called by the XSLT debugger process whenever an error happens."
