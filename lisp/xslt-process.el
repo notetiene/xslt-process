@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June  1, 2001 09:47:06 ovidiu>
+;; Time-stamp: <June  1, 2001 14:43:20 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -828,8 +828,11 @@ and view the results in a buffer."
   "*Invokes the XSLT processor of your choice on the current buffer,
 and view the results in a buffer."
   (interactive)
-  (let ((filename (expand-file-name "xslt-process-output.html"
-				    (temp-directory))))
+  (let ((filename (expand-file-name
+		   "xslt-process-output.html"
+		   (or (if (fboundp 'temp-directory) (temp-directory))
+		       (if (boundp 'temporary-file-directory)
+			   temporary-file-directory)))))
     (xslt-process-do-run t filename)))
 
 (defun xslt-process-display-messages (messages msg-buffer out-buffer)
