@@ -11,9 +11,10 @@ package xslt.debugger;
 import java.lang.ClassNotFoundException;
 import java.lang.IndexOutOfBoundsException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Stack;
-import java.util.Collection;
+import java.io.OutputStream;
 
 /**
  * <code>Manager</code> manages the breakpoints, and local and global
@@ -67,6 +68,13 @@ public class Manager
    *
    */
   AbstractXSLTDebugger debugger = null;
+
+  /**
+   * <code>outStream</code> specifies where the results of the XSLT
+   * processing should be sent. By default this is
+   * <code>System.out</code>.
+   */
+  protected OutputStream outStream = System.out;
 
   /**
    * <code>forDebug</code> indicates whether the XSLT processor should
@@ -388,5 +396,15 @@ public class Manager
   public Observer getObserver()
   {
     return observer;
+  }
+
+  public void setOutStream(OutputStream stream)
+  {
+    outStream = stream;
+  }
+
+  public OutputStream getOutStream()
+  {
+    return outStream;
   }
 }
