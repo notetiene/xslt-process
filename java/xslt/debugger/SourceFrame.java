@@ -36,6 +36,8 @@ public class SourceFrame implements Cloneable
                       Manager manager)
   {
     this.name = name;
+    if (filename.startsWith("file:"))
+      filename = filename.substring(5);
     this.filename = filename;
     this.line = line;
     this.column = column;
