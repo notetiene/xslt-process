@@ -9,8 +9,9 @@
 package xslt.debugger;
 
 import java.util.ArrayList;
+import java.lang.Cloneable;
 
-public class SourceFrame
+public class SourceFrame implements Cloneable
 {
   String name;
   String filename;
@@ -39,6 +40,46 @@ public class SourceFrame
     this.line = line;
     this.column = column;
     this.manager = manager;
+  }
+
+  protected Object clone()
+  {
+    SourceFrame frame = null;
+
+    try {
+      Class thisClass = this.getClass();
+      frame = (SourceFrame)thisClass.newInstance();
+      frame.name = name;
+      frame.filename = filename;
+      frame.line = line;
+      frame.column = column;
+      frame.manager = manager;
+      frame.styleFrame = styleFrame;
+    }
+    catch (Exception e) {
+      System.out.println("Cannot clone object " + this + ": " + e.toString());
+    }
+
+    return frame;
+  }
+
+  public boolean equals(Object object)
+  {
+    if (object instanceof SourceFrame) {
+      SourceFrame frame = (SourceFrame)object;
+      return name.equals(frame.name)
+        && line == frame.line
+        && column == frame.column
+        && (styleFrame == frame.styleFrame
+            || styleFrame.equals(frame.styleFrame));
+    }
+    else
+      return false;
+  }
+
+  public int hashCode()
+  {
+    return filename.hashCode() + line;
   }
   
   /**
@@ -75,6 +116,26 @@ public class SourceFrame
   public void setName(String name)
   {
     this.name = name;
+  }
+
+  /**
+   * Get the file name of this source frame.
+   *
+   * @return an <code>int</code> value
+   */
+  public String getFilename()
+  {
+    return filename;
+  }
+
+  /**
+   * Get the line number of this source frame.
+   *
+   * @return an <code>int</code> value
+   */
+  public int getLine()
+  {
+    return line;
   }
 }
 
