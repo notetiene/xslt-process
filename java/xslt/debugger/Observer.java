@@ -135,6 +135,11 @@ public interface Observer
   public void localVariablesChanged(ArrayList localVariables);
 
   /**
+   * Notifies that the XSLT processing is going to start now.
+   */
+  public void processorStarted();
+  
+  /**
    * Notifies that the XSLT processing has just finished.
    */
   public void processorFinished();
