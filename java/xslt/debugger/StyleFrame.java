@@ -9,10 +9,12 @@
 package xslt.debugger;
 
 import java.util.ArrayList;
+import java.lang.Cloneable;
+import java.lang.CloneNotSupportedException;
 
-public class StyleFrame
+public class StyleFrame implements Cloneable
 {
-  ArrayList variables = null;
+  protected ArrayList localVariables = null;
   String name;
   String filename;
   int line;
@@ -33,6 +35,52 @@ public class StyleFrame
     this.manager = manager;
   }
 
+  protected Object clone()
+    throws CloneNotSupportedException
+  {
+    StyleFrame frame = null;
+
+    try {
+      Class thisClass = this.getClass();
+      frame = (StyleFrame)thisClass.newInstance();
+      frame.localVariables = (localVariables == null
+                              ? null
+                              :(ArrayList)localVariables.clone());
+      frame.name = name;
+      frame.filename = filename;
+      frame.line = line;
+      frame.column = column;
+      frame.manager = manager;
+      frame.sourceFrame = sourceFrame;
+    }
+    catch (Exception e) {
+      System.out.println("Cannot clone object " + this + ": " + e.toString());
+    }
+
+    return frame;
+  }
+
+  public boolean equals(Object object)
+  {
+    if (object instanceof StyleFrame) {
+      StyleFrame frame = (StyleFrame)object;
+      return filename.equals(frame.filename)
+        && line == frame.line
+        && column == frame.column
+        && (sourceFrame == frame.sourceFrame
+            || sourceFrame.equals(frame.sourceFrame))
+        && (localVariables == frame.localVariables
+            || localVariables.equals(frame.localVariables));
+    }
+    else
+      return false;
+  }
+
+  public int hashCode()
+  {
+    return filename.hashCode() + line;
+  }
+
   /**
    * Return all the local variables in this style frame. Always use
    * this method to get the local variables, as specific subclasses
@@ -43,7 +91,7 @@ public class StyleFrame
    */
   public ArrayList getLocalVariables()
   {
-    return variables;
+    return localVariables;
   }
 
   /**
@@ -114,4 +162,23 @@ public class StyleFrame
     this.name = name;
   }
   
+  /**
+   * Get the file name of this style frame.
+   *
+   * @return an <code>int</code> value
+   */
+  public String getFilename()
+  {
+    return filename;
+  }
+
+  /**
+   * Get the line number of this style frame.
+   *
+   * @return an <code>int</code> value
+   */
+  public int getLine()
+  {
+    return line;
+  }
 }
