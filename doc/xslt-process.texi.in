@@ -14,7 +14,7 @@
 
 This file documents the features of the XSLT-process minor mode.
 
-Copyright (C) 2000--2001 Ovidiu Predescu
+Copyright (C) 2000--2003 Ovidiu Predescu
 Copyright (C) 2002--2003 Tony Addyman
 All rights reserved.
 
@@ -36,7 +36,7 @@ copyright notice remains intact and unchanged on all copies.
 @author by Ovidiu Predescu and Tony Addyman
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2000, 2001 Ovidiu Predescu.
+Copyright @copyright{} 2000, 2001, 2002, 2003 Ovidiu Predescu.
 @par Copyright @copyright{} 2002, 2003 Tony Addyman.
 @par All rights reserved.
 
@@ -149,14 +149,18 @@ the output from the execution of the stylesheet as it is being produced,
 what are the local and global variables, set breakpoints in both the XML
 source file and the XSLT program.
 
-The principle author of the @emph{XSLT-process} package is
-@email{ovidiu@@cup.hp.com, Ovidiu Predescu}, and the package is
+The principal author of the @emph{XSLT-process} package is
+@uref{http://webweavertech.com/ovidiu/weblog/, Ovidiu Predescu}; major contributions have been made by @uref{http://www.cs.salford.ac.uk/web/home.nsf/key/addyman/, Tony Addyman}. The package is
 distributed under the terms of
 @uref{http://www.gnu.org/copyleft/gpl.html, GNU General Public
-License}. The project is graciously hosted by SourceForge, and could be
-found at @uref{http://xslt-process.sourceforge.net/index.php,
+License}.
+
+@ifnothtml
+The project is graciously hosted by SourceForge, and could
+be found at @uref{http://xslt-process.sourceforge.net/index.php,
 http://xslt-process.sourceforge.net/index.php}. The current version is
 @value{version}.
+@end ifnothtml
 
 @c =========================================================================
 @node Installation and setup, Running the XSLT processor, What is it?, top
@@ -167,9 +171,11 @@ The @emph{XSLT-process} mode is part of XEmacs, but it works with both
 XEmacs and GNU Emacs. The installation differs slighly between the two
 editors as we will see shortly.
 
-The mode has been tested on Linux and Windows 2000, with XEmacs and GNU
-Emacs. The development platform however is Linux, so expect
-this to be the most stable one.
+The mode has been tested on Linux and Windows 2000, with XEmacs and
+GNU Emacs, and under MacOS X with
+@uref{http://webweavertech.com/ovidiu/emacs.html, GNU Emacs}. The
+development platform however is Linux, so expect this to be the most
+stable one.
 
 @menu
 * Package installation under XEmacs::  
