@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 30, 2001 20:52:20 ovidiu>
+;; Time-stamp: <May 30, 2001 22:38:37 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -412,6 +412,9 @@ display name, a file name and a line number, among other things.")
   "The stack of style frames, an array of entries consisting of a
 display name, a file name and a line number, among other things.")
 
+(defvar xslt-process-global-variables nil
+  "The global variables of the current stylesheet.")
+
 (defvar xslt-process-local-variables nil
   "The local variables for the currently selected style frame.")
 
@@ -503,6 +506,10 @@ filename line) that indicate the new source frame stack.")
   "List of functions to be called when the style frame stack
 changes. The functions should take one argument, a list of (name
 filename line) that indicate the new style frame stack.")
+
+(defvar xslt-process-global-variables-changed-hooks nil
+  "List of functions to be called when the global variables change. The
+hook functions should take no argument.")
 
 (defvar xslt-process-local-variables-changed-hooks nil
   "List of functions to be called when the local variables change. The
@@ -651,6 +658,7 @@ hook functions should take no argument.")
 	    'xslt-process-source-frames-stack
 	    'xslt-process-style-frames-stack
 	    'xslt-process-local-variables
+	    'xslt-process-global-variables
 	    (cons 'xslt-process-breakpoint-extents 'xslt-process-dump-hashtable)
 	    'xslt-process-execution-context-error-function
 	    'xslt-process-results-process
@@ -704,6 +712,8 @@ breakpoint is enabled or disabled.
 `xslt-process-source-frames-changed-hooks' is run when the XML
 document element path changes.
 `xslt-process-style-frames-changed-hooks' is run when the XSLT frames change.
+`xslt-process-global-variables-changed-hooks' is run when the global
+variables change.
 `xslt-process-local-variables-changed-hooks' is run when the local
 variables change.
 
@@ -1450,9 +1460,11 @@ the output to the XSLT process buffer."
   ;; Reset the source and style frame stacks
   (setq xslt-process-source-frames-stack nil)
   (setq xslt-process-style-frames-stack nil)
+  (setq xslt-process-global-variables nil)
   (setq xslt-process-local-variables nil)
   (run-hooks 'xslt-process-source-frames-changed-hooks)
   (run-hooks 'xslt-process-style-frames-changed-hooks)
+  (run-hooks 'xslt-process-global-variables-changed-hooks)
   (run-hooks 'xslt-process-local-variables-changed-hooks)
   (setq xslt-process-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running)
@@ -1553,6 +1565,16 @@ corresponding stack frame."
   (setq xslt-process-selected-style-frame style-frame)
   (run-hook-with-args 'xslt-process-source-frames-changed-hooks t)
   (run-hook-with-args 'xslt-process-style-frames-changed-hooks t))
+
+(defun xslt-process-global-variables-changed (variables)
+  "Called by the debugger process to inform that the global variables
+in the current XSLT template have changed."
+  (setq xslt-process-global-variables
+	(mapvector
+	 (lambda (x)
+	   (vector (aref x 0) (aref x 1) (xslt-process-unescape (aref x 2))))
+	 variables))
+  (run-hooks 'xslt-process-global-variables-changed-hooks))
 
 (defun xslt-process-local-variables-changed (variables)
   "Called by the debugger process to inform that the local variables
