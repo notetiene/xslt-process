@@ -170,6 +170,18 @@ in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
+(defcustom xslt-process-do-stop "a"
+  "*Keybinding for aborting a long XSLT processing. The buffer has to
+be in debug mode for this key to work."
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-do-quit "x"
+  "*Keybing for exiting the debugger process. The buffer has to be in
+debug mode for this key to work."
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
 (defface xslt-process-enabled-breakpoint-face
   '((((class color) (background light))
      (:foreground "purple" :background "salmon")))
@@ -216,24 +228,18 @@ indicator."
   "Indicates whether the current buffer is in debug mode.")
 (make-variable-buffer-local 'xslt-process-debug-mode)
 
-(defvar xslt-process-mode-line xslt-process-mode-line-string
-  "The string to be displayed in the modeline as the minor mode
-indicator.  Initially this is the same with the mode-line-string, but
-it can change to debug-mode-line-string, if the debug mode is
-entered.")
-
+;; Keymaps
 ;;;###autoload
 (defvar xslt-process-mode-map (make-sparse-keymap)
   "Keyboard bindings in normal XSLT-process mode enabled buffers.")
 
+;;;###autoload
 (defvar xslt-process-debug-mode-map (make-sparse-keymap)
   "Keyboard bindings for the XSLT debug mode.")
 
+;; State variables of the mode
 (defvar xslt-process-breakpoints (make-hashtable 10 'equal)
   "Hash table containing the currently defined breakpoints.")
-
-(defvar xslt-process-comint-process-name "xslt"
-  "The name of the comint process.")
 
 (defvar xslt-process-comint-process nil
   "The XSLT debugger process.")
@@ -251,6 +257,15 @@ stopped.")
 (defvar xslt-process-breakpoint-extents (make-hashtable 10 'equal)
   "Hash table of extents indexed by (filename . lineno). It is used to
 keep track of the extents created to highlight lines.")
+
+(defvar xslt-process-execution-context-error-function nil
+  "Function to be called by the xslt-process-report-error. This
+function should reset the proper state depending on the debugger
+operation that was invoked.")
+
+;; Other definitions
+(defvar xslt-process-comint-process-name "xslt"
+  "The name of the comint process.")
 
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
@@ -286,6 +301,10 @@ keep track of the extents created to highlight lines.")
   xslt-process-do-finish 'xslt-process-do-finish)
 (define-key xslt-process-debug-mode-map
   xslt-process-do-continue 'xslt-process-do-continue)
+(define-key xslt-process-debug-mode-map
+  xslt-process-do-stop 'xslt-process-do-stop)
+(define-key xslt-process-debug-mode-map
+  xslt-process-do-quit 'xslt-process-do-quit)
 
 ;;;###autoload
 (defun xslt-process-mode (&optional arg)
@@ -313,46 +332,58 @@ Emacs JDE:       http://sunsite.dk/jde/
 Java Bean Shell: http://www.beanshell.org/
 "
   (interactive "P")
-  (add-submenu
-   nil
-   '("XSLT"
-     ["Run XSLT processor" xslt-process-invoke :active t]
-     ["--:shadowEtchedIn" nil]
-     ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
-     ["Set breakpoint" xslt-process-set-breakpoint
-      :active (and xslt-process-debug-mode
-		   (not (xslt-process-is-breakpoint
-			 (xslt-process-new-breakpoint-here))))]
-     ["Delete breakpoint" xslt-process-delete-breakpoint
-      :active (and xslt-process-debug-mode
-		   (xslt-process-is-breakpoint
-		    (xslt-process-new-breakpoint-here)))]
-     ["Disable breakpoint" xslt-process-enable/disable-breakpoint
-      :active (and xslt-process-debug-mode
-		   (xslt-process-breakpoint-is-enabled
-		    (xslt-process-new-breakpoint-here)))]
-     ["--:shadowEtchedIn" nil]
-     ["Run debugger" xslt-process-do-run
-      :active (eq xslt-process-process-state 'not-running)]
-     ["Step" xslt-process-do-step
-      :active (eq xslt-process-process-state 'stopped)]
-     ["Next" xslt-process-do-next
-      :active (eq xslt-process-process-state 'stopped)]
-     ["Finish" xslt-process-do-finish
-      :active (eq xslt-process-process-state 'stopped)]
-     ["Continue" xslt-process-do-continue
-      :active (eq xslt-process-process-state 'stopped)]
-     ["Stop" xslt-process-do-stop
-      :active (eq xslt-process-process-state 'running)]
-     ["Quit debugger" xslt-process-do-quit
-      :active (not (eq xslt-process-process-state 'not-running))]))
   (setq xslt-process-mode
 	(if (null arg)
 	    (not xslt-process-mode)
 	  (> (prefix-numeric-value arg) 0)))
-  (setq xslt-process-mode-line xslt-process-mode-line-string)
+;  (setq xslt-process-mode-line xslt-process-mode-line-string)
+  (make-variable-buffer-local 'minor-mode-alist)
+  (if xslt-process-mode
+      (progn
+	(xslt-process-setup-minor-mode xslt-process-mode-map
+				       xslt-process-mode-line-string)
+	(add-submenu
+	 nil
+	 '("XSLT"
+	   ["Run XSLT processor" xslt-process-invoke :active t]
+	   ["--:shadowEtchedIn" nil]
+	   ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
+	   ["Set breakpoint" xslt-process-set-breakpoint
+	    :active (and xslt-process-debug-mode
+			 (not (xslt-process-is-breakpoint
+			       (xslt-process-new-breakpoint-here))))]
+	   ["Delete breakpoint" xslt-process-delete-breakpoint
+	    :active (and xslt-process-debug-mode
+			 (xslt-process-is-breakpoint
+			  (xslt-process-new-breakpoint-here)))]
+	   ["Breakpoint enabled" xslt-process-enable/disable-breakpoint
+	    :active (and xslt-process-debug-mode
+			 (xslt-process-is-breakpoint
+			  (xslt-process-new-breakpoint-here)))
+	    :style toggle
+	    :selected (and xslt-process-debug-mode
+			 (xslt-process-breakpoint-is-enabled
+			  (xslt-process-new-breakpoint-here)))]
+	   ["--:shadowEtchedIn" nil]
+	   ["Run debugger" xslt-process-do-run
+	    :active xslt-process-debug-mode]
+	   ["Step" xslt-process-do-step
+	    :active (eq xslt-process-process-state 'stopped)]
+	   ["Next" xslt-process-do-next
+	    :active (eq xslt-process-process-state 'stopped)]
+	   ["Finish" xslt-process-do-finish
+	    :active (eq xslt-process-process-state 'stopped)]
+	   ["Continue" xslt-process-do-continue
+	    :active (eq xslt-process-process-state 'stopped)]
+	   ["Stop" xslt-process-do-stop
+	    :active (eq xslt-process-process-state 'running)]
+	   ["Quit debugger" xslt-process-do-quit
+	    :active (not (eq xslt-process-process-state 'not-running))])))
+    (remassoc 'xslt-process-mode minor-mode-alist)
+    (remassoc 'xslt-process-mode minor-mode-map-alist)
+    (delete-menu-item '("XSLT")))
   ;; Force modeline to redisplay
-  (xslt-process-update-mode-line))
+  (redraw-mode-line))
 
 (defun xslt-process-toggle-debug-mode (arg)
   "*Setup a buffer in the XSLT debugging mode.
@@ -658,7 +689,9 @@ hits a breakpoint that causes it to stop."
 
 (defun xslt-process-report-error (message)
   "Called by the XSLT debugger process whenever an error happens."
-  (message message))
+  (message message)
+  (if xslt-process-execution-context-error-function
+      (funcall xslt-process-execution-context-error-function)))
 
 (defun xslt-process-do-run ()
   "*Send the run command to the XSLT debugger."
@@ -666,37 +699,52 @@ hits a breakpoint that causes it to stop."
   (block nil
     (if (not (eq xslt-process-process-state 'not-running))
 	(if (yes-or-no-p-maybe-dialog-box
-	     "The XSLT debugger is already running, restart it ")
-	    (xslt-process-do-quit)
+	     "The XSLT debugger is already running, restart it? ")
+	    (xslt-process-do-quit t)
 	  (return)))
-    (setq xslt-process-process-state 'running)
     (let ((filename (buffer-file-name)))
-      (xslt-process-send-command (concat "r " filename)))
-    (message "Starting the XSLT debugger...")))
+      (setq xslt-process-process-state 'running)
+      (xslt-process-send-command (concat "r " filename))
+      (setq xslt-process-execution-context-error-function
+	    (lambda ()
+	      (setq xslt-process-process-state 'not-running)))
+      (message "Running the XSLT debugger..."))))
 
 (defun xslt-process-do-step ()
   "*Send a STEP command to the XSLT debugger."
   (interactive)
-  (setq xslt-process-process-state 'running)
-  (xslt-process-send-command "s"))
+  (if (eq xslt-process-process-state 'stopped)
+      (progn
+	(setq xslt-process-process-state 'running)
+	(xslt-process-send-command "s"))
+    (message "XSLT debugger is not running.")))
 
 (defun xslt-process-do-next ()
   "*Send a NEXT command to the XSLT debugger."
   (interactive)
-  (setq xslt-process-process-state 'running)
-  (xslt-process-send-command "n"))
+  (if (eq xslt-process-process-state 'stopped)
+      (progn
+	(setq xslt-process-process-state 'running)
+	(xslt-process-send-command "n"))
+    (message "XSLT debugger is not running.")))
 
 (defun xslt-process-do-finish ()
   "*Send a FINISH command to the XSLT debugger."
   (interactive)
-  (setq xslt-process-process-state 'running)
-  (xslt-process-send-command "f"))
+  (if (eq xslt-process-process-state 'stopped)
+      (progn
+	(setq xslt-process-process-state 'running)
+	(xslt-process-send-command "f"))
+    (message "XSLT debugger is not running.")))
 
 (defun xslt-process-do-continue ()
   "*Send a CONTINUE command to the XSLT debugger."
   (interactive)
-  (setq xslt-process-process-state 'running)
-  (xslt-process-send-command "c"))
+  (if (eq xslt-process-process-state 'stopped)
+      (progn
+	(setq xslt-process-process-state 'running)
+	(xslt-process-send-command "c"))
+    (message "XSLT debugger is not running.")))
 
 (defun xslt-process-do-stop ()
   "*Send a STOP command to the XSLT debugger, potentially stopping the
@@ -705,18 +753,21 @@ debugger from a long processing with no breakpoints setup."
   (if (eq xslt-process-process-state 'running)
       (xslt-process-send-command "stop")))
 
-(defun xslt-process-do-quit ()
+(defun xslt-process-do-quit (&optional dont-ask)
   "*Quit the XSLT debugger."
   (interactive)
-  ;; Unselect the last line showing the debugger's position
-  (if xslt-process-last-selected-position
-      (let ((extent (xslt-process-last-selected-position-extent)))
-	(delete-extent extent)))
-  (xslt-process-send-command "q" t)
-  (setq xslt-process-process-state 'not-running)
-  (setq xslt-process-last-selected-position nil)
   (if xslt-process-comint-buffer
-      (kill-buffer xslt-process-comint-buffer)))
+      (if (or dont-ask
+	      (yes-or-no-p-maybe-dialog-box "Really quit the XSLT debugger? "))
+	  (progn
+	    (xslt-process-send-command "q" t)
+	    (kill-buffer xslt-process-comint-buffer)
+	    (if (and (not dont-ask)
+		     (yes-or-no-p-maybe-dialog-box "Delete all breakpoints? "))
+		(progn
+		  (xslt-process-change-breakpoints-highlighting nil)
+		  (clrhash xslt-process-breakpoints)))))
+    (message "XSLT debugger not running.")))
 
 (defun xslt-process-change-breakpoints-highlighting (flag &optional filename)
   "Highlights or unhighlights, depending on FLAG, all the breakpoints
@@ -758,8 +809,6 @@ buffers. It doesn't affect the current state of the breakpoints."
 			 'xslt-process-disabled-breakpoint-face)
 		       1)))
 	  ;; Intern the extent in the extents table
-	  (message (format "intern extent %s for breakpoint %s"
-			   extent breakpoint))
 	  (puthash breakpoint extent xslt-process-breakpoint-extents))))))
       
 (defun xslt-process-unhighlight-breakpoint (breakpoint)
@@ -771,10 +820,7 @@ buffers. It doesn't affect the current state of the breakpoints."
 	   (extent (gethash (cons filename line)
 			    xslt-process-breakpoint-extents)))
       (if extent
-	  (progn
-	    (message (format "removing extent %s for breakpoint %s"
-			     extent breakpoint))
-	    (delete-extent extent))))))
+	  (delete-extent extent)))))
 
 (defun xslt-process-highlight-line (face &optional priority)
   "Sets the face of the current line to FACE. Returns the extent that
@@ -795,6 +841,9 @@ highlights the line."
 (defun xslt-process-send-command (string &optional dont-start-process?)
   "Sends a command to the XSLT process. Start this process if not
 already started."
+  ;; Reset the execution-context-error-function so that in case of
+  ;; errors we don't get error functions called inadvertently
+  (setq xslt-process-execution-context-error-function nil)
   (if (and (not dont-start-process?)
 	   (or (null xslt-process-comint-process)
 	       (not (eq (process-status xslt-process-comint-process) 'run))))
@@ -812,25 +861,46 @@ already started."
 		 (comint-simple-send xslt-process-comint-process
 				     (format "dis %s %s" filename line)))))
 	 xslt-process-breakpoints)))
-  (if (eq (process-status xslt-process-comint-process) 'run)
-      (comint-simple-send xslt-process-comint-process string)))
+  (if (and dont-start-process?
+	   (null xslt-process-comint-process))
+      nil
+    (if (eq (process-status xslt-process-comint-process) 'run)
+	(comint-simple-send xslt-process-comint-process string))))
 
 (defun xslt-process-start-debugger-process ()
   "*Start the XSLT debugger process."
   (setq xslt-process-comint-buffer
 	(make-comint xslt-process-comint-process-name
 		     "java" nil "xslt.debugger.cmdline.Controller" "-emacs"))
-  (message "Started XSLT process.")
+  (message "Starting XSLT process...")
   (setq xslt-process-comint-process
 	(get-buffer-process xslt-process-comint-buffer))
   (save-excursion
     (set-buffer xslt-process-comint-buffer)
+    (add-hook 'kill-buffer-hook 'xslt-process-debugger-buffer-killed)
     ;; Set our own process filter, so we get a chance to remove Emacs
     ;; commands from the output sent to the buffer
     (set-process-filter xslt-process-comint-process
 			(function xslt-process-output-from-process))
     (setq comint-prompt-regexp "^xslt> ")
     (setq comint-delimiter-argument-list '(? ))))
+
+(defun xslt-process-debugger-process-started ()
+  "Called when the debugger process started and is ready to accept
+commands."
+  (message "Starting XSLT process... done"))
+
+(defun xslt-process-debugger-buffer-killed ()
+  "Called when the comint buffer running the XSLT debugger is killed
+by the user."
+  (setq xslt-process-comint-process nil)
+  (setq xslt-process-comint-buffer nil)
+  ;; Unselect the last line showing the debugger's position
+  (if xslt-process-last-selected-position
+      (let ((extent (xslt-process-last-selected-position-extent)))
+	(delete-extent extent)))
+  (setq xslt-process-last-selected-position nil)
+  (setq xslt-process-process-state 'not-running))
 
 (defun xslt-process-output-from-process (process string)
   "This function is called each time output is generated by the XSLT
@@ -881,8 +951,5 @@ don't want to use get-file-buffer because it doesn't follow links."
 	    (setq found buffer)
 	  (setq buffers-list (cdr buffers-list)))))
     found))
-
-;;;###autoload
-(xslt-process-setup-minor-mode xslt-process-mode-map xslt-process-mode-line)
 
 (provide 'xslt-process)
