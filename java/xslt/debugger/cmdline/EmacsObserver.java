@@ -95,7 +95,7 @@ public class EmacsObserver implements Observer
     Stack sourceFrames = manager.getSourceFrames();
 
     buffer.delete(0, buffer.length());
-    buffer.append("<<(xslt-process-source-frames-stack-changed '(");
+    buffer.append("<<(xslt-process-source-frames-stack-changed [");
     for (int i = 0; i < sourceFrames.size(); i++) {
       SourceFrame frame = (SourceFrame)sourceFrames.get(i);
       String filename = frame.getFilename();
@@ -103,12 +103,14 @@ public class EmacsObserver implements Observer
       if (filename.startsWith("file:"))
         filename = filename.substring(5);
 
-      buffer.append("(\"" + frame.getName()
+      buffer.append("[\"" + frame.getName()
                     + "\" \"" + filename
                     + "\" " + frame.getLine()
-                    + ")");
+                    + " " + (frame.isExiting() ? "t" : "nil")
+                    + " " + i
+                    + "]");
     }
-    buffer.append("))>>");
+    buffer.append("])>>");
     System.out.println(buffer);
     System.out.flush();
   }
@@ -119,15 +121,22 @@ public class EmacsObserver implements Observer
     Stack styleFrames = manager.getStyleFrames();
 
     buffer.delete(0, buffer.length());
-    buffer.append("<<(xslt-process-style-frames-stack-changed '(");
+    buffer.append("<<(xslt-process-style-frames-stack-changed [");
     for (int i = 0; i < styleFrames.size(); i++) {
       StyleFrame frame = (StyleFrame)styleFrames.get(i);
-      buffer.append("(\"" + frame.getName()
-                    + "\" \"" + frame.getFilename()
+      String filename = frame.getFilename();
+
+      if (filename.startsWith("file:"))
+        filename = filename.substring(5);
+
+      buffer.append("[\"" + frame.getName()
+                    + "\" \"" + filename
                     + "\" " + frame.getLine()
-                    + ")");
+                    + " " + (frame.isExiting() ? "t" : "nil")
+                    + " " + i
+                    + "]");
     }
-    buffer.append("))>>");
+    buffer.append("])>>");
     System.out.println(buffer);
     System.out.flush();
   }
