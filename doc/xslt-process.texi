@@ -77,6 +77,15 @@ download it from @uref{xslt-process-@value{version}.tar.gz, here}.
 For a list of changes between since the last version, please
 @pxref{Changes}.
 
+@html
+<a href="http://sourceforge.net/projects/xslt-process/"> <img
+src="http://sourceforge.net/sflogo.php?group_id=23425" width="88"
+height="31" border="0" alt="SourceForge Logo"></a>
+@end html
+For more information on the project, or if you want to download or
+browse the latest CVS development sources, check out the project at
+@uref{http://sourceforge.net/projects/xslt-process/, SourceForge}.
+
 @end ifhtml
 
 
