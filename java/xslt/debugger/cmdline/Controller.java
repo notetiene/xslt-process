@@ -67,8 +67,8 @@ public class Controller
     = "Usage: dis (<breakpoint number> | filename lineno)";
   static final String enableBreakpointUsage
     = "Usage: ena (<breakpoint number> | filename lineno)";
-  static final String debugUsage = "Usage: debug filename";
-  static final String runUsage = "Usage: run filename [<output filename>]";
+  static final String debugUsage = "Usage: debug -xml filename [-a | -xsl filename] [-o <output filename>]";
+  static final String runUsage = "Usage: run -xml filename [-a | -xsl filename] [-o <output filename>]";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
   static final String printLocalVariableUsage = "Usage: pl <name>";
@@ -401,6 +401,74 @@ public class Controller
     }
   }
 
+  protected void parseArguments(Vector args)
+    throws Exception
+  {
+    boolean foundXML = false;
+    // By default use the associated stylesheet
+    manager.setXSLTStylesheet(null);
+
+    // Set outputStream as the default for output
+    manager.setOutputStream(outputStream, false);
+
+    int i = 1;
+    int size = args.size();
+    while (i < size) {
+      String arg = (String)args.get(i);
+      if (arg.equals("-xsl")) {
+        if (i + 1 >= size) {
+          System.out.println("Required XSLT stylesheet argument is missing!");
+          throw new Exception("Required XSLT stylesheet argument is missing!");
+        }
+        manager.setXSLTStylesheet(getAbsoluteFilename((String)args.get(i + 1),
+                                                      true));
+        i += 2;
+      }
+      else if (arg.equals("-xml")) {
+        foundXML = true;
+        if (i + 1 >= size) {
+          System.out.println("Required XML file name argument is missing!");
+          throw new Exception("Required XML filename argument is missing!");
+        }
+        manager.setXMLFilename(getAbsoluteFilename((String)args.get(i + 1),
+                                                   true));
+        i += 2;
+      }
+      else if (arg.equals("-o")) {
+        if (i + 1 >= size) {
+          System.out.println("Required output filename argument is missing!");
+          throw new Exception("Required output filename argument is missing!");
+        }
+          
+        String outputFilename = (String)args.get(i + 1);
+        File file = new File(outputFilename);
+        boolean created = file.createNewFile();
+        file.deleteOnExit();
+        FileOutputStream fileStream = new FileOutputStream(file);
+        manager.setOutputStream(fileStream, true);
+        i += 2;
+      }
+      else if (arg.equals("-a")) {
+        manager.setXSLTStylesheet(null);
+        i++;
+      }
+      else {
+        System.out.println("Unknown argument: " + arg + "\n" + runUsage);
+        throw new Exception("Unknown argument: " + arg + "\n" + runUsage);
+      }
+    }
+
+    if (!foundXML) {
+      System.out.println("No XML document to process was specified!");
+      throw new Exception("No XML document to process was specified!");
+    }
+    
+    if (debugger.isStarted()) {
+      System.out.print("XSLT processor already running, aborting.");
+      debugger.stopProcessing();
+    }
+  }
+  
   /**
    * <code>debugXSLTProcessor</code> starts the execution of the XSLT
    * processor on the XML filename specified as argument. The
@@ -413,65 +481,32 @@ public class Controller
    * of the command.
    */
   public void debugXSLTProcessor(Vector args)
-    throws IOException, InterruptedException
+    throws Exception
   {
-    if (args.size() != 2) {
-      System.out.println(debugUsage);
-      return;
-    }
+    parseArguments(args);
 
     // Clear the current source and style frames
     currentSourceFrame = -1;
     currentStyleFrame = -1;
     
-    if (debugger.isStarted()) {
-      System.out.print("XSLT processor already running, aborting.");
-      debugger.stopProcessing();
-    }
-
     manager.setOutputStream(outputStream, false);
     String currentProcessorName = (String)parameters.get("processor");
     if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
       createXSLTDebugger();
 
-    manager.startDebugger(getAbsoluteFilename((String)args.get(1), true));
+    manager.startDebugger();
   }
 
   public void runXSLTProcessor(Vector args)
-    throws IOException, InterruptedException
+    throws Exception
   {
-    if (args.size() < 2 && args.size() > 3) {
-      System.out.println(runUsage);
-      return;
-    }
-    
-    if (debugger.isStarted()) {
-      System.out.print("XSLT processor already running, aborting.");
-      debugger.stopProcessing();
-    }
+    parseArguments(args);
 
-    if (args.size() == 3) {
-      try {
-        String outputFilename = (String)args.get(2);
-        File file = new File(outputFilename);
-        boolean created = file.createNewFile();
-        file.deleteOnExit();
-        FileOutputStream fileStream = new FileOutputStream(file);
-        manager.setOutputStream(fileStream, true);
-      }
-      catch (IOException ex) {
-        System.out.println("Cannot create output file: " + ex);
-        throw ex;
-      }
-    }
-    else
-      manager.setOutputStream(outputStream, false);
-      
     String currentProcessorName = (String)parameters.get("processor");
     if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
       createXSLTDebugger();
 
-    manager.startProcessor(getAbsoluteFilename((String)args.get(1), true));
+    manager.startProcessor();
   }
   
   public void doStep(Vector args)
@@ -835,6 +870,61 @@ public class Controller
     return value;
   }
 
+  public Vector split(String line)
+    throws Exception
+  {
+    int length = line.length();
+    StringBuffer tmp = new StringBuffer(length);
+    Vector arguments = new Vector();
+    boolean insideString = false;
+    char ch;
+    int i = 0;
+
+    while (i < length) {
+      // Skip over any blank characters 
+      for (; i < length && ((ch = line.charAt(i)) == ' ' || ch == '\t'); i++)
+        ; // do nothing
+
+      if (i < length && (ch = line.charAt(i)) == '"') {
+        insideString = true;
+        i++;
+      }
+
+      while (i < length
+             && (insideString
+                 || ((ch = line.charAt(i)) != ' ' && ch != '\t'))) {
+        if ((ch = line.charAt(i)) == '\\') {
+          if (i + 1 >= length)
+            throw new Exception("Escape character not followed by character.");
+          tmp.append(line.charAt(i + 1));
+          i += 2;
+          continue;
+        }
+
+        if (ch == '"') {
+          if (!insideString)
+            throw new Exception("Unescaped quote character in argument!");
+          insideString = false;
+          i++;
+          break;
+        }
+
+        tmp.append(ch);
+        i++;
+      }
+
+      if (tmp.length() != 0) {
+        arguments.add(tmp.toString());
+        tmp.delete(0, tmp.length());
+      }
+    }
+
+    if (insideString)
+      throw new Exception("Quoted string not terminated!");
+
+    return arguments;
+  }
+
   public void mainLoop()
   {
     InputStreamReader sin = new InputStreamReader(System.in);
@@ -859,8 +949,19 @@ public class Controller
       }
       if (line.equals(""))
         continue;
-      
-      Vector args = Utils.split(line, " ");
+
+      Vector args;
+      try {
+        args = split(line);
+      }
+      catch (Exception ex) {
+        System.out.println("Parse error: " + ex.toString());
+        continue;
+      }
+
+      if (args.size() == 0)
+        continue;
+        
       String cmd = (String)args.get(0);
       Method method = (Method)commands.get(cmd);
       if (method == null) {
