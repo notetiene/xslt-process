@@ -106,6 +106,16 @@ public abstract class AbstractXSLTDebugger implements Runnable
   abstract public void prepareTransformerForDebugging(Transformer transformer,
                                                       boolean forDebug);
 
+  public SAXParserErrorHandler getSAXParserErrorHandler(Manager manager)
+  {
+    return new SAXParserErrorHandler(manager);
+  }
+
+  public TrAXErrorListener getTrAXErrorListener(Manager manager)
+  {
+    return new TrAXErrorListener(manager);
+  }
+
   public synchronized void run()
   {
     SAXSource saxSource = null;
@@ -117,25 +127,28 @@ public abstract class AbstractXSLTDebugger implements Runnable
 
     try {
       TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
-      tFactory.setErrorListener(new TrAXErrorListener(manager));
+      tFactory.setErrorListener(getTrAXErrorListener(manager));
 
       InputSource is = new InputSource(new URL(xmlFilename).toString());
       saxSource = new SAXSource(is);
       setupXMLReader(saxSource);
-      System.out.println("After setting up XMLReader, saxSource " + saxSource);
       
       String media = null, title = null, charset = null;
       Source stylesheetSource
         = tFactory.getAssociatedStylesheet(saxSource, media, title, charset);
-      // Set an error handler for the stylesheet parser
       if (stylesheetSource == null)
         throw new
           TransformerConfigurationException
           ("No matching <?xml-stylesheet?> processing instruction found");
-      
-      if (stylesheetSource instanceof SAXSource)
-        setupXMLReader((SAXSource)stylesheetSource);
-      System.out.println("After setting up XML reader for stylesheet, stylesheetSource = " + stylesheetSource);
+
+      // Create a new Source for the stylesheet to avoid problems with
+      // different types of Source objects returned by different XSLT
+      // processors
+      InputSource stylesheetInputSource
+        = new InputSource(stylesheetSource.getSystemId());
+      SAXSource stylesheetSAXSource = new SAXSource(stylesheetInputSource);
+      // Set an error handler for the stylesheet parser
+      setupXMLReader(stylesheetSAXSource);
 
       StreamResult result = new StreamResult(manager.getOutputStream());
       String stylesheetId = stylesheetSource.getSystemId();
@@ -154,10 +167,9 @@ public abstract class AbstractXSLTDebugger implements Runnable
         template = sheetInfo.getTemplates(stylesheetSource);
       }
 
-      System.out.println("Got template = " + template);
-      
       if (template != null) {
         Transformer transformer = template.newTransformer();
+        transformer.setErrorListener(getTrAXErrorListener(manager));
         prepareTransformerForDebugging(transformer, manager.forDebug);
 
         if (transformer != null)
@@ -234,13 +246,13 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public void setupXMLReader(SAXSource saxSource)
     throws SAXException, ParserConfigurationException
   {
-    XMLReader xmlReader = saxSource.getXMLReader();
+    XMLReader xmlReader = saxSource.getXMLReader();    
     if (xmlReader == null) {
       xmlReader = SAXParserFactory.newInstance()
         .newSAXParser().getXMLReader();
       saxSource.setXMLReader(xmlReader);
     }
-    xmlReader.setErrorHandler(new SAXParserErrorHandler(manager));
+    xmlReader.setErrorHandler(getSAXParserErrorHandler(manager));
   }
 
   public synchronized void checkRequestToStop()
