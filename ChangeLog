@@ -1,6 +1,11 @@
 2002-07-21  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
-	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Display of global variables corrected.
+	* java/xslt/debugger/saxon/SaxonValue.java: Restrict the size of string
+	values which the debugger can return for display.
+
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Display of global variables
+	corrected.
+	
 	* lisp/xslt-speedbar.el: Removed message interfering with mini-buffer display.
 
 2002-07-20  Tony Addyman  <A.M.Addyman@salford.ac.uk>
@@ -31,11 +36,14 @@
 
 2002-07-11  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
-	* lisp/xslt-speedbar.el: Reformat multiline text values to a single lineto avoid display problems in speedbar. A paragraph character is the separator.
+	* lisp/xslt-speedbar.el: Reformat multiline text values to a single
+	lineto avoid display problems in speedbar. A paragraph character is
+	the separator.
 
 2002-07-10  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
-	* lisp/xslt-process.el: Correct error preventing "Other" option working for PDF viewer.
+	* lisp/xslt-process.el: Correct error preventing "Other" option
+	working for PDF viewer.
 
 2002-04-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
