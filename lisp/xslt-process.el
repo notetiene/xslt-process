@@ -608,7 +608,7 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("saxon-6.5.2.jar" "bsf.jar" "xml-apis.jar" "xercesImpl.jar" "xalan.jar"
+	  '("saxon-6.5.2.jar" "bsf.jar" "xalan.jar" "xercesImpl.jar" "xml-apis.jar"
 	    "batik.jar" "fop.jar" "avalon-framework-cvs-20020315.jar" "xslt.jar"))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
@@ -1643,6 +1643,14 @@ already started."
 	 (classpath (mapconcat (lambda (x) x)
 			       xslt-process-external-java-libraries
 			       classpath-separator))
+	 (bootpathjarfiles (mapcar (lambda (f)
+				  (concat (xslt-process-find-xslt-data-directory)
+					  "java" xslt-process-dir-separator f))
+	  '("saxon-6.5.2.jar" "xalan.jar" "xercesImpl.jar" "xml-apis.jar"
+	    )))
+	 (bootclasspath (mapconcat (lambda (x) x)
+			       bootpathjarfiles
+			       classpath-separator))
 	 (command nil))
     
     (if xslt-process-additional-classpath
@@ -1661,6 +1669,7 @@ already started."
 			    (concat "-D" (car x) "=" (cdr x)))
 			  xslt-process-jvm-option-properties)
 		  (list "-classpath" classpath
+			(concat "-Xbootclasspath/p:" bootclasspath)
 			"xslt.debugger.cmdline.Controller" "-emacs")
 		  (list (format "-%s" xslt-process-current-processor))))
     (setq xslt-process-comint-buffer
