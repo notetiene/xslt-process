@@ -117,6 +117,7 @@ public class Manager
    */
   Stack lastStyleFrames = null;
   Stack lastSourceFrames = null;
+  ArrayList lastGlobalVariables = null;
   ArrayList lastLocalVariables = null;
   
   /**
@@ -394,6 +395,7 @@ public class Manager
   {
     lastStyleFrames = null;
     lastSourceFrames = null;
+    lastGlobalVariables = null;
     lastLocalVariables = null;
 
     debugger.setXmlFilename(xmlFilename);
@@ -436,7 +438,7 @@ public class Manager
     }
 
     if ((lastStyleFrames == null && styleFrames != null)
-        || !lastStyleFrames.equals(styleFrames)) {
+        || !styleFrames.equals(lastStyleFrames)) {
       lastStyleFrames = (Stack)styleFrames.clone();
       observer.styleStackChanged();
 
@@ -451,6 +453,16 @@ public class Manager
         }
       }
     }
+
+    ArrayList newGlobalVariables = getDebugger().getGlobalVariables();
+    if ((lastGlobalVariables == null && newGlobalVariables != null)
+        || (newGlobalVariables != null
+            && !newGlobalVariables.equals(lastGlobalVariables))) {
+      lastGlobalVariables = newGlobalVariables;
+      System.out.println("global variables changed: " + lastGlobalVariables);
+      observer.globalVariablesChanged(lastGlobalVariables);      
+    }
+
     debugger.debuggerStopped(filename, line, column, message);
   }
   
