@@ -27,9 +27,12 @@ DEPEND = sizes.sed xslt-process.texi version.texi
 	dvips -o $@ $<
 
 .texi.html:
-	texi2html -nosec_nav -nomenu $<
-# Remove the CENTER specification for images
-	sed -e 's%<CENTER>\(<IMG[^>]*>\)</CENTER>%\1%g' <$@ >/tmp/new-$@
+	texi2html -nosec_nav -nomenu -frames $<
+# Remove the CENTER specification for images. Also fix a bug in how
+# texi2html deals with multitables that include images.
+	sed -e 's%<CENTER>\(<IMG[^>]*>\)</CENTER>%\1%g' \
+	  -e 's%<TR><TD></TD>%<TR><TD>%g' \
+	  <$@ >/tmp/new-$@
 	mv /tmp/new-$@ $@
 
 .texi.pdf:
