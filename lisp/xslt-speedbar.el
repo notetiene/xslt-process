@@ -3,14 +3,14 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April 11, 2001 00:13:13 ovidiu>
+;; Time-stamp: <April 13, 2001 22:10:06 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
 
 ;; This file is not part of GNU Emacs
 
-;; Copyright (C) 2000, 2001 Ovidiu Predescu
+;; Copyright (C) 2001 Ovidiu Predescu
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
