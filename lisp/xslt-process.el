@@ -34,14 +34,19 @@
 ;;
 ;; (autoload 'xslt-process-mode "xslt-process" "Run XSLT processor on buffer" t)
 ;;
-;; Then, while being in an XML buffer, use C-cx to invoke the XSLT
-;; processor of your choice. The result will be displayed in another
-;; buffer.
+;; Then, while being in an XML buffer, use the XSLT menu to either:
+;;
+;; - run an XSLT processor on the buffer and display the results in a
+;; different one
+;;
+;; - run an XSLT processor in debug mode, so you can view the XSLT
+;; processing as it happens
+;;
 
 (require 'jde)
 (require 'cl)
 
-;; From custom web page at http://www.dina.dk/~abraham/custom/
+;; From "custom" web page at http://www.dina.dk/~abraham/custom/
 (eval-and-compile
   (condition-case ()
       (require 'custom)
@@ -96,7 +101,7 @@ Bean Shell. You can do this by killing the *bsh* buffer."
   :group 'xslt-process
   :type '(repeat (file :must-match t :tag "Path")))
 
-(defcustom xslt-process-key-binding "\C-c\C-x\C-v"
+(defcustom xslt-process-key-binding "\C-c\C-xv"
   "*Keybinding for invoking the XSLT processor.
 To enter a normal key, enter its corresponding character. To enter a
 key with a modifier, either type C-q followed by the desired modified
@@ -105,7 +110,7 @@ use the [f1], [f2] etc. notation."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-toggle-debug-mode "\C-c\C-x\C-d"
+(defcustom xslt-process-toggle-debug-mode "\C-c\C-xd"
   "*Keybinding for toggling the debug mode."
   :group 'xslt-process
   :type '(string :tag "Key"))
@@ -138,13 +143,19 @@ in the debug mode for this key to work."
 (defface xslt-process-enabled-breakpoint-face
   '((((class color) (background light))
      (:foreground "purple" :background "salmon")))
-  "*Face used to highlight breakpoints."
+  "*Face used to highlight enabled breakpoints."
   :group 'font-lock-highlighting-faces)
 
 (defface xslt-process-disabled-breakpoint-face
   '((((class color) (background light))
-     (:foreground "purple" :background "wheat")))
-  "*Face used to highlight breakpoints."
+     (:foreground "purple" :background "wheat3")))
+  "*Face used to highlight disabled breakpoints."
+  :group 'font-lock-highlighting-faces)
+
+(defface xslt-process-current-line-face
+  '((((class color) (background light))
+     (:foreground "black" :background "orange")))
+  "*Face used to highlight disabled breakpoints."
   :group 'font-lock-highlighting-faces)
 
 ;;;###autoload
@@ -162,8 +173,8 @@ indicator."
 
 ;;; End of user customizations
 
-;;; Minor mode definitions
 
+;; Definitions used further
 ;;;###autoload
 (defvar xslt-process-mode nil
   "Indicates whether the current buffer is in the XSLT-process minor mode.")
@@ -190,11 +201,23 @@ entered.")
 (defvar xslt-process-breakpoints (make-hashtable 10 'equal)
   "Hash table containing the currently defined breakpoints.")
 
+(defvar xslt-process-comint-process-name "xslt"
+  "The name of the comint process.")
+
+(defvar xslt-process-comint-process nil
+  "The XSLT debugger process.")
+
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
   xslt-process-key-binding 'xslt-process-invoke)
+(define-key xslt-process-mode-map
+  xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
 
 ;; Setup the keymap used for debugging
+(define-key xslt-process-debug-mode-map
+  xslt-process-key-binding 'xslt-process-invoke)
+(define-key xslt-process-debug-mode-map
+  xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
 (define-key xslt-process-debug-mode-map
   xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
 (define-key xslt-process-debug-mode-map
@@ -254,7 +277,7 @@ Java Bean Shell: http://www.beanshell.org/
 		   (xslt-process-is-breakpoint
 		    (xslt-process-new-breakpoint-here)))]
      ["--:singleLine" nil]
-     ["Start Debugger" xslt-process-mode :active t]
+     ["Start Debugger" xslt-process-run-debugger :active t]
      ["Step" xslt-process-do-next :active nil]
      ["Next" xslt-process-do-next :active nil]
      ["Finish" xslt-process-do-next :active nil]
@@ -289,7 +312,7 @@ different actions for faster operations."
 (defun xslt-process-quit-debug ()
   "*Quit the debugger and exit from the xslt-process mode."
   (interactive)
-  (xslt-process-toggle-debug-mode 0))
+  (xslt-process-toggle-debug-mode))
 
 (put 'Saxon 'additional-params 'xslt-saxon-additional-params)
 (put 'Xalan1 'additional-params 'xslt-xalan1-additional-params)
@@ -537,8 +560,6 @@ breakpoints."
 				'xslt-process-disabled-breakpoint-face))
 	   (delete-extent extent)))))
    xslt-process-breakpoints))
-		 
-	     
 
 (defun xslt-process-highlight-line (face)
   "Sets the face of the current line to FACE."
@@ -548,6 +569,15 @@ breakpoints."
 	   (extent (or (extent-at from)
 		       (make-extent from to))))
       (set-extent-face extent face))))
+
+
+; comint-simple-send (string)
+(defun xslt-process-run-debugger ()
+  "*Start the XSLT debugger process."
+  (let ((buffer
+	 (make-comint xslt-process-comint-process-name
+		      "java" nil "xslt.debugger.cmdline.Controller")))
+    (setq xslt-process-comint-process (get-buffer-process buffer))))
 
 (defun xslt-process-setup-minor-mode (keymap mode-line-string)
   "Setup the XSLT-process minor mode. KEYMAP specifies the keybindings
@@ -559,10 +589,12 @@ the modeline."
 		      keymap
 		      nil
 		      'xslt-process-mode)
+    (remassoc 'xslt-process-mode minor-mode-alist)
     (or (assoc 'xslt-process-mode minor-mode-alist)
 	(setq minor-mode-alist
 	      (cons '(xslt-process-mode mode-line-string)
 		    minor-mode-alist)))
+    (remassoc 'xslt-process-mode minor-mode-map-alist)
     (or (assoc 'xslt-process-mode minor-mode-map-alist)
 	(setq minor-mode-map-alist
 	      (cons (cons 'xslt-process-mode keymap)
