@@ -50,16 +50,23 @@ public class SaxonStyleFrame extends StyleFrame
       getVariableNames();
       return localVariables;
     }
-    return null;
+    return localVariables;
   }
 
+  /**
+   * Get the global variables of the stylesheet. The Saxon API
+   * requires a StyleElement object to be able to get the global
+   * variables, even though they are kept at the stylesheet level.
+   *
+   * @return an <code>ArrayList</code> value
+   */
   public ArrayList getGlobalVariables()
   {
     if (globalVariables == null) {
       getVariableNames();
       return globalVariables;
     }
-    return null;
+    return globalVariables;
   }
 
   /**
