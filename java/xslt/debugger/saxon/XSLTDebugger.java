@@ -37,22 +37,25 @@ import java.io.PrintWriter;
 public class XSLTDebugger extends AbstractXSLTDebugger
 {
   TransformerFactory tFactory = null;
-  TransformerFactory tDebugFactory = null;
   
   public XSLTDebugger() {}
 
   public TransformerFactory getTransformerFactory(boolean forDebug)
   {
-    if (tFactory == null) {
+    if (tFactory == null)
       tFactory = new com.icl.saxon.TransformerFactoryImpl();
-      tDebugFactory = new com.icl.saxon.TransformerFactoryImpl();
 
+    if (forDebug) {
       TraceListener traceListener = new SaxonTraceListener(this);
-      tDebugFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
-      tDebugFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
+      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
+      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
+    }
+    else {
+      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, null);
+      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.FALSE);
     }
 
-    return forDebug ? tDebugFactory : tFactory;
+    return tFactory;
   }
   
   /**
@@ -62,7 +65,8 @@ public class XSLTDebugger extends AbstractXSLTDebugger
    * <code>Emitter</code>, used to output <code>xsl:message</code>, to
    * <code>EmacsEmitter</code>.
    */
-  public void prepareTransformerForDebugging(Transformer transformer)
+  public void prepareTransformerForDebugging(Transformer transformer,
+                                             boolean forDebug)
   {
     Observer observer = manager.getObserver();
     if (observer instanceof EmacsObserver) {
