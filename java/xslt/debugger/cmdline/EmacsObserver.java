@@ -209,7 +209,7 @@ public class EmacsObserver implements Observer
         buffer.append(" \"" + (typeName != null ? typeName : "") + "\"");
 
         // Now append the value
-        String stringValue = value.getValue();
+        String stringValue = escape(value.getValue());
         buffer.append(" \"" + (stringValue != null ? stringValue : "") + "\"");
       }
       else {
@@ -237,9 +237,52 @@ public class EmacsObserver implements Observer
     e.printStackTrace(pWriter);
     pWriter.flush();
     System.out.println("^(xslt-process-report-error \""
-                       + e.getMessage()
+                       + escape(e.getMessage())
                        + "\" \""
-                       + strWriter.getBuffer().toString()
+                       + escape(strWriter.getBuffer().toString())
                        + "\")$");
+  }
+
+  /**
+   * Escapes characters in <code>message</code> as follows:
+   *
+   * <ul>
+   *  <li><pre>\  -> \\</pre></li>
+   *  <li><pre>"  -> \d</pre></li>
+   *  <li><pre>^  -> \b</pre></li>
+   *  <li><pre>$  -> \e</pre></li>
+   * </ul>
+   *
+   * @param message a <code>String</code> value
+   */
+  public String escape(String message)
+  {
+    // Assume about 1% of the characters need to be escaped; probably
+    // a safe bet in most cases. Otherwise the buffer is increased
+    // automatically by the StringBuffer.
+    StringBuffer escaped = new StringBuffer((int)(message.length() * 1.01));
+
+    for (int i = 0, length = message.length(); i < length; i++) {
+      char ch = message.charAt(i);
+      switch (ch) {
+      case '\\':
+        escaped.append("\\\\");
+        break;
+      case '"':
+        escaped.append("\\d");
+        break;
+      case '^':
+        escaped.append("\\b");
+        break;
+      case '$':
+        escaped.append("\\e");
+        break;
+      default:
+        escaped.append(ch);
+        break;
+      }
+    }
+
+    return escaped.toString();
   }
 }
