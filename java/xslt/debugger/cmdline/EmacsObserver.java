@@ -8,17 +8,24 @@
 
 package xslt.debugger.cmdline;
 
+
+import java.util.Stack;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.InetAddress;
+import java.lang.StringBuffer;
 import java.io.OutputStream;
 
+import xslt.debugger.StyleFrame;
+import xslt.debugger.SourceFrame;
 import xslt.debugger.Observer;
+import xslt.debugger.Manager;
 import xslt.debugger.AbstractXSLTDebugger;
 
 public class EmacsObserver implements Observer
 {
   Controller controller;
+  StringBuffer buffer = new StringBuffer(2000);
   
   public EmacsObserver(Controller controller)
   {
@@ -33,6 +40,7 @@ public class EmacsObserver implements Observer
       ServerSocket serverSocket = new ServerSocket(0, 5, localhost);
       int port = serverSocket.getLocalPort();
       System.out.println("<<(xslt-process-set-output-port " + port + ")>>");
+      System.out.flush();
       Socket clientSocket = serverSocket.accept();
       OutputStream outputStream = clientSocket.getOutputStream();
       AbstractXSLTDebugger debugger = controller.getDebugger();
@@ -70,7 +78,7 @@ public class EmacsObserver implements Observer
                        + "\"" + filename
                        + "\" " + line
                        + " " + column
-                       + " \"" + message + "\")>>");
+                       + " \"" + message + "\")>>\n");
   }
 
   public void breakpointSetAt(String filename, int line) {}
@@ -81,32 +89,58 @@ public class EmacsObserver implements Observer
   
   public void breakpointDisabledAt(String filename, int line) {}
 
-  /**
-   *
-   */
-  public void stackChanged()
+  public void sourceStackChanged()
   {
-    // TODO: implement this xslt.debugger.Observer method
+    Manager manager = controller.getManager();
+    Stack sourceFrames = manager.getSourceFrames();
+
+    buffer.delete(0, buffer.length());
+    buffer.append("<<(xslt-process-source-frames-stack-changed '(");
+    for (int i = 0; i < sourceFrames.size(); i++) {
+      SourceFrame frame = (SourceFrame)sourceFrames.get(i);
+      String filename = frame.getFilename();
+
+      if (filename.startsWith("file:"))
+        filename = filename.substring(5);
+
+      buffer.append("(\"" + frame.getName()
+                    + "\" \"" + filename
+                    + "\" " + frame.getLine()
+                    + ")");
+    }
+    buffer.append("))>>\n");
+    System.out.println(buffer);
+    System.out.flush();
   }
 
-  /**
-   *
-   */
-  public void frameChanged()
+  public void styleStackChanged()
   {
-    // TODO: implement this xslt.debugger.Observer method
+    Manager manager = controller.getManager();
+    Stack styleFrames = manager.getStyleFrames();
+
+    buffer.delete(0, buffer.length());
+    buffer.append("<<(xslt-process-style-frames-stack-changed '(");
+    for (int i = 0; i < styleFrames.size(); i++) {
+      StyleFrame frame = (StyleFrame)styleFrames.get(i);
+      buffer.append("(\"" + frame.getName()
+                    + "\" \"" + frame.getFilename()
+                    + "\" " + frame.getLine()
+                    + ")");
+    }
+    buffer.append("))>>\n");
+    System.out.println(buffer);
+    System.out.flush();
   }
 
   public void processorFinished()
   {
-    System.out.println("<<(xslt-process-processor-finished)>>");
+    System.out.println("<<(xslt-process-processor-finished)>>\n");
   }
 
   public void caughtException(Exception e)
   {
     System.out.println("<<(xslt-process-report-error \""
                        + e.getMessage()
-                       + "\")>>");
-    
+                       + "\")>>\n");
   }
 }
