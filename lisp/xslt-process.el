@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 17, 2001 00:29:09 ovidiu>
+;; Time-stamp: <April 18, 2001 21:40:44 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -306,7 +306,7 @@ indicator."
 (defvar xslt-process-comint-buffer nil
   "The buffer within which the XSLT debugger process runs.")
 
-(defvar xslt-process-style-selected-position [nil nil nil nil nil nil]
+(defvar xslt-process-selected-position [nil nil nil nil nil nil]
   "An array containing the filename, line, column, extent, annotation
 and enter or exit action, describing the line where the debugger
 stopped last time.")
@@ -344,6 +344,11 @@ operation that was invoked.")
   "The Emacs process object that holds the connection with the socket
 on which the XSLT results come from the XSLT processor.")
 
+(defvar xslt-process-message-process nil
+  "The Emacs process object that holds the connection with the socket
+on which the XSLT messages (generated with xsl:message) come from the
+XSLT processor.")
+
 (defvar xslt-process-current-processor
   (symbol-name (car xslt-process-default-processor))
   "The current XSLT processor being used to do the
@@ -360,6 +365,10 @@ job.")
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
 
+(defvar xslt-process-error-messages nil
+  "Collects all the error messages reported during the XSLT
+processing. Used only in submitting bug reports.")
+
 ;; Other definitions
 (defvar xslt-process-comint-process-name "xslt"
   "The name of the comint process.")
@@ -368,9 +377,17 @@ you modify this.")
   "The name of the process that receives the result of the XSLT
 processing.")
 
+(defvar xslt-process-message-process-name "xslt messages"
+  "The name of the process that receives the messages generated using
+xsl:message during the XSLT processing.")
+
 (defvar xslt-process-results-buffer-name "*xslt results*"
   "The name of the buffer to which the output of the XSLT processing
 goes to.")
+
+(defvar xslt-process-message-buffer-name "*xslt messages*"
+  "The name of the buffer to which the messages generated using
+xsl:message go to.")
 
 (defvar xslt-process-enter-glyph "=>"
   "Graphic indicator for entering inside an element.")
@@ -435,6 +452,7 @@ filename line) that indicate the new style frame stack.")
 
 (defun xslt-process-visit-info-file ()
   "Visit the info file for XSLT-process."
+  (require 'info)
   (Info-find-file-node (concat (xslt-process-find-xslt-directory)
 			       "doc/xslt-process.info")
 		       "Top"))
@@ -464,7 +482,7 @@ filename line) that indicate the new style frame stack.")
       (list (cons 'xslt-process-breakpoints 'xslt-process-dump-hashtable)
 	    'xslt-process-comint-process
 	    'xslt-process-comint-buffer
-	    'xslt-process-style-selected-position
+	    'xslt-process-selected-position
 	    'xslt-process-debugger-process-started
 	    'xslt-process-process-state
 	    'xslt-process-debugger-running
@@ -475,7 +493,8 @@ filename line) that indicate the new style frame stack.")
 	    'xslt-process-results-process
 	    'xslt-process-current-processor
 	    'xslt-process-default-processor
-	    'xslt-process-external-java-libraries))))
+	    'xslt-process-external-java-libraries
+	    'xslt-process-error-messages))))
 
 ;;;###autoload
 (defun xslt-process-mode (&optional arg)
@@ -635,7 +654,8 @@ different actions for faster operations."
 	    ;; Enable the debug mode
 	    (setq xslt-process-debug-mode t)
 	    (toggle-read-only 1)
-	    (xslt-process-change-current-line-highlighting t filename)
+	    (if (equal filename (xslt-process-selected-position-filename))
+		(xslt-process-change-current-line-highlighting t))
 	    (xslt-process-change-breakpoints-highlighting t filename)
 	    (xslt-process-setup-minor-mode xslt-process-debug-mode-map
 					   xslt-process-debug-mode-line-string))
@@ -643,7 +663,8 @@ different actions for faster operations."
 	(if (not xslt-process-debug-mode)
 	    (return))
 	(toggle-read-only 0)
-	(xslt-process-change-current-line-highlighting nil filename)
+	(if (equal filename (xslt-process-selected-position-filename))
+	    (xslt-process-change-current-line-highlighting nil))
 	(xslt-process-change-breakpoints-highlighting nil filename)
 	(xslt-process-setup-minor-mode xslt-process-mode-map
 				       xslt-process-mode-line-string)
@@ -700,42 +721,42 @@ different actions for faster operations."
 ;;; The last selected position
 ;;;
 
-(defun xslt-process-style-selected-position-filename (&optional filename)
+(defun xslt-process-selected-position-filename (&optional filename)
   "Return the filename of the last selected position."
   (if filename
-      (aset xslt-process-style-selected-position 0 filename))
-  (aref xslt-process-style-selected-position 0))
+      (aset xslt-process-selected-position 0 filename))
+  (aref xslt-process-selected-position 0))
 
-(defun xslt-process-style-selected-position-line (&optional position)
+(defun xslt-process-selected-position-line (&optional position)
   "Return the line of the last selected position."
   (if position
-      (aset xslt-process-style-selected-position 1 position))
-  (aref xslt-process-style-selected-position 1))
+      (aset xslt-process-selected-position 1 position))
+  (aref xslt-process-selected-position 1))
 
-(defun xslt-process-style-selected-position-column (&optional column)
+(defun xslt-process-selected-position-column (&optional column)
   "Return the column of the last selected position."
   (if column
-      (aset xslt-process-style-selected-position 2 column))
-  (aref xslt-process-style-selected-position 2))
+      (aset xslt-process-selected-position 2 column))
+  (aref xslt-process-selected-position 2))
 
-(defun xslt-process-style-selected-position-extent (&optional extent)
+(defun xslt-process-selected-position-extent (&optional extent)
   "Return the extent used to highlight the last selected position."
   (if extent
-      (aset xslt-process-style-selected-position 3 extent))
-  (aref xslt-process-style-selected-position 3))
+      (aset xslt-process-selected-position 3 extent))
+  (aref xslt-process-selected-position 3))
 
-(defun xslt-process-style-selected-position-annotation (&optional annotation)
+(defun xslt-process-selected-position-annotation (&optional annotation)
   "Return the extent used to highlight the last selected position."
   (if annotation
-      (aset xslt-process-style-selected-position 4 annotation))
-  (aref xslt-process-style-selected-position 4))
+      (aset xslt-process-selected-position 4 annotation))
+  (aref xslt-process-selected-position 4))
 
-(defun xslt-process-style-selected-position-enter/exit? (&optional action)
+(defun xslt-process-selected-position-enter/exit? (&optional action)
   "Return the extent used to highlight the last selected position. If
 ACTION is non-nil, it is set as the new value."
   (if action
-      (aset xslt-process-style-selected-position 5 action))
-  (aref xslt-process-style-selected-position 5))
+      (aset xslt-process-selected-position 5 action))
+  (aref xslt-process-selected-position 5))
 
 ;;;
 ;;; Source and Style Frames
@@ -892,8 +913,10 @@ either a normal, no debug, XSLT processing, or a debugging session."
 	      (lambda ()
 		(setq xslt-process-process-state 'not-running)))
 	(speedbar-with-writable
-	  (let ((buffer (get-buffer xslt-process-results-buffer-name)))
-	    (if buffer (erase-buffer buffer))))
+	  (let ((results-buffer (get-buffer xslt-process-results-buffer-name))
+		(msgs-buffer (get-buffer xslt-process-message-buffer-name)))
+	    (if results-buffer (erase-buffer results-buffer))
+	    (if msgs-buffer (erase-buffer msgs-buffer))))
 	(message "Running the %s %s..."
 		 xslt-process-current-processor
 		 proc-type)))))
@@ -980,19 +1003,17 @@ buffers. It doesn't affect the current state of the breakpoints."
 	     (xslt-process-unhighlight-breakpoint breakpoint)))))
    xslt-process-breakpoints))
 
-(defun xslt-process-change-current-line-highlighting (flag &optional filename)
+(defun xslt-process-change-current-line-highlighting (flag)
   "Highlights or unhighlights, depending on FLAG, the current line
 indicator."
-  (if (and (or filename (xslt-process-style-selected-position-filename))
-	   (xslt-process-style-selected-position-line))
+  (if (and (xslt-process-selected-position-filename)
+	   (xslt-process-selected-position-line))
       (save-excursion
 	(let* ((buffer (xslt-process-get-file-buffer
-			(if filename
-			    filename
-			  (xslt-process-style-selected-position-filename))))
-	       (line (xslt-process-style-selected-position-line))
-	       (column (xslt-process-style-selected-position-column))
-	       (action (xslt-process-style-selected-position-enter/exit?))
+			(xslt-process-selected-position-filename)))
+	       (line (xslt-process-selected-position-line))
+	       (column (xslt-process-selected-position-column))
+	       (action (xslt-process-selected-position-enter/exit?))
 	       (glyph (if (eq action 'is-entering) xslt-process-enter-glyph
 			(if (eq action 'is-exiting) xslt-process-exit-glyph
 			  nil))))
@@ -1011,8 +1032,8 @@ indicator."
 		      (set-extent-priority annotation 3)))
 		;; Setup the new extent and annotation in the
 		;; last-selected-position
-		(xslt-process-style-selected-position-extent extent)
-		(xslt-process-style-selected-position-annotation annotation))
+		(xslt-process-selected-position-extent extent)
+		(xslt-process-selected-position-annotation annotation))
 	    ;; Unhighlight the last selected line
 	    (xslt-process-unhighlight-last-selected-line))))))
 
@@ -1145,7 +1166,7 @@ already started."
 	       classpath-separator classpath)))
     (message (concat xslt-process-java-program nil " "
 		     "-classpath" " " classpath " "
-		     "xslt.debugger.cmdline.Controller" " " "-emacs"
+		     "xslt.debugger.cmdline.Controller" " " "-emacs" " "
 		     (format "-%s" xslt-process-current-processor)))
     (setq xslt-process-comint-buffer
 	  (make-comint xslt-process-comint-process-name
@@ -1166,20 +1187,6 @@ already started."
 			  (function xslt-process-output-from-process))
       (setq comint-prompt-regexp "^xslt> ")
       (setq comint-delimiter-argument-list '(? )))))
-
-(defun xslt-process-results-process-filter (process string)
-  "Function called whenever the XSLT processor sends results to its
-output stream. The results come via the `xslt-process-results-process'
-process."
-  (let ((old-buffer (current-buffer)))
-    (unwind-protect
-	(let* ((buffer (get-buffer-create xslt-process-results-buffer-name)))
-	  (set-buffer buffer)
-	  (save-excursion
-	    ;; Insert the text, moving the marker.
-	    (goto-char (point-max))
-	    (insert string))
-	  (pop-to-buffer buffer)))))
 
 (defvar xslt-process-partial-command nil
   "Holds partial commands as output by the XSLT debugger.")
@@ -1272,17 +1279,17 @@ the output to the XSLT process buffer."
 (defun xslt-process-unhighlight-last-selected-line ()
   "Unselect the last selected line."
   ;; Unselect the last line showing the debugger's position
-  (if xslt-process-style-selected-position
-      (let ((extent (xslt-process-style-selected-position-extent))
-	    (annotation (xslt-process-style-selected-position-annotation)))
+  (if xslt-process-selected-position
+      (let ((extent (xslt-process-selected-position-extent))
+	    (annotation (xslt-process-selected-position-annotation)))
 	(if extent (delete-extent extent))
 	(if annotation (delete-annotation annotation))
 	;; Remove extent and annotation from the
 	;; last-selected-position. Need to use aset as there is no way
 	;; for the setter functions to detect between programmer
 	;; passed nil and no argument.
-	(aset xslt-process-style-selected-position 3 nil)
-	(aset xslt-process-style-selected-position 4 nil))))
+	(aset xslt-process-selected-position 3 nil)
+	(aset xslt-process-selected-position 4 nil))))
 
 ;;;
 ;;; Functions called as result of the XSLT processing
@@ -1296,12 +1303,15 @@ the output to the XSLT process buffer."
   (setq xslt-process-style-frames-stack nil)
   (run-hooks 'xslt-process-source-frames-changed-hooks)
   (run-hooks 'xslt-process-style-frames-changed-hooks)
-  (setq xslt-process-style-selected-position [nil nil nil nil nil nil])
+  (setq xslt-process-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running)
   (message "Done invoking %s." xslt-process-current-processor))
 
-(defun xslt-process-report-error (message)
+(defun xslt-process-report-error (message stack-trace)
   "Called by the XSLT debugger process whenever an error happens."
+  (setq xslt-process-error-messages
+	(concat xslt-process-error-messages message "\n" stack-trace "\n\n\n"))
+  (message stack-trace)
   (message message)
   (if xslt-process-execution-context-error-function
       (funcall xslt-process-execution-context-error-function)))
@@ -1323,16 +1333,16 @@ hits a breakpoint that causes it to stop."
       (progn
 	(pop-to-buffer buffer)
 	(goto-line line)
-	;; Setup the xslt-process-style-selected-position variable so we
+	;; Setup the xslt-process-selected-position variable so we
 	;; can call the xslt-process-change-current-line-highlighting
 	;; function
-	(xslt-process-style-selected-position-filename filename)
-	(xslt-process-style-selected-position-line line)
-	(xslt-process-style-selected-position-column column)
-	(xslt-process-style-selected-position-enter/exit?
+	(xslt-process-selected-position-filename filename)
+	(xslt-process-selected-position-line line)
+	(xslt-process-selected-position-column column)
+	(xslt-process-selected-position-enter/exit?
 	 (if is-entering 'is-entering
 	   (if is-exiting 'is-exiting nil)))
-	(xslt-process-change-current-line-highlighting t filename)))))
+	(xslt-process-change-current-line-highlighting t)))))
 
 (defun xslt-process-debugger-process-started ()
   "Called when the debugger process started and is ready to accept
@@ -1348,6 +1358,8 @@ by the user."
   (xslt-process-processor-finished)
   (setq xslt-process-comint-process nil)
   (setq xslt-process-comint-buffer nil)
+  (setq xslt-process-message-process nil)
+  (setq xslt-process-results-process nil)
   (setq xslt-process-debugger-process-started nil))
 
 (defun xslt-process-source-frames-stack-changed (stack)
@@ -1364,6 +1376,27 @@ stack as a list of (name filename line)."
   (setq xslt-process-style-frames-stack stack)
   (run-hooks 'xslt-process-style-frames-changed-hooks))
 
+(defun xslt-process-process-filter (process string)
+  "Function called whenever the XSLT processor sends results to its
+output stream. The results come via the `xslt-process-results-process'
+process."
+  (message "xslt-process-process-filter: process %s" process)
+  (let ((old-buffer (current-buffer)))
+    (unwind-protect
+	(let* ((bufname (cond ((eq process xslt-process-results-process)
+			       xslt-process-results-buffer-name)
+			      ((eq process xslt-process-message-process)
+			       xslt-process-message-buffer-name)
+			      (t nil)))
+	       (buffer (get-buffer-create bufname)))
+	  (message "xslt-process-process-filter %s" bufname)
+	  (set-buffer buffer)
+	  (save-excursion
+	    ;; Insert the text, moving the marker.
+	    (goto-char (point-max))
+	    (insert string))
+	  (pop-to-buffer buffer)))))
+
 (defun xslt-process-set-output-port (port)
   "Called by the XSLT debugger to setup the TCP/IP port number on
 which it listens for incoming connections. Emacs has to connect to
@@ -1372,7 +1405,13 @@ this port and use it for receiving the result of the XSLT processing."
 	(open-network-stream xslt-process-results-process-name
 			     nil "localhost" port))
   (set-process-filter xslt-process-results-process
-		      'xslt-process-results-process-filter))
+		      'xslt-process-process-filter)
+
+  (setq xslt-process-message-process
+	(open-network-stream xslt-process-message-process-name
+			     nil "localhost" port))
+  (set-process-filter xslt-process-message-process
+		      'xslt-process-process-filter))
 
 ;;;
 ;;; Setup the minor mode
