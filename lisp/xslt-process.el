@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <August 19, 2001 16:39:15 ovidiu>
+;; Time-stamp: <August 19, 2001 18:12:07 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -56,6 +56,7 @@
 
 (defconst xslt-process-version "2.1"
   "The version of the XSLT-process mode.")
+
 
 (eval-and-compile
   (require 'wid-edit)
