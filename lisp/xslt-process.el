@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 11, 2001 00:47:19 ovidiu>
+;; Time-stamp: <April 12, 2001 23:26:21 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -797,7 +797,7 @@ on its state."
 	  (return)))
     (let ((filename (buffer-file-name)))
       (setq xslt-process-process-state 'running)
-      (xslt-process-send-command (concat "r " filename))
+      (xslt-process-send-command (concat "debug " filename))
       (setq xslt-process-execution-context-error-function
 	    (lambda ()
 	      (setq xslt-process-process-state 'not-running)))
