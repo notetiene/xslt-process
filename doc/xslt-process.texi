@@ -38,15 +38,18 @@ Copyright @copyright{} 2000, 2001 Ovidiu Predescu.
 
 @sp 1
 
-Distributed under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
+Distributed under the terms of the
+@uref{http://www.gnu.org/copyleft/gpl.html, GNU General Public License}
+as published by the @uref{http://www.fsf.org/, Free Software
+Foundation}; either version 2 of the License, or (at your option) any
+later version.
 
 @sp 1
 
-The XSLT-process minor mode manual may be reproduced and distributed in
-whole or in part, in any medium, physical or electronic, so long as this
-copyright notice remains intact and unchanged on all copies.
+The @emph{XSLT-process} minor mode manual may be reproduced and
+distributed in whole or in part, in any medium, physical or electronic,
+so long as this copyright notice remains intact and unchanged on all
+copies.
 @end titlepage
 
 @node top, What is it?, (dir), (dir)
@@ -103,17 +106,18 @@ source file and the XSLT program.
 
 @html
 <a href="http://sourceforge.net/projects/xslt-process/"> <img
-src="http://sourceforge.net/sflogo.php?group_id=23425" width="88"
-height="31" border="0" alt="SourceForge Logo"></a>
+src="sflogo.png" width="88" height="31" border="0" alt="SourceForge
+Logo"></a>
 @end html
 
-The @emph{XSLT-process} package is distributed under the terms of GNU
-General Public License and the current version is @value{version}. The
-project is graciously hosted by SourceForge at
-@uref{http://sourceforge.net/projects/xslt-process/,
-http://sourceforge.net/projects/xslt-process/}. The author of the
-package is @uref{http://www.geocities.com/SiliconValley/Monitor/7464,
-Ovidiu Predescu}.
+The author of the @emph{XSLT-process} package is
+@uref{http://www.geocities.com/SiliconValley/Monitor/7464, Ovidiu
+Predescu}, and the package is distributed under the terms of
+@uref{http://www.gnu.org/copyleft/gpl.html, GNU General Public
+License}. The project is graciously hosted by SourceForge, and could be
+found at @uref{http://sourceforge.net/projects/xslt-process/,
+http://sourceforge.net/projects/xslt-process/}. The current version is
+@value{version}.
 
 @c =========================================================================
 @node Installation and setup,  , What is it?, top
@@ -179,8 +183,9 @@ installed, or the version number of the @emph{speedbar} package if it's
 already installed. You should have at least version 0.13 for
 @emph{XSLT-process} to work.
 
-In case you don't have the @emph{speedbar} package, please obtain it
-from @strong{TODO: ADD SPEEDBAR URL}. Unpack the package in your
+In case you don't have the @emph{speedbar} package, you can obtain it
+from its Web site at @uref{http://cedet.sourceforge.net/speedbar.shtml,
+http://cedet.sourceforge.net/speedbar.shtml}. Unpack the package in your
 @kbd{~/emacs} directory. If you don't have a @kbd{~/emacs} directory,
 create one now. Then go to the speedbar directory and run
 
@@ -195,7 +200,8 @@ $ make EMACS=xemacs
 @end example
 
 This step byte-compiles all the Lisp files in the @emph{speedbar}
-package using your Emacs editor.
+package using your Emacs editor. Please follow Speedbar's installation
+document for more up-to-date information on how to compile it.
 
 @c =========================================================================
 @node  Installing XSLT-process,  , Installing Speedbar, Generic installation
@@ -244,10 +250,11 @@ files, it just enables Emacs to process such files. Thus
 @emph{XSLT-process} should work with any XML/XSLT editing mode your
 Emacs is configured for.
 
-@emph{XSLT-process} was tested with both Lennart Staflin's @emph{PSGML}
-and James Clark's @emph{sgml-mode.el} major modes for editing XML
-files. It also works with Tony Graham's @emph{xslide} major mode for
-editing XSLT files. @strong{ADD URLS TO THE ABOVE MODES}.
+@emph{XSLT-process} was tested with both Lennart Staflin's
+@uref{http://sourceforge.net/projects/psgml,PSGML} and James Clark's
+@emph{sgml-mode.el} major modes for editing XML files. It also works
+with Tony Graham's @uref{http://sourceforge.net/projects/xslide,xslide}
+major mode for editing XSLT files.
 
 To automatically enable the @emph{XSLT-process} minor mode for the above
 major modes, add the following lines in your @kbd{~/.emacs} file:
@@ -263,9 +270,11 @@ You can also manually switch to this minor mode by typing @kbd{M-x
 xslt-process-mode}.
 
 You can check the modeline to see whether Emacs is in the
-@emph{XSLT-process} mode. Look for the ``XSLT'' indicator in
+@emph{XSLT-process} mode. Look for the ``XSLT'' indicator in the
 modeline:
 
 @image{xslt-process-mode}
+
+@contents
 
 @bye
