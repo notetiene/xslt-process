@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May  3, 2001 16:43:28 ovidiu>
+;; Time-stamp: <May  4, 2001 10:56:06 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -110,7 +110,10 @@ names conform to the URI definition."
 whether XSLT-process is installed as a package, in which case the
 directory structure looks a little different."
   (let ((xemacs-dir (if (featurep 'xemacs)
-			(file-truename (locate-data-directory "xslt-process"))
+			(let ((dir (locate-data-directory "xslt-process")))
+			  (when dir
+			    (setq dir (file-truename dir)))
+			  dir)
 		      nil))
 	(package-dir (file-truename (concat (file-name-directory
 					     (locate-library "xslt-process"))
@@ -387,6 +390,9 @@ display name, a file name and a line number, among other things.")
   "The stack of style frames, an array of entries consisting of a
 display name, a file name and a line number, among other things.")
 
+(defvar xslt-process-local-variables nil
+  "The local variables for the currently selected style frame.")
+
 (defvar xslt-process-breakpoint-extents (make-hash-table :size 10 :test 'equal)
   "Hash table of extents indexed by (filename . lineno). It is used to
 keep track of the extents created to highlight lines.")
@@ -416,7 +422,7 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
+	  '("bsf.jar" "saxon-6.3.jar" "xalan-2.0.1.jar"
 	    "xalanj1compat.jar" "xerces.jar" ""))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
@@ -471,6 +477,10 @@ filename line) that indicate the new source frame stack.")
   "List of functions to be called when the style frame stack
 changes. The functions should take one argument, a list of (name
 filename line) that indicate the new style frame stack.")
+
+(defvar xslt-process-local-variables-changed-hooks nil
+  "List of functions to be called when the local variables change. The
+hook functions should take no argument.")
 
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
@@ -614,6 +624,7 @@ filename line) that indicate the new style frame stack.")
 	    'xslt-process-debugger-running
 	    'xslt-process-source-frames-stack
 	    'xslt-process-style-frames-stack
+	    'xslt-process-local-variables
 	    (cons 'xslt-process-breakpoint-extents 'xslt-process-dump-hashtable)
 	    'xslt-process-execution-context-error-function
 	    'xslt-process-results-process
@@ -667,6 +678,8 @@ breakpoint is enabled or disabled.
 `xslt-process-source-frames-changed-hooks' is run when the XML
 document element path changes.
 `xslt-process-style-frames-changed-hooks' is run when the XSLT frames change.
+`xslt-process-local-variables-changed-hooks' is run when the local
+variables change.
 
 For more information please check:
 
@@ -1407,8 +1420,10 @@ the output to the XSLT process buffer."
   ;; Reset the source and style frame stacks
   (setq xslt-process-source-frames-stack nil)
   (setq xslt-process-style-frames-stack nil)
+  (setq xslt-process-local-variables nil)
   (run-hooks 'xslt-process-source-frames-changed-hooks)
   (run-hooks 'xslt-process-style-frames-changed-hooks)
+  (run-hooks 'xslt-process-local-variables-changed-hooks)
   (setq xslt-process-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running)
   (message "Done invoking %s." xslt-process-current-processor))
@@ -1498,7 +1513,8 @@ corresponding stack frame."
 (defun xslt-process-local-variables-changed (variables)
   "Called by the debugger process to inform that the local variables
 in the current XSLT template have changed."
-  (message "xslt-process-local-variables-changed: %s" variables))
+  (setq xslt-process-local-variables variables)
+  (run-hooks 'xslt-process-local-variables-changed-hooks))
 
 (defun xslt-process-process-filter (process string)
   "Function called whenever the XSLT processor sends results to its
