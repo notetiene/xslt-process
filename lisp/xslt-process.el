@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June 13, 2001 11:26:10 ovidiu>
+;; Time-stamp: <June 14, 2001 00:35:10 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -47,8 +47,10 @@
 (require 'browse-url)
 (require 'easymenu)
 (require 'string)
+(require 'widget)
 
 (eval-and-compile
+  (require 'wid-edit)
   (if (featurep 'xemacs)
       nil
     (defun remassoc (key list)
@@ -218,6 +220,24 @@ directory structure looks a little different."
 				   (list ',sym)))))
      processor-list)))
 
+(defcustom xslt-process-registered-stylesheets nil
+  "*List of registered stylesheets."
+  :group 'xslt-process
+  :type '(repeat (file :must-match t :tag "Filename")))
+
+(defcustom xslt-process-xml-xslt-associations nil
+  "*List of associations between XML source documents and XSLT stylesheets.
+Each XML document will use the XSLT stylesheet declared as a value "
+  :group 'xslt-process
+  :type '(repeat (cons 
+		  :tag "Enter an association between XML and XSLT files:"
+		  (file :must-match t :tag "XML file name")
+		  (choice
+		   :tag "XSLT"
+		   :value default
+		   (const :tag "Associated stylesheet" default)
+		   (file :must-match t :tag "File name")))))
+
 ;;;
 ;;; Disable Cocoon for the moment until we figure out how to hook up
 ;;; the debugger to it.
@@ -269,6 +289,43 @@ in a browser."
 
 (defcustom xslt-process-toggle-debug-mode "\C-c\C-xd"
   "*Keybinding for toggling the debug mode."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-register-buffer "\C-c\C-xb"
+  "*Keybinding for registering the current buffer in the stylesheet registry."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-unregister-buffer "\C-c\C-xu"
+  "*Keybinding for unregistering the current buffer from the
+stylesheet registry."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-manage-stylesheets "\C-c\C-xm"
+  "*Keybinding to show the stylesheet manager buffer."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-manage-associations "\C-c\C-xh"
+  "*Keybinding to show the XML/XSLT associations buffer."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-load-registry "\C-c\C-xo"
+  "*Keybinding to load a stylesheet registry from a file."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-save-registry "\C-c\C-xs"
+  "*Keybinding to save a stylesheet registry to a file."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-associate-stylesheet "\C-c\C-xa"
+  "*Keybinding to associate an XML file with a previously registered
+XSLT stylesheet."
   :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
@@ -553,6 +610,20 @@ hook functions should take no argument.")
   xslt-process-invoke-browser-view 'xslt-process-invoke-browser-view)
 (define-key xslt-process-mode-map
   xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
+(define-key xslt-process-mode-map
+  xslt-process-register-buffer 'xslt-process-register-buffer)
+(define-key xslt-process-mode-map
+  xslt-process-unregister-buffer 'xslt-process-unregister-buffer)
+(define-key xslt-process-mode-map
+  xslt-process-manage-stylesheets 'xslt-process-manage-stylesheets)
+(define-key xslt-process-mode-map
+  xslt-process-load-registry 'xslt-process-load-registry)
+(define-key xslt-process-mode-map
+  xslt-process-save-registry 'xslt-process-save-registry)
+(define-key xslt-process-mode-map
+  xslt-process-associate-stylesheet 'xslt-process-associate-stylesheet)
+(define-key xslt-process-mode-map
+  xslt-process-manage-associations 'xslt-process-manage-associations)
 
 ;; Setup the keymap used for debugging
 (define-key xslt-process-debug-mode-map
@@ -584,7 +655,20 @@ hook functions should take no argument.")
 	["Apply XSLT, View in buffer" xslt-process-invoke-buffer-view :active t]
 	["Apply XSLT, View in browser" xslt-process-invoke-browser-view
 	 :active t]
+	(list "Stylesheets Registry"
+	      ["Register XSLT buffer" xslt-process-register-buffer :active t]
+	      ["Unregister XSLT buffer" xslt-process-unregister-buffer
+	       :active t]
+	      ["Associate XSLT with XML buffer..."
+	       xslt-process-associate-stylesheet :active t]
+	      "--"
+	      ["Manage stylesheets..."
+	       xslt-process-manage-stylesheets :active t]
+	      ["Manage XML/XSLT associations..."
+	       xslt-process-manage-associations :active t])
+
 	"--"
+
 	["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
 	["Set breakpoint" xslt-process-set-breakpoint
 	 :active (and xslt-process-debug-mode
@@ -615,7 +699,9 @@ hook functions should take no argument.")
 	 :active (eq xslt-process-process-state 'stopped)]
 	["Stop" xslt-process-do-stop
 	 :active (eq xslt-process-process-state 'running)]
+
 	"--"
+
 	["Quit XSLT processor" xslt-process-do-quit
 	 :active xslt-process-debugger-process-started]
 	["Speedbar" xslt-process-speedbar-frame-mode
@@ -706,7 +792,9 @@ hook functions should take no argument.")
 	    'xslt-process-current-processor
 	    'xslt-process-default-processor
 	    'xslt-process-external-java-libraries
-	    'xslt-process-error-messages))))
+	    'xslt-process-error-messages
+	    'xslt-process-registered-stylesheets
+	    'xslt-process-xml-xslt-associations))))
 
 ;;;###autoload
 (defun xslt-process-mode (&optional arg)
@@ -1741,6 +1829,137 @@ the modeline."
 	      (cons (cons 'xslt-process-mode keymap)
 		    minor-mode-map-alist))))
   (force-mode-line-update))
+
+;;;
+;;; Stylesheet management
+;;;
+
+(defun xslt-process-register-buffer (buffer-name)
+  "*Registers the file visited by the current buffer in the stylesheet
+registry. The file visited by the buffer should be an XSLT file; no
+checks are done to verify this."
+  (interactive "bRegister buffer: ")
+  (let* ((buffer (get-buffer buffer-name))
+	 (filename (urlize (buffer-file-name buffer))))
+    (if (member filename xslt-process-registered-stylesheets)
+	(message "Filename already registered.")
+      (setq xslt-process-registered-stylesheets
+	    (cons filename xslt-process-registered-stylesheets)))))
+
+(defun xslt-process-unregister-buffer (buffer-name)
+  "*Unregisters the current buffer from the stylesheet registry. The
+file visited by the buffer should have been previously registered with
+the stylesheet registry. An error is generated if this is not the
+case."
+  (interactive "bUnregister buffer: ")
+  (let* ((buffer (get-buffer buffer-name))
+	 (filename (urlize (buffer-file-name buffer))))
+    (if (member filename xslt-process-registered-stylesheets)
+	(setq xslt-process-registered-stylesheets
+	      (delete filename xslt-process-registered-stylesheets))
+      (message "Filename not registered."))))
+
+;;; The following ugly code and global variables are needed to work
+;;; around the lack of lexical scoping in Emacs Lisp. It would have
+;;; been a lot easier to write the inner lambda functions in this
+;;; macro with lexical scoping. In fact, this would have been a
+;;; function, not a macro.
+
+(defmacro xslt-process-choose-from-list-buffer
+  (buffer-name items function selected-value &optional title)
+  "Creates a buffer that displays a list of items and two buttons,
+'Done' and 'Cancel'. Each item is a pair (name . value), with all the
+names being displayed in the buffer as radio-button-choice widget. If
+TITLE is specified, it is displayed at the top of the buffer, followed
+by the radio buttons.
+
+If the user clicks on the 'Done' button, FUNCTION is called. The value
+of the selected item is set in the SELECTED-VALUE variable. If
+'Cancel' is selected, FUNCTION is not invoked. In both cases the
+buffer displaying the radio buttons is killed."
+  `(unwind-protect
+       (let ((buffer (get-buffer-create ,buffer-name))
+	     (items ,items))
+	 (setq ,selected-value (cdar items))
+	 (switch-to-buffer (set-buffer buffer))
+	 (if ,title (widget-insert (concat ,title "\n\n")))
+	 (apply 'widget-create 'radio-button-choice
+		:value (cdar items)
+		:notify (lambda (widget &rest ignore)
+			  (setq ,selected-value (widget-value widget)))
+		(mapcar (lambda (item)
+			  (list 'item :tag (car item) :value (cdr item)))
+			items))
+	 (widget-insert "\n")
+	 (widget-create 'push-button
+			:notify (lambda (&rest ignore)
+				  (kill-buffer (current-buffer))
+				  (funcall ,function))
+			"Done")
+	 (widget-insert " ")
+	 (widget-create 'push-button
+			:notify (lambda (&rest ignore)
+				  (kill-buffer (current-buffer)))
+			"Cancel")
+	 (use-local-map widget-keymap)
+	 (widget-setup))))
+
+(defvar xslt-process-selected-xml-file nil
+  "Set by `xslt-process-associate-stylesheet' to the XML filename
+that's part of the association. It is used in
+`xslt-process-do-associate-stylesheet' as the first part of the
+association.")
+
+(defvar xslt-process-selected-xsl-file nil
+  "Used by `xslt-process-choose-from-list-buffer' to set the value of
+the selected XSLT stylesheet file. Is is used by
+`xslt-process-do-associate-stylesheet' as the second part of an
+association.")
+
+(defun xslt-process-do-associate-stylesheet ()
+  "Called when the user presses the 'Done' button in the XSLT
+selection buffer. The selected XSLT file is stored in
+`xslt-process-selected-xsl-file'."
+  (setq xslt-process-xml-xslt-associations
+	(remassoc xslt-process-selected-xml-file
+		  xslt-process-xml-xslt-associations))
+  (customize-set-variable 'xslt-process-xml-xslt-associations
+			  (cons
+			   (cons xslt-process-selected-xml-file
+				 xslt-process-selected-xsl-file)
+			   xslt-process-xml-xslt-associations)))
+
+(defun xslt-process-associate-stylesheet ()
+  "*Associate an XML buffer with a previously registered stylesheet."
+  (interactive)
+  (setq xslt-process-selected-xml-file (buffer-file-name (current-buffer)))
+  (setq xslt-process-selected-xsl-file nil)
+  (if (not xslt-process-selected-xml-file)
+      (error "Current buffer does not have a filename!")
+    (xslt-process-choose-from-list-buffer
+     "*xslt stylesheets*"
+     (cons (cons "Use the associated stylesheet specified in PI" 'default)
+	   (mapcar (lambda (file) (cons file file))
+		   xslt-process-registered-stylesheets))
+     'xslt-process-do-associate-stylesheet
+     xslt-process-selected-xsl-file
+     "Please select the stylesheet to use:")))
+
+;;;
+;;; End of the ugly code
+;;;
+
+(defun xslt-process-manage-stylesheets ()
+  "*Displays the buffer to manage the stylesheets registry.  You can
+add or remove stylesheets in the registry."
+  (interactive)
+  (customize-variable 'xslt-process-registered-stylesheets))
+
+(defun xslt-process-manage-associations ()
+  "*Displays the buffer to manage the association between XML and XSLT
+files. You can add or remove associations in the registry."
+  (interactive)
+  (customize-variable 'xslt-process-xml-xslt-associations))
 
 ;;;
 ;;; Additional functions
