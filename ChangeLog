@@ -1,3 +1,7 @@
+2003-01-05  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+	* doc/processors.png: Shows transformation parameter entry.
+	* doc/xsltd-stopped.png: Shows revised menu and output during debugging
+	* doc/speedbar.png: Shows speedbar-0.14beta
 2003-01-04  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 	* doc/xslt-process.texi.in: Updated to reflect changes to software.
 	* java/xslt.jar: reflect changes
