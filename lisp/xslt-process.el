@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June 17, 2001 00:12:21 ovidiu>
+;; Time-stamp: <June 19, 2001 10:08:54 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -1163,12 +1163,27 @@ either a normal, no debug, XSLT processing, or a debugging session."
       (let* ((filename (urlize (buffer-file-name)))
 	     (xsl-filename
 	      (cdr (assoc filename xslt-process-xml-xslt-associations)))
-	     (complete-command
-	      (concat command " -xml " (xslt-process-escape filename))))
-	(if (and xsl-filename (not (eq xsl-filename 'default)))
-	    (setq complete-command
-		  (concat complete-command " -xsl "
-			  (xslt-process-escape xsl-filename))))
+	     (xml-filename
+	      (car (rassoc filename xslt-process-xml-xslt-associations)))
+	     complete-command)
+	(if xml-filename
+	    ;; The current buffer is an XSLT stylesheet. Find a
+	    ;; corresponding XML document to run the XSLT processor
+	    ;; on.
+	    (progn
+	      (setq complete-command
+		    (concat command
+			    " -xml " (xslt-process-escape xml-filename)))
+	      (setq complete-command
+		    (concat complete-command
+			    " -xsl " (xslt-process-escape filename))))
+	  ;; The current buffer is an XML document.
+	  (setq complete-command
+		(concat command " -xml " (xslt-process-escape filename)))
+	  (if (and xsl-filename (not (eq xsl-filename 'default)))
+	      (setq complete-command
+		    (concat complete-command " -xsl "
+			    (xslt-process-escape xsl-filename)))))
 	(if out-filename
 	    (setq complete-command
 		  (concat complete-command " -o "
