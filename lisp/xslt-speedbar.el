@@ -3,12 +3,12 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <May  4, 2001 15:34:34 ovidiu>
+;; Time-stamp: <May 30, 2001 22:40:52 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
 
-;; This file is not part of GNU Emacs
+;; This file is part of XEmacs
 
 ;; Copyright (C) 2001 Ovidiu Predescu
 
@@ -102,7 +102,7 @@ is selected.")
      (null xslt-process-style-frames-stack))
     ("Global variables"
      xslt-process-speedbar-show-global-variables
-     t)
+     (null xslt-process-global-variables))
     ("Local variables"
      xslt-process-speedbar-show-local-variables
      (null xslt-process-local-variables)))
@@ -130,6 +130,8 @@ and an expression to test whether the list of items is empty.")
 	  'xslt-process-speedbar-source-frames-changed)
 (add-hook 'xslt-process-style-frames-changed-hooks
 	  'xslt-process-speedbar-style-frames-changed)
+(add-hook 'xslt-process-global-variables-changed-hooks
+	  'xslt-process-speedbar-global-variables-changed)
 (add-hook 'xslt-process-local-variables-changed-hooks
 	  'xslt-process-speedbar-local-variables-changed)
 
@@ -382,10 +384,8 @@ the breakpoints in speedbar."
 	    (forward-line 1)
 	    (xslt-process-speedbar-show-style-frames-stack "" 0))))))
 
-
-(defun xslt-process-speedbar-show-local-variables (text indent)
-  "Called to display the local variables in the speedbar window."
-  (message "show-local-variables %s" xslt-process-local-variables)
+(defun xslt-process-speedbar-show-global-variables (text indent)
+  "Called to display the global variables in the speedbar window."
   (mapvector
    (lambda (variable)
      (let ((name (aref variable 0))
@@ -394,7 +394,37 @@ the breakpoints in speedbar."
 	 (speedbar-make-tag-line 'braket ??
 				 nil
 				 nil
-				 name
+				 (concat name " :" type "  " value)
+				 nil
+				 nil
+				 'speedbar-file-face
+				 (1+ indent))))
+   xslt-process-global-variables))
+
+(defun xslt-process-speedbar-global-variables-changed ()
+  "Called by the debugger when the global variables changed."
+  (let ((speedbar-buffer (get-buffer xslt-process-speedbar-bufname)))
+    (if (and speedbar-buffer xslt-process-global-variables-item-expanded)
+	(speedbar-with-writable
+	  (save-excursion
+	    (set-buffer speedbar-buffer)
+	    (beginning-of-buffer)
+	    (xslt-process-select-menu-item 0 "Global variables")
+	    (speedbar-delete-subblock 0)
+	    (forward-line 1)
+	    (xslt-process-speedbar-show-global-variables "" 0))))))
+
+(defun xslt-process-speedbar-show-local-variables (text indent)
+  "Called to display the local variables in the speedbar window."
+  (mapvector
+   (lambda (variable)
+     (let ((name (aref variable 0))
+	   (type (aref variable 1))
+	   (value (aref variable 2)))
+	 (speedbar-make-tag-line 'braket ??
+				 nil
+				 nil
+				 (concat name " :" type "  " value)
 				 nil
 				 nil
 				 'speedbar-file-face
