@@ -29,6 +29,49 @@
 
 	* doc/Makefile: Added rule to generate the pdf version of images.
 
+2001-05-22  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Display error messages in a compilation
+	buffer. Kill the errors buffer upon restarting the XSLT
+	processing.
+	
+	Call xslt-process-debugger-buffer-killed when the Java process
+	disappears.
+	
+	Added Emacs-Lisp compilation support. General clean-up to remove
+	Lisp compilation warnings.
+	
+	Define xslt-process-unescape, function to replaced the escape
+	sequences in strings passed from the Java process. Call unescape
+	in output-from-process.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Moved the escape
+	function to Utils.
+
+	* java/xslt/debugger/cmdline/Controller.java: Set the observer
+	before creating the concrete AbstractXSLTDebugger instance.
+
+2001-05-21  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/Utils.java (escape): New function to escape
+	special characters interpreted by Emacs.
+
+	* java/xslt/debugger/TrAXErrorListener.java: Added.
+
+	* java/xslt/debugger/SAXParserErrorHandler.java: Added.
+
+	* java/xslt/debugger/Manager.java: Report the caught exceptions to
+	the observer instance.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Moved the error
+	handler classes outside this class, to better support different
+	XSLT processors.
+
+	* doc/xslt-process.texi: Started the update for version 2.
+	* doc/xslt-process-mode.png: Added.
+
+	* tests/: Added.
+
 2001-05-12  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Changed the order of xerces and saxon in
