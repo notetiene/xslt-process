@@ -1,3 +1,8 @@
+2001-03-22  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Fixed typos in
+	getGlobalVariables() and getLocalVariables().
+
 2001-03-06  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	Started the work on XSLT debugging support.
