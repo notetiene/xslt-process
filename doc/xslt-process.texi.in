@@ -1044,6 +1044,11 @@ These are the changes since the 2.0 release:
 @itemize @bullet
 
 @item
+Added the ability to run Apache's FOP processor on the XML document
+created as a result of the XSLT processing. Suggestion from
+@email{jeff.rancier@@softechnics.com, Jeff Rancier}.
+
+@item
 Added the ability to pass JVM arguments and properties. Thanks to
 @email{p.lord@@russet.org.uk, Phillip Lord} for the idea and initial
 patch.
