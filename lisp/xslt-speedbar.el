@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April 22, 2001 01:18:53 ovidiu>
+;; Time-stamp: <April 25, 2001 23:50:54 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -29,6 +29,7 @@
 
 
 (require 'speedbar)
+(require 'string)
 
 ;;;; Speedbar support
 (speedbar-add-supported-extension ".xml")
@@ -92,7 +93,7 @@ is selected.")
 (defvar xslt-process-top-level-entries
   '(("Breakpoints"
      xslt-process-speedbar-show-breakpoints
-     (eq (hashtable-fullness xslt-process-breakpoints) 0))
+     (eq (hash-table-count xslt-process-breakpoints) 0))
     ("Source frames"
      xslt-process-speedbar-show-source-frames-stack
      (null xslt-process-source-frames-stack))
@@ -112,8 +113,9 @@ and an expression to test whether the list of items is empty.")
 (mapc
  (lambda (entry)
    (let* ((name (car entry))
+	  (lisp-name (string-replace-match " " (downcase name) "-"))
 	  (varname (concat "xslt-process-"
-			   (replace-in-string (downcase name) " " "-")
+			   (if lisp-name lisp-name (downcase name))
 			   "-item-expanded")))
      (eval (read (concat "(setq " varname " nil)")))))
  xslt-process-top-level-entries)
@@ -122,7 +124,7 @@ and an expression to test whether the list of items is empty.")
 	  'xslt-process-speedbar-update-breakpoints)
 (add-hook 'xslt-process-breakpoint-removed-hooks
 	  'xslt-process-speedbar-update-breakpoints)
-(add-hook 'xslt-process-breakpoint-enabled/disabled-hooks
+(add-hook 'xslt-process-breakpoint-enabled-disabled-hooks
 	  'xslt-process-speedbar-update-breakpoints)
 (add-hook 'xslt-process-source-frames-changed-hooks
 	  'xslt-process-speedbar-source-frames-changed)
@@ -181,10 +183,11 @@ positions the point right at the beginning of the line."
   (message "xslt-process-show-top-level-entry '%s' '%s' '%s'" text token indent)
   (let* ((entry (assoc token xslt-process-top-level-entries))
 	 (name (car entry))
+	 (lisp-name (string-replace-match " " (downcase name) "-"))
 	 (fn (cadr entry))
 	 (condition (caddr entry))
 	 (varname (concat "xslt-process-"
-			  (replace-in-string (downcase name) " " "-")
+			  (if lisp-name lisp-name (downcase name))
 			  "-item-expanded")))
     (cond ((string-match "+" text)	;; expand the breakpoints
 	   (eval (read (concat "(setq " varname " t)")))
@@ -207,7 +210,7 @@ positions the point right at the beginning of the line."
   "Function called from `xslt-process-show-top-level-entry' to display
 the breakpoints in speedbar."
   (let ((breakpoints))
-    (maphash
+    (cl-maphash
      (lambda (breakpoint enabled)
        (let ((filename (file-name-nondirectory
 			(xslt-process-breakpoint-filename breakpoint)))
@@ -266,15 +269,15 @@ the breakpoints in speedbar."
   "Highlights the line where FRAME points to."
   (let ((filename (xslt-process-frame-file-name frame))
 	(line (xslt-process-frame-line frame))
-	(is-exiting? (xslt-process-frame-is-exiting? frame)))
+	(is-exiting (xslt-process-frame-is-exiting frame)))
     ;; Unselect the previously selected line
     (xslt-process-change-current-line-highlighting nil)
     ;; Modify the `xslt-process-selected-position' to point to
     ;; this filename/line and highlight the new position
     (xslt-process-selected-position-filename filename)
     (xslt-process-selected-position-line line)
-    (xslt-process-selected-position-enter/exit?
-     (if is-exiting? 'is-exiting 'is-entering))
+    (xslt-process-selected-position-enter-exit
+     (if is-exiting 'is-exiting 'is-entering))
     (xslt-process-change-current-line-highlighting t)
     (xslt-process-show-line text (list filename line) indent)))
 
