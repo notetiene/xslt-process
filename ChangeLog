@@ -1,3 +1,41 @@
+2001-06-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Minor changes and cleanup to support the
+	`finish' functionality.
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Implemented
+	the `finish' functionality.
+
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Set the
+	isTemplate instance variable if the StyleElement is an instance of
+	XSLTemplate (standing for an xsl:template instruction).
+
+	* java/xslt/debugger/cmdline/Controller.java (doFinish): Added;
+	handles the `finish' command.
+
+	* java/xslt/debugger/TrAXErrorListener.java (reportError): Don't
+	throw an exception when working with Saxon.
+
+	* java/xslt/debugger/StyleFrame.java: Added isTemplate(), method
+	to identify whether a StyleFrame instance stands for a
+	xsl:template instruction.
+
+	* java/xslt/debugger/Manager.java: Removed debugging println.
+
+	* doc/Makefile: Use the wildcard function to generate the IMAGES
+	variable. Set the read-only mode when generating xslt-process.texi
+	file, to avoid accidentally editing the file instead of the
+	.texi.in version.
+
+	* doc/xslt-process.texi.in: Document how to specify a stylesheet,
+	how to temporarily change the XSLT processor. Added future
+	enhancements and changes sections.
+
+	* doc/xsltd-stopped.png: Added.
+	* doc/xslt-errors.png: Added.
+	
+	* doc/.cvsignore: Added sizes.sed and xslt-process.texi.
+
 2001-06-03  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Added customization for the Web browser.
