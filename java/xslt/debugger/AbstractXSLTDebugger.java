@@ -109,6 +109,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public synchronized void run()
   {
     SAXSource saxSource = null;
+
+    manager.getObserver().processorStarted();
     
     state = RUNNING;
     notifyAll();
@@ -154,14 +156,13 @@ public abstract class AbstractXSLTDebugger implements Runnable
 
       System.out.println("Got template = " + template);
       
-      if (template == null)
-        return;
-      
-      Transformer transformer = template.newTransformer();
-      prepareTransformerForDebugging(transformer, manager.forDebug);
+      if (template != null) {
+        Transformer transformer = template.newTransformer();
+        prepareTransformerForDebugging(transformer, manager.forDebug);
 
-      if (transformer != null)
-        transformer.transform(saxSource, result);
+        if (transformer != null)
+          transformer.transform(saxSource, result);
+      }
     }
     catch (TransformerException ex) {
       // Kludge: check the error message for file name and line
@@ -196,12 +197,11 @@ public abstract class AbstractXSLTDebugger implements Runnable
     catch(Exception e) {
       manager.getObserver().caughtException(e);
     }
-    finally {
-      manager.getObserver().processorFinished();
-      state = NOT_RUNNING;
-      action = DO_NOTHING;
-      notifyAll();
-    }
+
+    manager.getObserver().processorFinished();
+    state = NOT_RUNNING;
+    action = DO_NOTHING;
+    notifyAll();
   }
 
   protected String processErrorMessage(String systemId,
@@ -220,6 +220,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
     }
     return message;
   }
+
   /**
    * <code>setupXMLReader</code> sets up an ErrorHandler for a given
    * SAXSource object.
