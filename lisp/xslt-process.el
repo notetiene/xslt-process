@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 31, 2001 09:11:07 ovidiu>
+;; Time-stamp: <June  1, 2001 09:47:06 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -114,7 +114,7 @@ names conform to the URI definition."
 (defconst xslt-process-version "2.0"
   "The version of the XSLT-process mode.")
 
-(defconst xslt-process-home-web-site "http://xslt-process.sourceforge.net"
+(defconst xslt-process-home-web-site "http://xslt-process.sourceforge.net/"
   "XSLT-process' home on the Web.")
 
 (defconst xslt-process-web-mailing-list
@@ -231,12 +231,17 @@ which make use of your own Java classes."
   :group 'xslt-process
   :type '(repeat (file :must-match t :tag "Path")))
 
-(defcustom xslt-process-key-binding "\C-c\C-xv"
+(defcustom xslt-process-invoke-buffer-view "\C-c\C-xv"
   "*Keybinding for invoking the XSLT processor.
 To enter a normal key, enter its corresponding character. To enter a
 key with a modifier, either type C-q followed by the desired modified
 keystroke, e.g. C-q C-c to enter Control c. To enter a function key,
 use the [f1], [f2] etc. notation."
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-invoke-browser-view "\C-c\C-xn"
+  "*Keybinding for invoking the XSLT processor and viewing the results in a browser."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
@@ -517,7 +522,9 @@ hook functions should take no argument.")
 
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
-  xslt-process-key-binding 'xslt-process-invoke)
+  xslt-process-invoke-buffer-view 'xslt-process-invoke-buffer-view)
+(define-key xslt-process-mode-map
+  xslt-process-invoke-browser-view 'xslt-process-invoke-browser-view)
 (define-key xslt-process-mode-map
   xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
 
@@ -548,7 +555,9 @@ hook functions should take no argument.")
 
 (defvar xslt-process-menu-definition
   (list "XSLT"
-	["Run XSLT processor" xslt-process-invoke :active t]
+	["Apply XSLT, View in buffer" xslt-process-invoke-buffer-view :active t]
+	["Apply XSLT, View in browser" xslt-process-invoke-browser-view
+	 :active t]
 	"--"
 	["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
 	["Set breakpoint" xslt-process-set-breakpoint
@@ -686,7 +695,10 @@ Bindings:
 \\[xslt-process-mode]: Toggle the XSLT minor mode on the current buffer.
 \\[xslt-process-toggle-debug-mode]: Toggle the debug mode on the current buffer.
 
-\\[xslt-process-invoke]: Invoke the XSLT processor on the current buffer.
+\\[xslt-process-invoke-buffer-view]: Invoke the XSLT processor on the
+current buffer, and view the results in a buffer.
+\\[xslt-process-invoke-browser-view]: Invoke the XSLT processor on the
+current buffer, and view the results in a browser.
 \\[xslt-process-do-run]: Start the XSLT debugger on the current buffer.
 
 \\[xslt-process-set-breakpoint]: Set a breakpoint at the current line.
@@ -719,7 +731,7 @@ variables change.
 
 For more information please check:
 
-xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
+xslt-process:    http://xslt-process.sourceforge.net/
 
 \\{xslt-process-mode-map}"
   (interactive "P")
@@ -806,10 +818,19 @@ different actions for faster operations."
 ;		    cocoon-user-agent "\");"))
 ;  (makunbound 'user-agent))
 
-(defun xslt-process-invoke ()
-  "*Invokes the XSLT processor of your choice on the current buffer."
+(defun xslt-process-invoke-buffer-view ()
+  "*Invokes the XSLT processor of your choice on the current buffer,
+and view the results in a buffer."
   (interactive)
   (xslt-process-do-run t))
+
+(defun xslt-process-invoke-browser-view ()
+  "*Invokes the XSLT processor of your choice on the current buffer,
+and view the results in a buffer."
+  (interactive)
+  (let ((filename (expand-file-name "xslt-process-output.html"
+				    (temp-directory))))
+    (xslt-process-do-run t filename)))
 
 (defun xslt-process-display-messages (messages msg-buffer out-buffer)
   (set-buffer msg-buffer)
@@ -992,8 +1013,11 @@ on its state."
 ;;;
 ;;; Debugger commands
 ;;;
+(defvar xslt-process-output-to-filename nil
+  "The name of the filename to which the output goes, nil if the
+output comes to Emacs directly.")
 
-(defun xslt-process-do-run (&optional no-debug)
+(defun xslt-process-do-run (&optional no-debug out-filename)
   "*Send the run/debug command to the command line interpreter to start
 either a normal, no debug, XSLT processing, or a debugging session."
   (interactive)
@@ -1006,14 +1030,18 @@ either a normal, no debug, XSLT processing, or a debugging session."
 		       proc-type))
 	      (xslt-process-do-quit t)
 	    (return)))
-      (let ((filename (urlize (buffer-file-name))))
+      (setq xslt-process-output-to-filename out-filename)
+      (let* ((filename (urlize (buffer-file-name)))
+	     (complete-command (concat command " " filename)))
+	(if out-filename
+	    (setq complete-command (concat complete-command " " out-filename)))
 	;; Prepare the buffers
 	(save-some-buffers)
 	;; Set the XSLT processor to be used
 	(xslt-process-set-processor)
 	(setq xslt-process-process-state 'running)
 	(setq xslt-process-debugger-running (not no-debug))
-	(xslt-process-send-command (concat command " " filename))
+	(xslt-process-send-command complete-command)
 	(setq xslt-process-execution-context-error-function
 	      (lambda ()
 		(setq xslt-process-process-state 'not-running)))
@@ -1468,7 +1496,11 @@ the output to the XSLT process buffer."
   (run-hooks 'xslt-process-local-variables-changed-hooks)
   (setq xslt-process-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running)
-  (message "Done invoking %s." xslt-process-current-processor))
+  (message "Done invoking %s." xslt-process-current-processor)
+  ;; If the output was sent to a file, invoke a browser to view the
+  ;; contents of the file
+  (if xslt-process-output-to-filename
+      (browse-url (concat "file:" xslt-process-output-to-filename))))
 
 (defun xslt-process-report-error (message stack-trace)
   "Called by the XSLT debugger process whenever an error happens."
