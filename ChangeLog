@@ -1,3 +1,8 @@
+2001-04-05  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Cleaned up the highlighting code by
+	putting the common functionality in a single function.
+
 2001-04-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Got the breakpoints to correctly expand
