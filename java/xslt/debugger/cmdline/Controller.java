@@ -380,16 +380,8 @@ public class Controller
     currentStyleFrame = -1;
     
     if (debugger.isStarted()) {
-      System.out.print("XSLT processor already running, "
-                       + "do you want to restart? (y/n)");
-      int resp = 0;
-      try {
-        resp = System.in.read();
-      }
-      catch (IOException e) {
-      }
-      if (!(resp == 'y' || resp == 'Y'))
-        debugger.stopProcessing();
+      System.out.print("XSLT processor already running, aborting.");
+      debugger.stopProcessing();
     }
 
     manager.startDebugger(getAbsoluteFilename((String)args.get(1)));
