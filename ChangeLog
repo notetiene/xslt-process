@@ -1,3 +1,14 @@
+2001-04-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-speedbar.el: Got the breakpoints to correctly expand
+	and unexpand in the speedbar. Need to implement auto-updating of
+	the breakpoints list when the users sets up a new breakpoint, and
+	to handle the case when the buffer containing the breakpoint
+	disappears.
+
+	* lisp/xslt-process.el: In xslt-process-get-file-buffer open the
+	file and return the buffer that holds the file.
+
 2001-04-03  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Added test code for the speedbar support.
