@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 29, 2001 08:42:06 ovidiu>
+;; Time-stamp: <2001-04-29 12:31:44 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -64,9 +64,9 @@ modified value to the result of this function."
 	  (cons elem (remassoc key (cdr list)))))))
   (defun mapvector (function seq)
     "Apply FUNCTION to each element in SEQUENCE."
-    (let (result)
+    (let ((result nil))
       (loop for elem across seq do
-	    (setq result (append result (cons elem nil))))
+	    (setq result (append result (list (apply function (list elem))))))
       (vconcat result))))
 
 (defun xslt-process-make-glyph (glyph)
@@ -544,7 +544,7 @@ filename line) that indicate the new style frame stack.")
 	       :active t]))
   "XSLT-process menu definition.")
 
-(easy-menu-define xslt-process-menu xslt-process-debug-mode-map
+(easy-menu-define xslt-process-menu xslt-process-mode-map
 		  "XSLT-process menu"
 		  xslt-process-menu-definition)
 ;(easy-menu-define xslt-process-debug-menu xslt-process-debug-mode-map
