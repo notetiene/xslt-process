@@ -12,7 +12,7 @@ $(JAR): $(CLASSES)
 	jar cf $(JAR) xslt
 
 $(CLASSES): $(JAVA)
-	javac -classpath $(CLASSPATH) $(JAVA)
+	javac -classpath '$(CLASSPATH)' $(JAVA)
 
 clean:
 	find . -name '*.class' -exec rm -f {} \;
