@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April  3, 2001 17:11:43 ovidiu>
+;; Time-stamp: <April  4, 2001 01:45:19 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -52,61 +52,95 @@ related info.")
 is selected.")
 
 (defvar xslt-process-top-level-entries
-  '(("Breakpoints" . xslt-process-show-breakpoints)
-    ("Source frames" . xslt-process-show-source-stack-frame)
-    ("Style frames" . xslt-process-show-style-stack-frame)
-    ("Global variables" . xslt-process-show-global-variables))
-  "Top level entries in the speedbar and their associated functions.")
+  '(("Breakpoints"
+     xslt-process-speedbar-show-breakpoints
+     (eq (hashtable-fullness xslt-process-breakpoints) 0))
+    ("Source frames"
+     xslt-process-show-source-stack-frame
+     t)
+    ("Style frames"
+     xslt-process-show-style-stack-frame
+     t)
+    ("Global variables"
+     xslt-process-show-global-variables
+     t))
+  "Top level entries in the speedbar. Each entry contains a list of
+the name of the entry, the function to be invoked to expand the entry
+and an expression to test whether the list of items is empty.")
 
 (defun xslt-process-speedbar-buttons (directory zero)
   "Create the buffer to displays the XSLT debugger menu in speedbar."
   (mapc
    (lambda (entry)
-     (let ((name (car entry))
-	   (fn (cdr entry)))
+     (let ((name (car entry)))
        (speedbar-make-tag-line 'angle ?+ 'xslt-process-show-top-level-entry
-			     name
-			     name fn name
-			     'speedbar-button-face 0)))
+			       name
+			       name 'xslt-process-top-level-entry-click
+			       name
+			       'speedbar-button-face 0)))
    xslt-process-top-level-entries))
 
 (defun xslt-process-top-level-entry-click (text token indent)
-  "When the user clicks on the breakpoint's button in speedbar."
-  (message "xslt-process-top-level-entry-click '%s' '%s' '%s'" text token indent))
+  "When the user clicks on the text of a top level entry in speedbar."
+  (save-excursion
+    (let* ((beg (progn (beginning-of-line) (point)))
+	   (end (progn (end-of-line) (point)))
+	   (line (buffer-string beg end)))
+      (message "xslt-process-top-level-entry-click '%s' '%s' '%s' '%s'" text token indent line)
+      (xslt-process-show-top-level-entry line token indent))))
 
 (defun xslt-process-show-top-level-entry (text token indent)
   "Function called to show the breakpoints."
-  (message "xslt-process-top-level-entry '%s' '%s' '%s'" text token indent)
-  (cond ((string-match "+" text);; expand the breakpoints
-	 ;; Change the appearance of the entry
-	 (if (eq (hashtable-fullness xslt-process-breakpoints) 0)
-	     (message "No %s." (downcase token))
-	   (speedbar-change-expand-button-char ?-)
-	   (speedbar-with-writable
-	     (save-excursion
-;	       (end-of-line) (forward-char 1)
-	       (message "maphash starts")
-	       (maphash
-		(lambda (breakpoint enabled)
-		  (speedbar-insert-button
-		   (format "%s:%s"
-			   (file-name-nondirectory
-			    (xslt-process-breakpoint-filename breakpoint))
-			   (xslt-process-breakpoint-line breakpoint))
-		   'speedbar-file-face
-		   'speedbar-highlight-face
-		   'xslt-process-select-breakpoint breakpoint))
-		xslt-process-breakpoints)
-	       (message "maphash ended")))))
-	((string-match "-" text);; contract this node
+  (message "xslt-process-show-top-level-entry '%s' '%s' '%s'" text token indent)
+  (cond ((string-match "+" text)	;; expand the breakpoints
+	 (let* ((entry (assoc token xslt-process-top-level-entries))
+		(name (car entry))
+		(fn (cadr entry))
+		(condition (caddr entry)))
+	   (if (eval condition)
+	       (message "No %s." (downcase name))
+	     (speedbar-change-expand-button-char ?-)
+	     (speedbar-with-writable
+	       (save-excursion
+		 (end-of-line) (forward-char 1)
+		 (funcall fn text indent))))))
+	((string-match "-" text)	;; contract this node
 	 (speedbar-change-expand-button-char ?+)
 	 (speedbar-delete-subblock indent))
 	(t (error "Ooops...  not sure what to do")))
-  (speedbar-center-buffer-smartly))
+  (speedbar-center-buffer-smartly)
+  (save-excursion (speedbar-stealthy-updates)))
 
-(defun xslt-process-show-breakpoints (text breakpoint indent)
+(defun xslt-process-speedbar-show-breakpoints (text indent)
+  "Function called from `xslt-process-show-top-level-entry' to display
+the breakpoints in speedbar."
+  (maphash
+   (lambda (breakpoint enabled)
+     (speedbar-make-tag-line 'bracket ?? 'xslt-process-show-breakpoint
+			     breakpoint
+			     (format 
+			      "%s:%s"
+			      (file-name-nondirectory
+			       (xslt-process-breakpoint-filename breakpoint))
+			      (xslt-process-breakpoint-line breakpoint))
+			     'xslt-process-show-breakpoint
+			     breakpoint
+			     'speedbar-file-face
+			     (1+ indent)))
+   xslt-process-breakpoints))
+  
+
+(defun xslt-process-show-breakpoint (text breakpoint indent)
   "Show the buffer that contains BREAKPOINT."
-  (message "show breakpoints '%s' '%s' '%s'" text breakpoint indent))
+  (let* ((filename (xslt-process-breakpoint-filename breakpoint))
+	 (line (xslt-process-breakpoint-line breakpoint))
+	 (buffer (xslt-process-get-file-buffer filename)))
+    (message "Breakpoint in %s, at line %s" filename line)
+    (save-window-excursion
+      (pop-to-buffer buffer)
+      (set-buffer buffer)
+      (goto-line line))))
+      
 
 (defun xslt-process-show-source-stack-frame (text token indent)
   "Show the source stack frames."
