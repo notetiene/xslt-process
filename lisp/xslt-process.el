@@ -204,7 +204,8 @@ indicator."
 ;;; End of user customizations
 
 
-;; Definitions used further
+;;; Other definitions
+
 ;;;###autoload
 (defvar xslt-process-mode nil
   "Indicates whether the current buffer is in the XSLT-process minor mode.")
@@ -242,6 +243,14 @@ entered.")
 
 (defvar xslt-process-last-selected-position nil
   "The filename, line and column where the debugger stopped last time.")
+
+(defvar xslt-process-process-state 'not-running
+  "The state of the process. It can be either not-running, running or
+stopped.")
+
+(defvar xslt-process-breakpoint-extents (make-hashtable 10 'equal)
+  "Hash table of extents indexed by (filename . lineno). It is used to
+keep track of the extents created to highlight lines.")
 
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
@@ -323,12 +332,19 @@ Java Bean Shell: http://www.beanshell.org/
 		   (xslt-process-is-breakpoint
 		    (xslt-process-new-breakpoint-here)))]
      ["--:shadowEtchedIn" nil]
-     ["Run debugger" xslt-process-run-debugger :active t]
-     ["Step" xslt-process-do-step :active nil]
-     ["Next" xslt-process-do-next :active nil]
-     ["Finish" xslt-process-do-finish :active nil]
-     ["Continue" xslt-process-do-continue :active nil]
-     ["Stop" nil]))
+     ["Run debugger" xslt-process-do-run
+      :active (eq xslt-process-process-state 'not-running)]
+     ["Step" xslt-process-do-step
+      :active (eq xslt-process-process-state 'stopped)]
+     ["Next" xslt-process-do-next
+      :active (eq xslt-process-process-state 'stopped)]
+     ["Finish" xslt-process-do-finish
+      :active (eq xslt-process-process-state 'stopped)]
+     ["Continue" xslt-process-do-continue
+      :active (eq xslt-process-process-state 'stopped)]
+     ["Stop" xslt-process-do-stop
+      :active (eq xslt-process-process-state 'running)]
+     ["Quit debugger" xslt-process-do-stop :active t]))
   (setq xslt-process-mode
 	(if (null arg)
 	    (not xslt-process-mode)
@@ -342,20 +358,20 @@ Java Bean Shell: http://www.beanshell.org/
 This essentially makes the buffer read-only and binds various keys to
 different actions for faster operations."
   (interactive "P")
-  (if (or (> (prefix-numeric-value arg) 0)
-	  (not xslt-process-debug-mode))
-      (progn
-	;; Enable the debug mode
-	(setq xslt-process-debug-mode t)
-	(toggle-read-only 1)
-	(xslt-process-change-breakpoints-highlighting t)
-	(xslt-process-setup-minor-mode xslt-process-debug-mode-map
-				       xslt-process-debug-mode-line-string))
-    ;; Disable the debug mode if it's enabled
-    (progn
+  (let ((filename (buffer-file-name)))
+    (if (or (and arg (> (prefix-numeric-value arg) 0))
+	    (not xslt-process-debug-mode))
+	(progn
+	  ;; Enable the debug mode
+	  (setq xslt-process-debug-mode t)
+	  (toggle-read-only 1)
+	  (xslt-process-change-breakpoints-highlighting t filename)
+	  (xslt-process-setup-minor-mode xslt-process-debug-mode-map
+					 xslt-process-debug-mode-line-string))
+      ;; Disable the debug mode if it's enabled
       (setq xslt-process-debug-mode nil)
       (toggle-read-only 0)
-      (xslt-process-change-breakpoints-highlighting nil)
+      (xslt-process-change-breakpoints-highlighting nil filename)
       (xslt-process-setup-minor-mode xslt-process-mode-map
 				     xslt-process-mode-line-string))))
 
@@ -503,12 +519,16 @@ choice on the current buffer."
 
 (defun xslt-process-last-selected-position-column ()
   "Return the column of the last selected position."
-  (cddr xslt-process-last-selected-position))
+  (caddr xslt-process-last-selected-position))
+
+(defun xslt-process-last-selected-position-extent ()
+  "Return the extent used to highlight the last selected position."
+  (cadddr xslt-process-last-selected-position))
 
 (defun xslt-process-new-breakpoint-here ()
   "Returns a breakpoint object at filename and line number of the
 current buffer or nil otherwise. By default the breakpoint is enabled."
-  (let ((filename (buffer-file-name))
+  (let ((filename (file-truename (buffer-file-name)))
 	(line (save-excursion (progn (end-of-line) (count-lines 1 (point))))))
     (cons filename line)))
 
@@ -570,12 +590,7 @@ message if a breakpoint is already setup."
 	  ;; Send the command to the XSLT debugger, but don't start it
 	  ;; if it's not started.
 	  (xslt-process-send-command (format "d %s %s" filename line) t)
-	  (xslt-process-highlight-line 'default)
-	  ;; Remove the extent that exists at this line
-	  (save-excursion
-	    (let* ((from (or (beginning-of-line) (point)))
-		   (extent (extent-at from)))
-	      (delete-extent extent)))
+	  (xslt-process-unhighlight-breakpoint breakpoint)
 	  (message (format "Removed breakpoint in %s at %s." filename line)))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
@@ -612,105 +627,139 @@ on its state."
   "Function called by the XSLT debugger process each time the debugger
 hits a breakpoint that causes it to stop."
   (message (format "Stopped at %s %s" filename line))
-  ;; Unselect the previous selected line, but only if the buffer is
-  ;; still around
+  (setq xslt-process-process-state 'stopped)
+  ;; Unselect the previous selected line
   (if xslt-process-last-selected-position
-      (let ((filename (xslt-process-last-selected-position-filename))
-	    (buffer (get-file-buffer filename)))
-	(if buffer
-	    (save-excursion
-	      (set-buffer buffer)
-	      (goto-line (xslt-process-last-selected-position-line))
-	      ;; If the line is a breakpoint, make sure we highlight
-	      ;; it before leaving
-	      (let ((breakpoint (xslt-process-new-breakpoint-here)))
-		(if (xslt-process-is-breakpoint breakpoint)
-		    (xslt-process-highlight-breakpoint breakpoint)
-		(xslt-process-highlight-line 'default)))))))
-  ;; Now select the new line. Create a buffer for the file if one does
-  ;; not exist already and put it in the debug mode.
-  (let ((buffer (or (get-file-buffer filename)
-		    (let ((buffer (find-file filename)))
+      (let ((extent (xslt-process-last-selected-position-extent)))
+	(delete-extent extent)))
+  ;; Now select the new line. Create a buffer for the file, if one
+  ;; does not exist already, and put it in the debug mode.
+  (let ((buffer (or (xslt-process-get-file-buffer filename)
+		    (let ((buffer (find-file (file-truename filename))))
 		      (xslt-process-toggle-debug-mode 1)
 		      buffer))))
-    (save-excursion
+    (progn
       (pop-to-buffer buffer)
       (goto-line line)
-      (xslt-process-highlight-line 'xslt-process-current-line-face)
-      (setq xslt-process-last-selected-position (list filename line column)))))
+      (let ((extent
+	     (xslt-process-highlight-line 'xslt-process-current-line-face 2)))
+      (setq xslt-process-last-selected-position
+	    (list filename line column extent))))))
 
 (defun xslt-process-do-run ()
-  "Send the run command to the XSLT debugger."
+  "*Send the run command to the XSLT debugger."
   (interactive)
   (let ((filename (buffer-file-name)))
-    (xslt-process-send-command (concat "r " filename))))
+    (xslt-process-send-command (concat "r " filename)))
+  (setq xslt-process-process-state 'running)
+  (message "Starting the XSLT debugger..."))
 
 (defun xslt-process-do-step ()
-  "Send a STEP command to the XSLT debugger."
+  "*Send a STEP command to the XSLT debugger."
   (interactive)
+  (setq xslt-process-process-state 'running)
   (xslt-process-send-command "s"))
 
 (defun xslt-process-do-next ()
-  "Send a NEXT command to the XSLT debugger."
+  "*Send a NEXT command to the XSLT debugger."
   (interactive)
+  (setq xslt-process-process-state 'running)
   (xslt-process-send-command "n"))
 
 (defun xslt-process-do-finish ()
-  "Send a FINISH command to the XSLT debugger."
+  "*Send a FINISH command to the XSLT debugger."
   (interactive)
+  (setq xslt-process-process-state 'running)
   (xslt-process-send-command "f"))
 
 (defun xslt-process-do-continue ()
-  "Send a CONTINUE command to the XSLT debugger."
+  "*Send a CONTINUE command to the XSLT debugger."
   (interactive)
+  (setq xslt-process-process-state 'running)
   (xslt-process-send-command "c"))
 
-(defun xslt-process-change-breakpoints-highlighting (flag)
+(defun xslt-process-do-stop ()
+  "*Send a STOP command to the XSLT debugger, potentially stopping the
+debugger from a long processing with no breakpoints setup."
+  (interactive)
+  (if (eq xslt-process-process-state 'running)
+      (xslt-process-send-command "stop")))
+
+(defun xslt-process-do-quit ()
+  "*Quit the XSLT debugger."
+  (interactive)
+  (xslt-process-do-stop)
+  (xslt-process-send-command "q")
+  (setq xslt-process-process-state 'not-running))
+
+(defun xslt-process-change-breakpoints-highlighting (flag &optional filename)
   "Highlights or unhighlights, depending on FLAG, all the breakpoints
-in the current buffer. It doesn't affect the current state of the
-breakpoints."
+in the buffer visiting FILENAME. If FILENAME is not specified or is
+nil, it changes the highlighting on the breakpoints in all the
+buffers. It doesn't affect the current state of the breakpoints."
   (maphash
    (lambda (breakpoint state)
-     (if flag
-	 (xslt-process-highlight-breakpoint breakpoint state)
-       (xslt-process-unhighlight-breakpoint breakpoint)))
+     (let ((fname (xslt-process-breakpoint-filename breakpoint)))
+       (if (or (not filename) (equal filename fname))
+	   (if flag
+	       (xslt-process-highlight-breakpoint breakpoint state)
+	     (xslt-process-unhighlight-breakpoint breakpoint)))))
    xslt-process-breakpoints))
 
 (defun xslt-process-highlight-breakpoint (breakpoint &optional state)
   "Highlight BREAKPOINT depending on it state."
-  (save-excursion
-    (let* ((filename (xslt-process-breakpoint-filename breakpoint))
-	   (line (xslt-process-breakpoint-line breakpoint))
-	   (from (prog2 (goto-line line) (point)))
-	   (extent (or (extent-at from)
-		       (make-extent from (prog2 (end-of-line) (point))))))
+  (let* ((filename (xslt-process-breakpoint-filename breakpoint))
+	 (line (xslt-process-breakpoint-line breakpoint))
+	 (buffer (or (xslt-process-get-file-buffer filename)
+		     (let ((buffer (find-file filename)))
+		       (xslt-process-toggle-debug-mode 1)
+		       buffer))))
+    ;; Signal an error if there's no buffer
+    (if (not buffer)
+	(error "Cannot find the buffer associated with %s" filename)
+      ;; If state was not passed as argument to this function, set
+      ;; state to the state of the breakpoint
       (if (not state)
 	  (setq state (xslt-process-breakpoint-is-enabled breakpoint)))
-      (set-extent-face extent
+      ;; Position to the line we want to be highlighted and invoke the
+      ;; xslt-process-highlight-line function
+      (save-excursion
+	(set-buffer buffer)
+	(goto-line line)
+	(let ((extent (xslt-process-highlight-line
 		       (if (or (not (null state)) (eq state 'enabled))
 			   'xslt-process-enabled-breakpoint-face
-			 'xslt-process-disabled-breakpoint-face)))))
-
+			 'xslt-process-disabled-breakpoint-face)
+		       1)))
+	  ;; Intern the extent in the extents table
+	  (puthash breakpoint extent xslt-process-breakpoint-extents))))))
+      
 (defun xslt-process-unhighlight-breakpoint (breakpoint)
   "Remove the highlighting associated with BREAKPOINT."
   (save-excursion
+    ;; First remove any extent that exists at this line
     (let* ((filename (xslt-process-breakpoint-filename breakpoint))
 	   (line (xslt-process-breakpoint-line breakpoint))
-	   (from (prog2 (goto-line line) (point)))
-	   (extent (or (extent-at from)
-		       (make-extent from (prog2 (end-of-line) (point))))))
-      (delete-extent extent))))
-  
+	   (extent (gethash (filename . line)
+			    xslt-process-breakpoint-extents)))
+      (if extent
+	  (delete-extent extent)))))
 
-(defun xslt-process-highlight-line (face)
-  "Sets the face of the current line to FACE."
+(defun xslt-process-highlight-line (face &optional priority)
+  "Sets the face of the current line to FACE. Returns the extent that
+highlights the line."
   (save-excursion
-    (let* ((from (or (beginning-of-line) (point)))
-	   (to (or (end-of-line) (point)))
-	   (extent (or (extent-at from)
-		       (make-extent from to))))
-      (set-extent-face extent face)
-      (auto-show-make-region-visible from to))))
+      ;; Don't setup a new extent if the face is 'default
+      (if (eq face 'default)
+	  nil
+	;; Otherwise setup a new a new extent at the current line
+	(let* ((from (or (beginning-of-line) (point)))
+	       (to (or (end-of-line) (point)))
+	       (extent (make-extent from to)))
+	  (set-extent-face extent face)
+	  (if priority
+	      (set-extent-priority extent priority))
+	  extent))))
 
 (defun xslt-process-send-command (string &optional dont-start-process?)
   "Sends a command to the XSLT process. Start this process if not
@@ -783,6 +832,24 @@ the modeline."
 	      (cons (cons 'xslt-process-mode keymap)
 		    minor-mode-map-alist))))
   (force-mode-line-update))
+
+;;; Additional functions
+
+(defun xslt-process-get-file-buffer (filename)
+  "Searches through all the current buffers for a buffer whose true
+file name is the same as FILENAME. The true file name is the one in
+which all the symlinks in the original file name were expanded. We
+don't want to use get-file-buffer because it doesn't follow links."
+  (let ((true-filename (file-truename filename))
+	(buffers-list (buffer-list))
+	(found nil))
+    (while (and (not found) buffers-list)
+      (let* ((buffer (car buffers-list))
+	     (filename (buffer-file-name buffer)))
+	(if (equal true-filename (if filename (file-truename filename) nil))
+	    (setq found buffer)
+	  (setq buffers-list (cdr buffers-list)))))
+    found))
 
 ;;;###autoload
 (xslt-process-setup-minor-mode xslt-process-mode-map xslt-process-mode-line)
