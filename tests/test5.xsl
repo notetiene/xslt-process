@@ -17,7 +17,7 @@
  <xsl:variable name="number" select="number(123)"/>
  <xsl:variable name="date" select="Date:new()" xmlns:Date="java:java.util.Date"/>
  <xsl:variable name="a1" select="."/>
- <xsl:apply-templates select="child::*"/>
+ <xsl:value-of select="."/> as of <xsl:value-of select="$date"/>
 </xsl:template>
 
 </xsl:transform>
