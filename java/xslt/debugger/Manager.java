@@ -122,6 +122,16 @@ public class Manager
   Stack lastSourceFrames = null;
   ArrayList lastGlobalVariables = null;
   ArrayList lastLocalVariables = null;
+
+  /**
+   * The XML file name to process.
+   */
+  String xmlFilename = null;
+
+  /**
+   * The XSLT stylesheet to use to process the XML document.
+   */
+  String xslFilename = null;
   
   /**
    * Creates a new <code>Manager</code> instance.
@@ -392,8 +402,7 @@ public class Manager
    * @param forDebug a <code>boolean</code> value
    * @exception InterruptedException if an error occurs
    */
-  public synchronized void startXSLTProcessing(String xmlFilename,
-                                               boolean forDebug)
+  public synchronized void startXSLTProcessing(boolean forDebug)
     throws InterruptedException
   {
     lastStyleFrames = null;
@@ -401,7 +410,8 @@ public class Manager
     lastGlobalVariables = null;
     lastLocalVariables = null;
 
-    debugger.setXmlFilename(xmlFilename);
+    debugger.setXMLFilename(xmlFilename);
+    debugger.setXSLTStylesheet(xslFilename);
     this.forDebug = forDebug;
     if (!debugger.isStarted()) {
       Thread worker = new Thread(debugger);
@@ -409,18 +419,18 @@ public class Manager
     }
   }
 
-  public void startDebugger(String xmlFilename)
+  public void startDebugger()
     throws InterruptedException
   {
     sourceFrames = new Stack();
     styleFrames = new Stack();
-    startXSLTProcessing(xmlFilename, true);
+    startXSLTProcessing(true);
   }
 
-  public void startProcessor(String xmlFilename)
+  public void startProcessor()
     throws InterruptedException
   {
-    startXSLTProcessing(xmlFilename, false);
+    startXSLTProcessing(false);
   }
 
   public void processorFinished()
@@ -528,5 +538,15 @@ public class Manager
   public OutputStream getMessageStream()
   {
     return messageStream;
+  }
+
+  public void setXMLFilename(String filename)
+  {
+    xmlFilename = filename;
+  }
+
+  public void setXSLTStylesheet(String filename)
+  {
+    xslFilename = filename;
   }
 }
