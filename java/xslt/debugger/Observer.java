@@ -10,6 +10,7 @@ package xslt.debugger;
 
 public interface Observer
 {
+  public void debuggerProcessStarted();
   public void debuggerStopped(String filename,
                               int lineno,
                               int column,
