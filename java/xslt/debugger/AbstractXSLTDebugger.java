@@ -9,23 +9,25 @@
 package xslt.debugger;
 
 
-import java.io.OutputStream;
-import java.lang.Runnable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import javax.xml.transform.Templates;
-import xslt.debugger.Manager;
-import java.io.File;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.Source;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerConfigurationException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.MalformedURLException;
-import java.io.IOException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Source;
+
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.net.URLConnection;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.lang.Runnable;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.io.File;
+
+import xslt.debugger.Manager;
 
 public abstract class AbstractXSLTDebugger implements Runnable
 {
@@ -119,6 +121,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
     }
 
     state = NOT_RUNNING;
+    action = DO_NOTHING;
     notifyAll();
   }
 
