@@ -137,7 +137,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
         setupXMLReader((SAXSource)stylesheetSource);
       System.out.println("After setting up XML reader for stylesheet, stylesheetSource = " + stylesheetSource);
 
-      StreamResult result = new StreamResult(manager.getOutStream());
+      StreamResult result = new StreamResult(manager.getOutputStream());
       String stylesheetId = stylesheetSource.getSystemId();
 
       // Check for a Templates object already created for this
@@ -197,6 +197,10 @@ public abstract class AbstractXSLTDebugger implements Runnable
     catch(Exception e) {
       manager.getObserver().caughtException(e);
     }
+
+    // Give a chance to the manager to release any resources it might
+    // hold (open files etc.)
+    manager.processorFinished();
 
     manager.getObserver().processorFinished();
     state = NOT_RUNNING;
