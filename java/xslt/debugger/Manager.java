@@ -4,6 +4,22 @@
     Author: Ovidiu Predescu <ovidiu@cup.hp.com>
     Date: March  6, 2001
 
+    Copyright (C) 2001 Ovidiu Predescu
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License as
+    published by the Free Software Foundation; either version 2 of the
+    License, or (at your option) any later version.
+   
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    General Public License for more details.
+   
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+    02111-1307, USA.
  */
 
 package xslt.debugger;
@@ -92,6 +108,17 @@ public class Manager
    */
   boolean forDebug = false;
 
+  /**
+   * The following variables are used to maintain info on what is the
+   * information communicated to the GUI client (e.g. Emacs), the last
+   * time the debugger stopped. This is used to minimize the
+   * communication between the XSLT debugger and the GUI front-end, by
+   * sending only the data that changed since last time.
+   */
+  Stack lastStyleFrames = null;
+  Stack lastSourceFrames = null;
+  ArrayList lastLocalVariables = null;
+  
   /**
    * Creates a new <code>Manager</code> instance.
    *
@@ -363,6 +390,10 @@ public class Manager
                                                boolean forDebug)
     throws InterruptedException
   {
+    lastStyleFrames = null;
+    lastSourceFrames = null;
+    lastLocalVariables = null;
+    
     debugger.setXmlFilename(xmlFilename);
     this.forDebug = forDebug;
     if (!debugger.isStarted()) {
@@ -383,6 +414,42 @@ public class Manager
     throws InterruptedException
   {
     startXSLTProcessing(xmlFilename, false);
+  }
+
+  /**
+   * <code>debuggerStopped</code> is called by the debugger's trace
+   * listener instance when it stops the XSLT processing.
+   */
+  public void debuggerStopped(String filename,
+                              int line,
+                              int column,
+                              String message)
+  {
+    // Check the source frame stack and the style frame stack for
+    // modifications
+    if ((lastSourceFrames == null && sourceFrames != null)
+        || !lastSourceFrames.equals(sourceFrames)) {
+      lastSourceFrames = (Stack)sourceFrames.clone();
+      observer.sourceStackChanged();
+    }
+
+    if ((lastStyleFrames == null && styleFrames != null)
+        || !lastStyleFrames.equals(styleFrames)) {
+      lastStyleFrames = (Stack)styleFrames.clone();
+      observer.styleStackChanged();
+
+      if (lastStyleFrames.size() > 0) {
+        // Check whether the local variables have changed
+        ArrayList newLocalVariables
+          = ((StyleFrame)lastStyleFrames.pop()).getLocalVariables();
+        if ((lastLocalVariables == null && newLocalVariables != null)
+            || !lastLocalVariables.equals(newLocalVariables)) {
+          lastLocalVariables = (ArrayList)newLocalVariables.clone();
+          observer.localVariablesChanged(lastLocalVariables);
+        }
+      }
+    }
+    debugger.debuggerStopped(filename, line, column, message);
   }
   
   /**
