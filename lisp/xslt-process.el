@@ -1967,12 +1967,18 @@ process."
 			     xslt-process-message-buffer-name)
 			    (t nil)))
 	     (buffer (get-buffer-create bufname)))
-	(set-buffer buffer)
 	(save-excursion
-	  ;; Insert the text, moving the marker.
-	  (goto-char (point-max))
-	  (insert string))
-	(pop-to-buffer buffer))))
+	  (save-selected-window
+	    (set-buffer buffer)
+	    (setq buffer-read-only nil)
+	    ;; Insert the text, moving the marker.
+	    (goto-char (point-max))
+	    (insert string)
+	    (setq buffer-read-only t)
+	    (setq pop-up-windows t)
+	    (setq split-height-threshold 15)
+	    (pop-to-buffer buffer)
+	    (set-window-point (get-buffer-window buffer) (point-max)))))))
 
 (defun xslt-process-set-output-port (port)
   "Called by the XSLT debugger to setup the TCP/IP port number on

@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
+import java.io.Writer;
 import java.lang.Runnable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -83,6 +85,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
   protected Manager manager = null;
   protected String xmlFilename;
   protected String xslFilename;
+  protected StreamResult result;
 
   protected int state = NOT_RUNNING;
   protected int action = DO_NOTHING;
@@ -162,7 +165,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
       // Set an error handler for the stylesheet parser
       setupXMLReader(stylesheetSAXSource);
 
-      StreamResult result = new StreamResult(manager.getOutputStream());
+      // create result to receive generated output - may be overridden later
+      result = new StreamResult(manager.getOutputStream());
       String stylesheetId = stylesheetInputSource.getSystemId();
 
       // Check for a Templates object already created for this
@@ -281,6 +285,12 @@ public abstract class AbstractXSLTDebugger implements Runnable
                                            String message)
   {
     try {
+      try {
+	Writer writer = result.getWriter();
+	if (writer != null) {
+	  writer.flush();
+	}
+      } catch (IOException ioe) { }
       state = STOPPED;
       notifyAll();
       manager.observer.debuggerStopped(filename, line, column, message);

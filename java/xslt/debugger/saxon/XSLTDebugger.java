@@ -36,6 +36,7 @@ import com.icl.saxon.trace.TraceListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 import java.lang.Runnable;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -88,6 +89,11 @@ public class XSLTDebugger extends AbstractXSLTDebugger
       TraceListener traceListener = new SaxonTraceListener(this);
       controller.setTraceListener(traceListener);
       controller.setLineNumbering(true);
+      // Use a Writer to ensure output is produced incrementally for the debugger
+      // Should the encoding be a user-selectable option in emacs?
+      try {
+	result = new StreamResult(new OutputStreamWriter(manager.getOutputStream(), "UTF8"));
+      } catch (Exception e) { }
     }
   }
 
