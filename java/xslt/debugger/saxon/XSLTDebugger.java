@@ -102,6 +102,9 @@ public class XSLTDebugger extends AbstractXSLTDebugger
     // in the style frames stack to be able to ask for global
     // variables.
     Stack styleFrames = manager.getStyleFrames();
+    if (styleFrames == null || styleFrames.size() == 0)
+      return null;
+    
     SaxonStyleFrame styleFrame = (SaxonStyleFrame)styleFrames.get(0);
     if (styleFrame.getElement() instanceof StyleElement)
       return styleFrame.getGlobalVariables();
