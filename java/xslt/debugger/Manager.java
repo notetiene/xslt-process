@@ -456,7 +456,6 @@ public class Manager
     Driver driver = new Driver(xmlSource, fileStream);
     driver.setRenderer(Driver.RENDER_PDF);
     driver.run();
-    System.out.println("done running the FOP processor");
 
     fileStream.flush();
     fileStream.close();

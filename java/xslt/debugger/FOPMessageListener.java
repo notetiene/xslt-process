@@ -26,8 +26,6 @@ public class FOPMessageListener implements MessageListener
     if (event.getMessageType() != MessageEvent.LOG)
       return;
 
-    System.out.print("line = " + line);
-
     String message = event.getMessage();
     // Check for a \n character in the message. If there's no such
     // character, append it to `line'. Otherwise appends to the line
