@@ -34,42 +34,66 @@ import com.icl.saxon.ExtendedInputSource;
 
 public class XSLTDebugger extends AbstractXSLTDebugger
 {
+  TransformerFactory tFactory = null;
+  TransformerFactory tDebugFactory = null;
+  
   public XSLTDebugger() {}
 
-  public synchronized void run()
+  public TransformerFactory getTransformerFactory(boolean forDebug)
   {
-    state = RUNNING;
-    notifyAll();
-
-    try {
-      TransformerFactory tFactory = new com.icl.saxon.TransformerFactoryImpl();
+    if (tFactory == null) {
+      tFactory = new com.icl.saxon.TransformerFactoryImpl();
+      tDebugFactory = new com.icl.saxon.TransformerFactoryImpl();
 
       TraceListener traceListener = new SaxonTraceListener(this);
-      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
-      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
-
-      File inFile = new File(xmlFilename);
-      StreamSource in = new StreamSource(xmlFilename);
-      StreamResult result = new StreamResult(outStream);
-
-      String media = null, title = null, charset = null;
-      Source stylesheet
-        = tFactory.getAssociatedStylesheet(in, media, title, charset);
-      String stylesheetId = stylesheet.getSystemId();
-
-      Transformer transformer = tFactory.newTransformer(stylesheet);
-      if (transformer != null)
-        transformer.transform(in, result);
-
-      manager.getObserver().processorFinished();
-    }
-    catch(Exception e) {
-      manager.getObserver().caughtException(e);
+      tDebugFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
+      tDebugFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
     }
 
-    state = NOT_RUNNING;
-    notifyAll();
+    return forDebug ? tDebugFactory : tFactory;
   }
+  
+  /**
+   * In Saxon nothing needs to be done to prepare a transformer for
+   * debugging. The debugging transformer is obtained initially from
+   * the TransformerFactory.
+   */
+  public void prepareTransformerForDebugging(Transformer transformer) {}
+
+//   public synchronized void run()
+//   {
+//     state = RUNNING;
+//     notifyAll();
+
+//     try {
+//       TransformerFactory tFactory = new com.icl.saxon.TransformerFactoryImpl();
+
+//       TraceListener traceListener = new SaxonTraceListener(this);
+//       tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
+//       tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
+
+//       File inFile = new File(xmlFilename);
+//       StreamSource in = new StreamSource(xmlFilename);
+//       StreamResult result = new StreamResult(outStream);
+
+//       String media = null, title = null, charset = null;
+//       Source stylesheet
+//         = tFactory.getAssociatedStylesheet(in, media, title, charset);
+//       String stylesheetId = stylesheet.getSystemId();
+
+//       Transformer transformer = tFactory.newTransformer(stylesheet);
+//       if (transformer != null)
+//         transformer.transform(in, result);
+
+//       manager.getObserver().processorFinished();
+//     }
+//     catch(Exception e) {
+//       manager.getObserver().caughtException(e);
+//     }
+
+//     state = NOT_RUNNING;
+//     notifyAll();
+//   }
 
   /**
    * Return the list of global variables.

@@ -10,6 +10,7 @@ package xslt.debugger.xalan;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.lang.Runnable;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -21,58 +22,92 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import org.apache.xalan.trace.PrintTraceListener;
 import org.apache.xalan.trace.TraceListener;
+import org.apache.xalan.trace.TraceManager;
+import org.apache.xalan.transformer.TransformerImpl;
 import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
-import java.io.PrintWriter;
+import java.util.TooManyListenersException;
 
 public class XSLTDebugger extends AbstractXSLTDebugger
 {
+  TransformerFactory tFactory = null;
+
   public XSLTDebugger() {}
 
-  public synchronized void run()
+  public TransformerFactory getTransformerFactory(boolean forDebug)
   {
-    state = RUNNING;
-    notifyAll();
+    if (tFactory == null)
+      tFactory = new org.apache.xalan.processor.TransformerFactoryImpl();
 
+    return tFactory;
+  }
+
+  public void prepareTransformerForDebugging(Transformer transformer)
+  {
+    PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
+    PrintTraceListener traceListener
+      = new PrintTraceListener(diagnosticsWriter);
+    traceListener.m_traceTemplates = true;
+    traceListener.m_traceElements = true;
+    traceListener.m_traceGeneration = true;
+    traceListener.m_traceSelection = true;
+
+    TransformerImpl transformerImpl = (TransformerImpl)transformer;
+    // Register the TraceListener with a TraceManager associated
+    // with the TransformerImpl.
+    TraceManager trMgr = transformerImpl.getTraceManager();
     try {
-      System.out.println("Xalan XSLTDebugger starting...");
-      
-      PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
-      TransformerFactory tFactory
-        = new org.apache.xalan.processor.TransformerFactoryImpl();
-
-      PrintTraceListener traceListener
-        = new PrintTraceListener(diagnosticsWriter);
-      traceListener.m_traceTemplates = true;
-      traceListener.m_traceElements = true;
-      traceListener.m_traceGeneration = true;
-      traceListener.m_traceSelection = true;
-      
-      //      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
-      //      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
-
-      File inFile = new File(xmlFilename);
-      StreamSource in = new StreamSource(xmlFilename);
-      StreamResult result = new StreamResult(outStream);
-
-      String media = null, title = null, charset = null;
-      Source stylesheet
-        = tFactory.getAssociatedStylesheet(in, media, title, charset);
-      String stylesheetId = stylesheet.getSystemId();
-
-      Transformer transformer = tFactory.newTransformer(stylesheet);
-      if (transformer != null)
-        transformer.transform(in, result);
-
-      manager.getObserver().processorFinished();
+      trMgr.addTraceListener(traceListener);
     }
-    catch(Exception e) {
+    catch (TooManyListenersException e) {
       manager.getObserver().caughtException(e);
     }
-
-    state = NOT_RUNNING;
-    notifyAll();
   }
+
+//   public synchronized void run()
+//   {
+//     state = RUNNING;
+//     notifyAll();
+
+//     try {
+//       System.out.println("Xalan XSLTDebugger starting...");
+      
+//       PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
+//       TransformerFactory tFactory
+//         = new org.apache.xalan.processor.TransformerFactoryImpl();
+
+//       PrintTraceListener traceListener
+//         = new PrintTraceListener(diagnosticsWriter);
+//       traceListener.m_traceTemplates = true;
+//       traceListener.m_traceElements = true;
+//       traceListener.m_traceGeneration = true;
+//       traceListener.m_traceSelection = true;
+      
+//       //      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
+//       //      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
+
+//       File inFile = new File(xmlFilename);
+//       StreamSource in = new StreamSource(xmlFilename);
+//       StreamResult result = new StreamResult(outStream);
+
+//       String media = null, title = null, charset = null;
+//       Source stylesheet
+//         = tFactory.getAssociatedStylesheet(in, media, title, charset);
+//       String stylesheetId = stylesheet.getSystemId();
+
+//       Transformer transformer = tFactory.newTransformer(stylesheet);
+//       if (transformer != null)
+//         transformer.transform(in, result);
+
+//       manager.getObserver().processorFinished();
+//     }
+//     catch(Exception e) {
+//       manager.getObserver().caughtException(e);
+//     }
+
+//     state = NOT_RUNNING;
+//     notifyAll();
+//   }
 
   public ArrayList getGlobalVariables()
   {
