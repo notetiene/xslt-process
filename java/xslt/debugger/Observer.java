@@ -126,6 +126,15 @@ public interface Observer
   public void stackFramesChanged(int sourceFrameNo, int styleFrameNo);
 
   /**
+   * Called to inform that the global variables in the last XSLT
+   * template have changed.
+   *
+   * @param globalVariables an <code>ArrayList</code> containing a list
+   * of {@link Variable} instances.
+   */
+  public void globalVariablesChanged(ArrayList globalVariables);
+
+  /**
    * Called to inform that the local variables in the last XSLT
    * template have changed.
    *
