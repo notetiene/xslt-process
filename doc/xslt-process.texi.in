@@ -338,6 +338,10 @@ major modes, add the following lines in your @kbd{~/.emacs} file:
 (add-hook 'sgml-mode-hook 'xslt-process-mode)
 (add-hook 'xml-mode-hook 'xslt-process-mode)
 (add-hook 'xsl-mode-hook 'xslt-process-mode)
+
+(defadvice xml-mode (after run-xml-mode-hooks act)
+  "Invoke `xml-mode-hook' hooks in the XML mode."
+  (run-hooks 'xml-mode-hook))
 @end example
 
 You can also manually switch to this minor mode by typing @kbd{M-x
