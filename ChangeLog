@@ -1,5 +1,7 @@
 2001-04-02  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* Makefile: Changed the rules for compiling the Java files.
+
 	* java/xslt/debugger/saxon/SaxonTraceListener.java: Print the
 	entering and exiting messages followed by a colon to be able to
 	match them in Emacs.
