@@ -66,11 +66,15 @@ public class XalanValue extends xslt.debugger.Value
 	  case XObject.CLASS_BOOLEAN:
 	  case XObject.CLASS_NUMBER:
 	  case XObject.CLASS_STRING:
+	  case XObject.CLASS_UNKNOWN:
 	    value = xvalue.toString();
 	    break;
 	  case XObject.CLASS_NODESET:
 	    value = ((XNodeSet)xvalue).xstr().toString();
 	    break;
+	  case XObject.CLASS_UNRESOLVEDVARIABLE:
+	      value = "";
+	      break;
 	  default:
 	    value = "";
 	    break;
@@ -87,7 +91,7 @@ public class XalanValue extends xslt.debugger.Value
       System.out.println("Got exception while trying to get value: " + e);
     }
   }
-  
+
   public String getValue()
   {
     return value;
