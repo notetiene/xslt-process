@@ -8,31 +8,31 @@
 
 package xslt.debugger.cmdline;
 
-import java.util.Vector;
-import java.util.Stack;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.text.MessageFormat;
-import java.lang.reflect.Method;
-import java.lang.NoSuchMethodException;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.File;
-import java.io.BufferedReader;
 
-import xslt.debugger.Variable;
-import xslt.debugger.Value;
-import xslt.debugger.Utils;
-import xslt.debugger.StyleFrame;
-import xslt.debugger.SourceFrame;
-import xslt.debugger.Observer;
-import xslt.debugger.Observer;
-import xslt.debugger.Manager;
-import xslt.debugger.Breakpoint;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.NoSuchMethodException;
+import java.lang.reflect.Method;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Stack;
+import java.util.Vector;
 import xslt.debugger.AbstractXSLTDebugger;
+import xslt.debugger.Breakpoint;
+import xslt.debugger.Manager;
+import xslt.debugger.Observer;
+import xslt.debugger.Observer;
+import xslt.debugger.SourceFrame;
+import xslt.debugger.StyleFrame;
 import xslt.debugger.Type;
+import xslt.debugger.Utils;
+import xslt.debugger.Value;
+import xslt.debugger.Variable;
 
 /**
  * This is the public class used by the command line interface to
@@ -118,7 +118,24 @@ public class Controller
 
   public static void main(String[] args)
   {
-    Controller controller = new Controller("Saxon", new CmdLineObserver());
+    boolean useEmacs = false;
+    String processor = "Saxon";
+
+    for (int i = 0; i < args.length; i++) {
+      String arg = (String)args[i];
+      if (arg.equals("-emacs"))
+        useEmacs = true;
+      else if (arg.equals("-saxon"))
+        processor = "Saxon";
+    }
+
+    Observer observer = null;
+    if (useEmacs)
+      observer = new EmacsObserver();
+    else
+      observer = new CmdLineObserver();
+    
+    Controller controller = new Controller(processor, observer);
     controller.mainLoop();
   }
 
