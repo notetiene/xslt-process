@@ -1,3 +1,22 @@
+2002-07-15  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+
+	* java/avalon-framework-4.0.jar, java/avalon-framework-cvs-20020315.jar,
+	java/batik.jar, java/fop-0.20.3.jar, java/fop.jar, java/logkit-1.0.jar,
+	java/saxon-6.5.2.jar, java/xerces-1.2.3.jar, java/xercesImpl-2.0.1.jar,
+	java/xslt.jar, java/xalan-2.1.0, java/xalan-2.3.1: Updated to new versions.
+
+	* java/Makefile: Updated CLASSPATH to point to the latest jar
+	files.
+
+	* java/xslt/debugger/Manager.java, java/xslt/debugger/Observer.java,
+	java/xslt/debugger/FOPMessageListener.java,
+	java/xslt/debugger/cmdline/Controller.java, lisp/xslt-process.el: Add support
+	for fop-0.20.4 and xalan-2.3.1; improve reporting of log output from fop.
+
+	* java/xslt/debugger/FOPLogger.java: Added to improve fop log reporting.
+
+	* lisp/xslt-speedbar.el: Reformat multiline text values for global variables.
+
 2002-07-11  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
 	* lisp/xslt-speedbar.el: Reformat multiline text values to a single lineto avoid display problems in speedbar. A paragraph character is the separator.
