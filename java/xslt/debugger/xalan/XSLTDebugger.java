@@ -39,7 +39,7 @@ public class XSLTDebugger extends AbstractXSLTDebugger
       
       PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
       TransformerFactory tFactory
-        = org.apache.xalan.processor.TransformerFactoryImpl.newInstance();
+        = new org.apache.xalan.processor.TransformerFactoryImpl();
 
       PrintTraceListener traceListener
         = new PrintTraceListener(diagnosticsWriter);
