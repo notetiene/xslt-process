@@ -90,7 +90,7 @@ public class SourceFrame implements Cloneable
         && line == frame.line
         && column == frame.column
         && (styleFrame == frame.styleFrame
-            || styleFrame.equals(frame.styleFrame));
+            || (styleFrame != null && styleFrame.equals(frame.styleFrame)));
     }
     else
       return false;
