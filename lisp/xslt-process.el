@@ -210,7 +210,7 @@ directory structure looks a little different."
   :group 'xslt-process
   :type '(list
 	  (radio-button-choice
-	   (const :tag "Saxon 6.3" Saxon)
+	   (const :tag "Saxon 6.5.2" Saxon)
 	   (const :tag "Xalan 2.1.0" Xalan))))
 
 (if (or (eq system-type 'windows-nt)
@@ -592,10 +592,10 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "xerces.jar" "xalan-2.1.0.jar" "saxon-6.3.jar"
-	    "xalanj1compat.jar" "batik.jar" "fop-0.20.1.jar"
-	    "jimi-1.0.jar" "xslt.jar"))
-  "Defines the classpath to the XSLT processors thyat do the real work
+	  '("bsf.jar" "xerces-1.2.3.jar" "xalan-2.1.0.jar" "saxon-6.5.2.jar"
+	    "xalanj1compat.jar" "batik.jar" "fop-0.20.3.jar"
+	    "logkit-1.0.jar" "avalon-framework-4.0.jar" "xslt.jar"))
+  "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
 
