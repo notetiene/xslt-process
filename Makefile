@@ -1,21 +1,11 @@
 VERSION = $(shell grep '@set'  doc/xslt-process.texi | grep version | awk '{print $$NF}')
 
-JAR = xslt.jar
-
 all: jar doc elc
 
 .PHONY: doc
 
-JAVA = $(shell find java/xslt/debugger -name '*.java' -type f -print)
-CLASSES = $(JAVA:.java=.class)
-
-jar: java/$(JAR)
-
-java/$(JAR): $(CLASSES)
-	jar cf java/$(JAR) $(CLASSES)
-
-$(CLASSES): $(JAVA)
-	javac -classpath `pwd`/java:$$CLASSPATH $(JAVA)
+jar:
+	(cd java; make)
 
 doc:
 	(cd doc; make)
