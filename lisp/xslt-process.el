@@ -46,7 +46,7 @@
 (require 'cl)
 (require 'browse-url)
 (require 'easymenu)
-;(require 'setnu)
+(require 'string)
 (require 'xslt-speedbar)
 
 (if (featurep 'xemacs)
@@ -68,6 +68,17 @@ modified value to the result of this function."
       (loop for elem across seq do
 	    (setq result (append result (list (apply function (list elem))))))
       (vconcat result))))
+
+(if (eq system-type 'windows-nt)
+    (defun urlize (filename)
+      "Replace a series of \\\\ with a single /, so that the file
+names conform to the URI definition."
+      (if (null filename) filename
+	(let ((new (string-replace-match "\\\\" filename "/" t t)))
+	  (if new new filename))))
+  (defun urlize (filename)
+    "On Unix systems the file names already conform to the URI definition."
+    filename))
 
 (defun xslt-process-make-glyph (glyph)
   "GNU Emacs compatibility function for the make-glyph function of XEmacs."
@@ -389,7 +400,9 @@ job.")
 
 (defvar xslt-process-external-java-libraries
   (mapcar (lambda (f)
-	    (concat (xslt-process-find-xslt-directory) "java/" f))
+	    (let ((dir-separator (if (eq system-type 'windows-nt) "\\" "/")))
+	      (concat (xslt-process-find-xslt-directory)
+		      "java" dir-separator f)))
 	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
 	    "xalanj1compat.jar" "xerces.jar" ""))
   "Defines the classpath to the XSLT processors that do the real work
@@ -672,7 +685,7 @@ This essentially makes the buffer read-only and binds various keys to
 different actions for faster operations."
   (interactive "P")
   (block nil
-    (let ((filename (file-truename (buffer-file-name))))
+    (let ((filename (urlize (file-truename (buffer-file-name)))))
       (if (or (and arg (> (prefix-numeric-value arg) 0))
 	      (not xslt-process-debug-mode))
 	  (progn
@@ -817,7 +830,7 @@ ACTION is non-nil, it is set as the new value."
 (defun xslt-process-new-breakpoint-here ()
   "Returns a breakpoint object at filename and line number of the
 current buffer or nil otherwise. By default the breakpoint is enabled."
-  (let ((filename (file-truename (buffer-file-name)))
+  (let ((filename (urlize (file-truename (buffer-file-name))))
 	(line (save-excursion (progn (end-of-line) (count-lines 1 (point))))))
     (cons filename line)))
 
@@ -926,12 +939,12 @@ either a normal, no debug, XSLT processing, or a debugging session."
     (let ((proc-type (if no-debug "processor" "debugger"))
 	  (command (if no-debug "run" "debug")))
       (if (not (eq xslt-process-process-state 'not-running))
-	  (if (yes-or-no-p-maybe-dialog-box
+	  (if (yes-or-no-p
 	       (format "The XSLT %s is already running, restart it? "
 		       proc-type))
 	      (xslt-process-do-quit t)
 	    (return)))
-      (let ((filename (buffer-file-name)))
+      (let ((filename (urlize (buffer-file-name))))
 	;; Prepare the buffers
 	(save-some-buffers)
 	;; Set the XSLT processor to be used
@@ -964,7 +977,7 @@ either a normal, no debug, XSLT processing, or a debugging session."
       (progn
 	(setq xslt-process-process-state 'running)
 	(xslt-process-send-command "s"))
-    (message "XSLT debugger is not running.")))
+    (message "Will not queue command while debugger is running.")))
 
 (defun xslt-process-do-next ()
   "*Send a NEXT command to the XSLT debugger."
@@ -973,7 +986,7 @@ either a normal, no debug, XSLT processing, or a debugging session."
       (progn
 	(setq xslt-process-process-state 'running)
 	(xslt-process-send-command "n"))
-    (message "XSLT debugger is not running.")))
+    (message "Will not queue command while debugger is running.")))
 
 (defun xslt-process-do-finish ()
   "*Send a FINISH command to the XSLT debugger."
@@ -982,7 +995,7 @@ either a normal, no debug, XSLT processing, or a debugging session."
       (progn
 	(setq xslt-process-process-state 'running)
 	(xslt-process-send-command "f"))
-    (message "XSLT debugger is not running.")))
+    (message "Will not queue command while debugger is running.")))
 
 (defun xslt-process-do-continue ()
   "*Send a CONTINUE command to the XSLT debugger."
@@ -991,7 +1004,7 @@ either a normal, no debug, XSLT processing, or a debugging session."
       (progn
 	(setq xslt-process-process-state 'running)
 	(xslt-process-send-command "c"))
-    (message "XSLT debugger is not running.")))
+    (message "Will not queue command while debugger is running.")))
 
 (defun xslt-process-do-stop ()
   "*Send a STOP command to the XSLT debugger, potentially stopping the
@@ -1005,14 +1018,14 @@ debugger from a long processing with no breakpoints setup."
   (interactive)
   (if xslt-process-comint-buffer
       (if (or dont-ask
-	      (yes-or-no-p-maybe-dialog-box "Really quit the XSLT debugger? "))
+	      (yes-or-no-p "Really quit the XSLT debugger? "))
 	  (progn
 	    (xslt-process-send-command "q" t)
 	    (kill-buffer xslt-process-comint-buffer)
 	    ;; Delete maybe the breakpoints?
 	    (if (and (not dont-ask)
 		      (> (hash-table-count xslt-process-breakpoints) 0)
-		     (yes-or-no-p-maybe-dialog-box "Delete all breakpoints? "))
+		     (yes-or-no-p "Delete all breakpoints? "))
 		(progn
 		  (xslt-process-change-breakpoints-highlighting nil)
 		  (cl-clrhash xslt-process-breakpoints)
@@ -1179,7 +1192,7 @@ needed. The user can change the XSLT processor either through
 customization or by explicitly setting up the `processor' local
 variable in the XML buffer."
   (let ((filename (if (buffer-file-name)
-		      (expand-file-name (buffer-file-name))
+		      (urlize (expand-file-name (buffer-file-name)))
 		    (error "No filename associated with this buffer.")))
 	;; Set the name of the XSLT processor. This is either specified
 	;; in the local variables of the file or is the default one.
@@ -1275,9 +1288,9 @@ debugger. It filters out all the Emacs commands and sends the rest of
 the output to the XSLT process buffer."
   (while (and string (not (equal string "")))
 ;    (message "String is now '%s'" string)
-    (let* ((l-start (string-match "<<" string))
+    (let* ((l-start (string-match "\\^" string))
 	   (l-end (if l-start (match-end 0) nil))
-	   (g-start (string-match ">>" string))
+	   (g-start (string-match "$$" string))
 	   (g-end (if g-start (match-end 0) nil)))
       (cond ((and l-start (null g-start))
 	     ;; We have the start of a command which doesn't end in
@@ -1530,13 +1543,16 @@ don't want to use `get-file-buffer' because it doesn't follow links.
 
 If the buffer does not exists, open the file in a new buffer and
 return the buffer."
-  (let ((true-filename (file-truename filename))
+  (let ((true-filename (urlize (file-truename filename)))
 	(buffers-list (buffer-list))
 	(found nil))
     (while (and (not found) buffers-list)
       (let* ((buffer (car buffers-list))
-	     (filename (buffer-file-name buffer)))
-	(if (equal true-filename (if filename (file-truename filename) nil))
+	     (filename (urlize (buffer-file-name buffer))))
+	(if (equal true-filename
+		   (if filename
+		       (urlize (file-truename filename))
+		     nil))
 	    (setq found buffer)
 	  (setq buffers-list (cdr buffers-list)))))
     ;; Return the buffer if found, otherwise open the file and return it
