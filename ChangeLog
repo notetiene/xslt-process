@@ -1,3 +1,14 @@
+2001-06-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added support for running the XSLT
+	processor while being in an XSLT buffer.
+
+	* doc/xslt-process.texi.in: Added blurb in the HTML section about
+	downloading the PDF and PS documents. Removed the SF logo from the
+	generated HTML. Updated email and URL pointers.
+
+	* doc/Makefile: Don't generate frames for HTML.
+
 2001-06-17  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java/xslt/debugger/cmdline/Controller.java: The command line now
