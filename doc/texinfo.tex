@@ -3,7 +3,7 @@
 % Load plain if necessary, i.e., if running under initex.
 \expandafter\ifx\csname fmtname\endcsname\relax\input plain\fi
 %
-\def\texinfoversion{1999-09-25.10}
+\def\texinfoversion{2001-06-11.01}
 %
 % Copyright (C) 1985, 86, 88, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99
 % Free Software Foundation, Inc.
@@ -5637,7 +5637,7 @@ width0pt\relax} \fi
         % above and below. 
         \nobreak\vskip\parskip
         \nobreak
-        \centerline{\epsfbox{#1.eps}}%
+        \epsfbox{#1.eps}%
         \bigbreak
       \else
         % In the middle of a paragraph, no extra space.
@@ -5989,4 +5989,5 @@ should work if nowhere else does.}
 @c time-stamp-start: "def\\\\texinfoversion{"
 @c time-stamp-format: "%:y-%02m-%02d.%02H"
 @c time-stamp-end: "}"
+@c TeX-master: t
 @c End:
