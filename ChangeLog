@@ -1,3 +1,24 @@
+2001-06-01  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* tests/test5.xml: Reference the test5.xsl instead of test.xsl,
+	which doesn't exist.
+
+	* lisp/xslt-process.el: Added the ability to view the results of
+	XSLT processing in a Web browser.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Set the output
+	stream to the controller rather than the manager.
+
+	* java/xslt/debugger/cmdline/Controller.java: Added the ability to
+	direct the results of XSLT processing to a file.
+
+	* java/xslt/debugger/Manager.java: Added new instance variable
+	closeOnFinish. Implement processorFinished method to close the
+	output stream if closeOnFinish is true.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Invoke the
+	Manager's processorFinished method.
+
 2001-05-31  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* Added generic description based on the documentation.
