@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <August 19, 2001 03:51:11 ovidiu>
+;; Time-stamp: <August 19, 2001 16:39:15 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -53,6 +53,9 @@
 (require 'easymenu)
 (require 'string)
 (require 'widget)
+
+(defconst xslt-process-version "2.1"
+  "The version of the XSLT-process mode.")
 
 (eval-and-compile
   (require 'wid-edit)
@@ -129,9 +132,6 @@ names conform to the URI definition."
   (if (featurep 'xemacs)
       (make-glyph glyph)
     glyph))
-
-(defconst xslt-process-version "2.0"
-  "The version of the XSLT-process mode.")
 
 (defconst xslt-process-home-web-site "http://xslt-process.sourceforge.net/"
   "XSLT-process' home on the Web.")
@@ -824,6 +824,11 @@ hook functions should take no argument.")
 	       :active t]
 	      ["Browser"
 	       (customize-variable 'browse-url-browser-function)
+	       :active t]
+	      ["PDF Viewer"
+	       (customize-variable 'xslt-process-pdf-viewer)
+	       :active t]
+	      ["DocBook location" xslt-process-install-docbook
 	       :active t])
 	(list "Help"
 	      (concat "XSLT-process " xslt-process-version)

@@ -1,5 +1,7 @@
 2001-08-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* doc/xslt-process.texi.in: Added info on generating PDF.
+
 	* doc/xslt-process.texi.in: Added line of code for making public
 	the xslt-process-install-docbook.
 
