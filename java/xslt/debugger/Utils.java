@@ -77,16 +77,16 @@ public class Utils
       char ch = message.charAt(i);
       switch (ch) {
       case '\\':
-        escaped.append("\\\\");
+        escaped.append("\\\\\\\\");
         break;
       case '"':
-        escaped.append("\\d");
+        escaped.append("\\\\d");
         break;
       case '^':
-        escaped.append("\\b");
+        escaped.append("\\\\b");
         break;
       case '$':
-        escaped.append("\\e");
+        escaped.append("\\\\e");
         break;
       default:
         escaped.append(ch);
