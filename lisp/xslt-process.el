@@ -211,7 +211,7 @@ directory structure looks a little different."
   :type '(list
 	  (radio-button-choice
 	   (const :tag "Saxon 6.5.2" Saxon)
-	   (const :tag "Xalan 2.3.1" Xalan))))
+	   (const :tag "Xalan 2.4.D1" Xalan))))
 
 (defcustom xslt-process-fop-log-level (list 'info)
   "*The logging level used when running FOP."
@@ -604,9 +604,8 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "xercesImpl-2.0.1.jar" "xalan-2.3.1.jar" "saxon-6.5.2.jar"
-	    "xalanj1compat.jar" "batik.jar" "fop.jar"
-	    "avalon-framework-cvs-20020315.jar" "xslt.jar"))
+	  '("saxon-6.5.2.jar" "bsf.jar" "xercesImpl-2.0.1.jar" "xalan-2.4.D1.jar"
+	    "batik.jar" "fop.jar" "avalon-framework-cvs-20020315.jar" "xslt.jar"))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
@@ -1853,10 +1852,10 @@ action. When the processing completes, the
 	(insert message)
 	(display-buffer buffer)))))
 
-(defun xslt-process-debugger-stopped-at (filename line column info)
+(defun xslt-process-debugger-stopped-at (filename line column count info)
   "Function called by the XSLT debugger process each time the debugger
 hits a breakpoint that causes it to stop."
-  (message "Stopped at %s %s" filename line)
+  (message "Stopped at %s %s: %s" filename line count)
   (setq xslt-process-process-state 'stopped)
   ;; Unselect the previous selected line
   (xslt-process-unhighlight-last-selected-line)
