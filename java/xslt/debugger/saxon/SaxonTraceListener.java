@@ -4,6 +4,22 @@
     Author: Ovidiu Predescu <ovidiu@cup.hp.com>
     Date: March  6, 2001
 
+    Copyright (C) 2001 Ovidiu Predescu
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License as
+    published by the Free Software Foundation; either version 2 of the
+    License, or (at your option) any later version.
+   
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    General Public License for more details.
+   
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+    02111-1307, USA.
  */
 
 package xslt.debugger.saxon;
@@ -20,9 +36,10 @@ import com.icl.saxon.trace.TraceListener;
 import java.util.Stack;
 import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
+import xslt.debugger.Observer;
 import xslt.debugger.SourceFrame;
 import xslt.debugger.StyleFrame;
-import xslt.debugger.Observer;
+import java.util.ArrayList;
 
 public class SaxonTraceListener implements TraceListener
 {
@@ -38,9 +55,6 @@ public class SaxonTraceListener implements TraceListener
   SourceFrame sourceFrameToStop = null;
   StyleFrame styleFrameToStop = null;
 
-  Stack styleFrames = null;
-  Stack sourceFrames = null;
-  
   public SaxonTraceListener (XSLTDebugger debugger)
   {
     this.debugger = debugger;
@@ -57,26 +71,7 @@ public class SaxonTraceListener implements TraceListener
     int line = element.getLineNumber();
     int column = element.getColumnNumber();
 
-    // Check the source frame stack and the style frame stack for
-    // modifications
-    Observer observer = manager.getObserver();
-
-    Stack newSourceFrames = manager.getSourceFrames();
-    
-    if ((sourceFrames == null && newSourceFrames != null)
-        || !sourceFrames.equals(newSourceFrames)) {
-      sourceFrames = (Stack)newSourceFrames.clone();
-      observer.sourceStackChanged();
-    }
-
-    Stack newStyleFrames = manager.getStyleFrames();
-    if ((styleFrames == null && newStyleFrames != null)
-        || !styleFrames.equals(newStyleFrames)) {
-      styleFrames = (Stack)newStyleFrames.clone();
-      observer.styleStackChanged();
-    }
-
-    debugger.debuggerStopped(filename, line, column, message);
+    manager.debuggerStopped(filename, line, column, message);
     currentFilename = filename;
     currentLine = line;
     currentColumn = column;
@@ -232,8 +227,6 @@ public class SaxonTraceListener implements TraceListener
     currentColumn = -1;
     sourceFrameToStop = null;
     styleFrameToStop = null;
-    styleFrames = null;
-    sourceFrames = null;
   }
 
   /**
