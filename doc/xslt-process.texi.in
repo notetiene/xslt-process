@@ -96,6 +96,7 @@ The XSLT debugger
 * Entering the debug mode::     
 * Breakpoints::                 
 * Controlling the debugger::    
+* The speedbar::                
 
 @end detailmenu
 @end menu
@@ -357,6 +358,10 @@ C-x n}. The Web browser used could be customized as described in
 key bindings described above, you can also customize them as described
 in the same chapter.
 
+If you choose to view the results in a buffer, they will be shown in the
+@code{*xslt results*} buffer. If any message are generated during the
+XSLT processing, they are show separately in the @code{*xslt messages*}.
+
 @c =========================================================================
 @node  Dealing with errors, Associating an XSLT stylesheet with an XML document, Viewing the results of the XSLT processing, Running the XSLT processor
 @comment  node-name,  next,  previous,  up
@@ -477,6 +482,7 @@ DTM tree model.
 * Entering the debug mode::     
 * Breakpoints::                 
 * Controlling the debugger::    
+* The speedbar::                
 @end menu
 
 @c =========================================================================
@@ -566,6 +572,9 @@ there is no breakpoint.
 
 @end itemize
 
+The enabled and disabled breakpoints are shown with distinctive colors,
+so you can easily identify them.
+
 You can setup breakpoints both in the source XML document, and in the
 XSLT stylesheet program. Note however that the semantic of a breakpoint
 in the source document is very different from a breakpoint in the XSLT
@@ -578,7 +587,7 @@ at a breakpoint means that the execution of the program reached the
 instruction at that line.
 
 @c =========================================================================
-@node  Controlling the debugger,  , Breakpoints, The XSLT debugger
+@node  Controlling the debugger, The speedbar, Breakpoints, The XSLT debugger
 @comment  node-name,  next,  previous,  up
 @section Controlling the debugger
 
@@ -652,13 +661,128 @@ to setup the appropriate breakpoints.
 @image{xsltd-stopped}
 @end ifnotinfo
 
-The XSLT processing happens in a separate process from Emacs, so you can
-still do useful work if the XSLT processing takes a long time.
+@c =========================================================================
+@node  The speedbar,  , Controlling the debugger, The XSLT debugger
+@comment  node-name,  next,  previous,  up
+@section The speedbar
+
+The speedbar is a separate Emacs window that allows you to:
+
+@itemize @bullet
+
+@item
+View the breakpoints that you've set. The enabled and disabled
+breakpoints are shown with distinctive colors, so you can easily
+identify them.
+
+Clicking on a breakpoint entry in the speedbar will move the point to
+the file and line where the breakpoint is set. If the file is not
+currently opened within Emacs, it will open and shown in a buffer.
+
+@item
+View the stack of source elements that have been selected during the
+processing.
+
+Whenever you click with the middle button on such a entry, the point is
+positioned in the file and line where the source element starts.
+
+@item
+View the stack of XSLT elements that are currently being executed. Each
+element that has been entered, but not yet exited is being shown in the
+speedbar.
+
+Clicking with the middle button on such a node will position the point
+in the file at line where the element starts.
+
+@item
+View the local and global variables declared with @code{xsl:variable} or
+@code{xsl:param}.
+
+Each entry for a variable has a little icon showing the type of the
+variable, its name and value. If images are not supported by your Emacs
+(GNU Emacs 20.x and lower), a text indication of the type is shown
+instead. Below are all the possible XSLT types and how they are
+displayed by speedbar:
+
+@itemize @bullet
+
+@item
+@ifnotinfo
+@image{boolean}
+@end ifnotinfo
+@code{boolean} - The text representation of an XSLT boolean is @code{@{b@}}.
+
+@item
+@ifnotinfo
+@image{number}
+@end ifnotinfo
+@code{number} - The text representation of an XSLT number is @code{@{n@}}.
+
+@item
+@ifnotinfo
+@image{string}
+@end ifnotinfo
+@code{string} - The text representation of an XSLT string is @code{@{s@}}.
+
+@item
+@ifnotinfo
+@image{tree}
+@end ifnotinfo
+@code{nodeset} or @code{document fragment} - The text representation of this type is @code{@{t@}}.
+
+@item
+@ifnotinfo
+@image{object}
+@end ifnotinfo
+@code{object} - The text representation of Java object is @code{@{o@}}.
+
+@item
+@ifnotinfo
+@image{type}
+@end ifnotinfo
+@code{any} - This is an unknown XSLT type; its text representation is @code{@{a@}}.
+
+@end itemize
+
+@end itemize
+
+@ifnotinfo
+Here is a picture of the speedbar in the @emph{XSLT-process} mode:
+
+@c @sp 1
+@image{speedbar}
+@end ifnotinfo
+
 
 @c =========================================================================
 @node  Customizing the XSLT-process mode, Known problems and limitations, The XSLT debugger, top
 @comment  node-name,  next,  previous,  up
 @chapter Customizing the @emph{XSLT-process} mode
+
+You can customize the @emph{XSLT-process} mode in a number of
+ways. There are several groups of customizations you can do:
+
+@itemize @bullet
+
+@item
+Customize the environment for the Java process that's running the XSLT
+processor.
+
+@item
+Customize the faces (the fonts) used when displaying the breakpoints,
+the current line etc.
+
+@item
+Customize the key bindings used for invoking the processor and for the
+debugger.
+
+@end itemize
+
+You can find all the above customization options under the main menu, in
+``XSLT'' @result{} ``Customize''. Alternatively, you can run @code{M-x
+customize-group RET xslt-process} to get to the main customization page
+for @emph{XSLT-process}.
+
 
 @c =========================================================================
 @node  Known problems and limitations, Future enhancements, Customizing the XSLT-process mode, top
@@ -804,11 +928,11 @@ This is the list of changes since the 1.1 release.
 @itemize @bullet
 
 @item
-Added support for the TrAX interface, thanks to
-@email{a.erskine@@cs.ucl.ac.uk, Allan Erskine}. Currently Saxon
-6.2 and Xalan2 have been tested. The TrAX interface caches the XSLT
-stylesheets in the processor driver in a compiled form, so the speed of
-the processing is increased.
+Added support for the TrAX interface, part of the JAXP API, thanks to
+@email{a.erskine@@cs.ucl.ac.uk, Allan Erskine}. Currently Saxon 6.2 and
+Xalan2 have been tested. The TrAX interface caches the XSLT stylesheets
+in the processor driver in a compiled form, so the speed of the
+processing is increased.
 
 @item
 The mode is now running with GNU Emacs on Windows NT/2000, thanks to
