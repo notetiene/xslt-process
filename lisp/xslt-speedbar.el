@@ -466,7 +466,6 @@ inserting in the speedbar."
 	    (type (aref variable 1))
 	    (value (aref variable 2))
 	    (item (xslt-process-speedbar-item type)))
-       (message "name %s, type %s, value %s" name type value)
        (speedbar-make-tag-line
 	   (car item) (cadr item)
 	   nil
