@@ -45,16 +45,6 @@ public class XSLTDebugger extends AbstractXSLTDebugger
     if (tFactory == null)
       tFactory = new com.icl.saxon.TransformerFactoryImpl();
 
-    if (forDebug) {
-      TraceListener traceListener = new SaxonTraceListener(this);
-      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
-      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
-    }
-    else {
-      tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, null);
-      tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.FALSE);
-    }
-
     return tFactory;
   }
   
@@ -74,6 +64,13 @@ public class XSLTDebugger extends AbstractXSLTDebugger
       emitter.setWriter(new PrintWriter(manager.getMessageStream()));
       emitter.setOutputStream(manager.getMessageStream());
       ((Controller)transformer).setMessageEmitter(emitter);
+    }
+
+    if (forDebug) {
+      Controller controller = (Controller)transformer;
+      TraceListener traceListener = new SaxonTraceListener(this);
+      controller.setTraceListener(traceListener);
+      controller.setLineNumbering(true);
     }
   }
 
