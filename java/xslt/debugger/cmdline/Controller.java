@@ -50,6 +50,7 @@ public class Controller
   static final String enableBreakpointUsage
     = "Usage: ena (<breakpoint number> | filename lineno)";
   static final String debugUsage = "Usage: debug filename";
+  static final String runUsage = "Usage: run filename";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
   static final String printLocalVariableUsage = "Usage: pl <name>";
@@ -78,6 +79,7 @@ public class Controller
     commands.put("ena", getMethod("enableBreakpoint"));
     commands.put("lb", getMethod("listBreakpoints"));
     commands.put("debug", getMethod("debugXSLTProcessor"));
+    commands.put("run", getMethod("runXSLTProcessor"));
     commands.put("s", getMethod("doStep"));
     commands.put("n", getMethod("doNext"));
     commands.put("c", getMethod("continueProcessing"));
@@ -114,6 +116,7 @@ public class Controller
                        + "ena\t enable breakpoint\n"
                        + "lb\t list breakpoints\n"
                        + "debug\t run the XSLT debugger\n"
+                       + "run\t run the XSLT processor without debugging\n"
                        + "s\t step\n"
                        + "n\t next\n"
                        + "c\t continue\n"
@@ -126,6 +129,8 @@ public class Controller
                        + "sbt\t show source stack frames\n"
                        + "xbt\t show XSLT stack frames\n"
                        + "stop\t stop (useful with long processings)\n"
+                       + "set\t set parameters (see help set)\n"
+                       + "show\t show the values of settable parameters\n"
                        + "q\t quit\n");
   }
 
@@ -138,8 +143,10 @@ public class Controller
       String arg = (String)args[i];
       if (arg.equals("-emacs"))
         useEmacs = true;
-      else if (arg.equals("-saxon"))
+      else if (arg.equalsIgnoreCase("-saxon"))
         processor = "Saxon";
+      else if (arg.equalsIgnoreCase("-xalan"))
+        processor = "Xalan";
     }
 
     Controller controller = new Controller();
@@ -409,6 +416,25 @@ public class Controller
     manager.startDebugger(getAbsoluteFilename((String)args.get(1)));
   }
 
+  public void runXSLTProcessor(Vector args)
+    throws IOException, InterruptedException
+  {
+    if (args.size() != 2) {
+      System.out.println(runUsage);
+      return;
+    }
+    
+    if (debugger.isStarted()) {
+      System.out.print("XSLT processor already running, aborting.");
+      debugger.stopProcessing();
+    }
+    String currentProcessorName = (String)parameters.get("processor");
+    if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
+      createXSLTDebugger();
+
+    manager.startProcessor(getAbsoluteFilename((String)args.get(1)));
+  }
+  
   public void doStep(Vector args)
   {
     // Clear the current source and style frames
