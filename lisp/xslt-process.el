@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April  2, 2001 17:36:47 ovidiu>
+;; Time-stamp: <April  3, 2001 11:36:34 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -45,6 +45,7 @@
 
 (require 'jde)
 (require 'cl)
+(require 'xslt-speedbar)
 
 ;; From "custom" web page at http://www.dina.dk/~abraham/custom/
 (eval-and-compile
@@ -1068,34 +1069,5 @@ don't want to use get-file-buffer because it doesn't follow links."
 	    (setq found buffer)
 	  (setq buffers-list (cdr buffers-list)))))
     found))
-
-
-;;;; Speedbar support
-(speedbar-add-supported-extension ".xml")
-(speedbar-add-supported-extension ".xsl")
-
-(require 'speedbar)
-
-(or (boundp 'speedbar-dynamic-tags-function-list)
-    (error "Speedbar 0.11 or newer is required to use sb-texinfo."))
-
-;; Attach these new functions to handle XSLT-process mode.
-(add-to-list 'speedbar-dynamic-tags-function-list
-	     '(xslt-process-fetch-dynamic . xslt-process-insert-list))
-
-(defun xslt-process-fetch-dynamic (filename)
-  (message "xslt-process-fetch-dynamic invoked on %s" filename)
-  (let ((buffer (get-file-buffer filename)))
-    (save-excursion
-      (set-buffer buffer)
-      (message "set buffer %s, xslt-process %s" buffer xslt-process-mode)
-      (if (not xslt-process-debug-mode)
-	  t
-	(list '("el 1" . 10) '("el 2" . 20))))))
-
-(defun xslt-process-insert-list (indent list)
-  (speedbar-insert-generic-list indent list
-				'speedbar-tag-expand
-				'speedbar-tag-find))
 
 (provide 'xslt-process)
