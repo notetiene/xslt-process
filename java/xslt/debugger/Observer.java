@@ -4,10 +4,34 @@
     Author: Ovidiu Predescu <ovidiu@cup.hp.com>
     Date: March  6, 2001
 
+    Copyright (C) 2001 Ovidiu Predescu
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License as
+    published by the Free Software Foundation; either version 2 of the
+    License, or (at your option) any later version.
+   
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    General Public License for more details.
+   
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+    02111-1307, USA.
  */
 
 package xslt.debugger;
+import java.util.ArrayList;
 
+/**
+ * An <code>Observer</code> could be registered with the
+ * <code>Manager</code> to be notified of important changes in the
+ * state of the debugger.
+ *
+ * @author <a href="mailto:ovidiu@cup.hp.com">Ovidiu Predescu</a>
+ */
 public interface Observer
 {
   /**
@@ -89,6 +113,26 @@ public interface Observer
    * of the XSLT processor.
    */
   public void styleStackChanged();
+
+  /**
+   * <code>stackFramesChanged</code> is called when either the source
+   * frame or the style frame changes.
+   *
+   * @param sourceFrameNo an <code>int</code> value, the index in the
+   * source frame stack
+   * @param styleFrameNo an <code>int</code> value, the index in the
+   * style frame stack
+   */
+  public void stackFramesChanged(int sourceFrameNo, int styleFrameNo);
+
+  /**
+   * Called to inform that the local variables in the last XSLT
+   * template have changed.
+   *
+   * @param localVariables an <code>ArrayList</code> containing a list
+   * of {@link Variable} instances.
+   */
+  public void localVariablesChanged(ArrayList localVariables);
 
   /**
    * Notifies that the XSLT processing has just finished.
