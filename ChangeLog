@@ -1,3 +1,51 @@
+2001-06-11  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Removed debug
+	println calls.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java
+	(processErrorMessage): Check for a null message.
+
+	* lisp/xslt-process.el: Added support for determining whether any
+	output has been generated during the processing; print a
+	descriptive message if nothing is generated to the output. Always
+	show the error buffer in case of errors.
+
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Define
+	getSAXParserErrorHandler to return a customized error handler.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Define
+	getSAXParserErrorHandler to return a customized error handler.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Tell Emacs both
+	when we start the XSLT processing and when we finish it.
+
+	* java/xslt/debugger/TrAXErrorListener.java: Modified the
+	signature of reportError to allow for the exception to be
+	returned. Subclass this class for particular XSLT processors and
+	throw an exception if this is needed.
+	* java/xslt/debugger/SAXParserErrorHandler.java: Likewise.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Added
+	getSAXParserErrorHandler and getTrAXErrorListener methods to allow
+	for customizatin of error reporting. Set the error listeners using
+	the objects returned by these methods.
+	
+	Set an error listener on the Transformer object to handle
+	Xalan. Create a new source for the associated stylesheet, to avoid
+	not having an XML reader. This seems to have fixed the Xalan
+	problem with the incorrect error reporting of an invalid
+	xml-stylesheet in the XSLT file.
+
+	* java/xslt/debugger/xalan/XalanSAXParserErrorHandler.java:
+	Added. Throw exception when reportError is invoked.
+	* java/xslt/debugger/saxon/SaxonSAXParserErrorHandler.java:
+	Likewise.
+
+	* tests/test5.xsl: Use the value of variable date.
+
+	* tests/test2.xsl: Changed the text content of the variable a1.
+
 2001-06-07  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* etc/Makefile: Created.
