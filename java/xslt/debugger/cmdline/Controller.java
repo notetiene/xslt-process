@@ -26,7 +26,6 @@ import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Breakpoint;
 import xslt.debugger.Manager;
 import xslt.debugger.Observer;
-import xslt.debugger.Observer;
 import xslt.debugger.SourceFrame;
 import xslt.debugger.StyleFrame;
 import xslt.debugger.Type;
@@ -63,7 +62,7 @@ public class Controller
   int currentStyleFrame = -1;
   Observer observer = null;
 
-  public Controller(String processorName, Observer observer)
+  public Controller(String processorName)
   {
     commands.put("h", getMethod("help"));
     commands.put("help", getMethod("help"));
@@ -86,8 +85,6 @@ public class Controller
     commands.put("xbt", getMethod("showStyleFrames"));
     commands.put("stop", getMethod("stopXSLTProcessing"));
     commands.put("q", getMethod("quit"));
-    this.observer = observer;
-    manager.setObserver(this.observer);
     manager.setXSLTProcessorType(processorName);
     debugger = manager.getDebugger();
   }
@@ -129,13 +126,16 @@ public class Controller
         processor = "Saxon";
     }
 
+    Controller controller = new Controller(processor);
+
     Observer observer = null;
     if (useEmacs)
-      observer = new EmacsObserver();
+      observer = new EmacsObserver(controller);
     else
-      observer = new CmdLineObserver();
-    
-    Controller controller = new Controller(processor, observer);
+      observer = new CmdLineObserver(controller);
+
+    controller.setObserver(observer);
+    observer.debuggerProcessStarted();
     controller.mainLoop();
   }
 
@@ -739,5 +739,11 @@ public class Controller
                            + method.getName() + "': " + e);
       }
     }
+  }
+
+  public void setObserver(Observer observer)
+  {
+    this.observer = observer;
+    manager.setObserver(this.observer);
   }
 }
