@@ -63,6 +63,12 @@ public class SaxonValue extends xslt.debugger.Value
         StaticContext staticContext = context.getStaticContext();
         Bindery bindery = context.getBindery();
 
+        if (staticContext == null) {
+          value = "";
+          type = new Type(Type.ANY);
+          return;
+        }
+        
         int fprint = staticContext.makeNameCode(variable.getName(), false);
 //         System.out.println("fingerprint for name " + variable.getName()
 //                            + " is " + fprint);
@@ -79,7 +85,6 @@ public class SaxonValue extends xslt.debugger.Value
             type = new SaxonType(v.getDataType());
           }
         }
-        System.out.println("");
       }
     }
     catch (XPathException e) {
