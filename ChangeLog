@@ -1,8 +1,17 @@
 2001-04-02  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Print the
+	entering and exiting messages followed by a colon to be able to
+	match them in Emacs.
+
 	* lisp/xslt-process.el: Create a TCP/IP connection to the XSLT
 	debugger process to get the results of the processing separate
 	from stdin. Now the XSLT results go in a separate buffer.
+
+	Line indicators to show whether the debugger is entering in or
+	exiting from an element. Fixed (most of) the problems when
+	toggling back and forth in debug mode and in the xslt-process
+	mode.
 
 	* java/xslt/debugger/cmdline/EmacsObserver.java: Added the support
 	code for creating the server socket and passing it to the Emacs
