@@ -1,5 +1,6 @@
 TEXI = xslt-process.texi
-IMAGES = xslt-process-mode.png
+IMAGES = xslt-mode.png xsltd-mode.png processors.png apply-xslt.png \
+	xslt-menu.png xsltd-menu.png
 
 INFO = $(TEXI:.texi=.info)
 DVI = $(TEXI:.texi=.dvi)
@@ -7,10 +8,12 @@ PS = $(TEXI:.texi=.ps)
 PDF = $(TEXI:.texi=.pdf)
 PDFIMAGES = $(IMAGES:.png=.pdf)
 EPSIMAGES = $(IMAGES:.png=.eps)
-JPGIMAGES = $(IMAGES:.png=.jpg)
+#JPGIMAGES = $(IMAGES:.png=.jpg)
 HTML = $(TEXI:.texi=.html)
 
-.SUFFIXES: .texi .png .info .dvi .ps .pdf .eps .jpg .html
+DEPEND = sizes.sed xslt-process.texi version.texi
+
+.SUFFIXES: .in .texi .png .info .dvi .ps .pdf .eps .jpg .html
 
 .texi.info:
 	makeinfo $<
@@ -28,16 +31,33 @@ HTML = $(TEXI:.texi=.html)
 .texi.pdf:
 	texi2pdf $<
 
-all: version.texi info dvi ps pdf html
+all: info dvi ps pdf html
+
+info: $(DEPEND) $(INFO)
+dvi: $(DEPEND) $(EPSIMAGES) $(DVI)
+ps: $(DEPEND) $(EPSIMAGES) $(PS)
+pdf: $(DEPEND) $(PDFIMAGES) $(PDF)
+html: $(DEPEND) $(HTML)
 
 version.texi:
 	(cd ..; make doc/version.texi)
 
-info: $(INFO)
-dvi: $(EPSIMAGES) $(DVI)
-ps: $(EPSIMAGES) $(PS)
-pdf: $(PDFIMAGES) $(PDF)
-html: $(JPGIMAGES) $(HTML)
+# Generate a texinfo file containing width definitions for the
+# images. This is used by main texinfo file when including the image
+# files to resize them. The scale is defined below
+sizes.sed: $(IMAGES)
+	(scale=0.75; \
+	 for f in $(IMAGES); do \
+	  width=`identify $$f | awk '{print $$2}' | awk -F x '{print $$1}'`; \
+	  height=`identify $$f | awk '{print $$2}' | awk -F x '{print $$2}'`; \
+	  scalew=`echo $$scale '*' $$width | bc | awk '{printf "%d", $$0}'`; \
+	  scaleh=`echo $$scale '*' $$height | bc | awk '{printf "%d", $$0}'`; \
+	  var=`echo $$f | sed 's/.png//g'`; \
+	  echo "s/@image{$$var}/@image{$$var,$${scalew}pt,$${scaleh}pt}/g"; \
+	 done) > $@
+
+xslt-process.texi: xslt-process.texi.in sizes.sed
+	sed -f sizes.sed xslt-process.texi.in > $@
 
 .png.pdf:
 	@(size=`identify $< | awk '{print $$2}'`; \
@@ -61,7 +81,7 @@ homepage: html
 
 clean:
 	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr version.texi \
-	    $(PDFIMAGES)
+	    $(PDFIMAGES) sizes.sed xslt-process.texi *.cps
 
 distclean: clean
-	rm -f *.dvi *.html *.pdf *.ps *.eps *.jpg *.info *.cps
+	rm -f *.dvi *.html *.pdf *.ps *.jpg *.eps *.info *.info-*
