@@ -38,6 +38,7 @@ public class StyleFrame implements Cloneable
   boolean isExiting = false;
   Manager manager;
   SourceFrame sourceFrame;
+  protected boolean isTemplate = false;
   
   public StyleFrame (String name,
                      String filename,
@@ -218,5 +219,14 @@ public class StyleFrame implements Cloneable
   public boolean isExiting()
   {
     return isExiting;
+  }
+
+  /**
+   * Returns true if the style element represents an
+   * <code>xsl:template</code> element.
+   */
+  public boolean isTemplate()
+  {
+    return isTemplate;
   }
 }
