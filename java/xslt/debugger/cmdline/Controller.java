@@ -101,6 +101,7 @@ public class Controller
     commands.put("run", getMethod("runXSLTProcessor"));
     commands.put("s", getMethod("doStep"));
     commands.put("n", getMethod("doNext"));
+    commands.put("f", getMethod("doFinish"));
     commands.put("c", getMethod("continueProcessing"));
     commands.put("lv", getMethod("showLocalVariables"));
     commands.put("gv", getMethod("showGlobalVariables"));
@@ -489,6 +490,15 @@ public class Controller
     currentStyleFrame = -1;
     
     debugger.doNext();
+  }
+
+  public void doFinish(Vector args)
+  {
+    // Clear the current source and style frames
+    currentSourceFrame = -1;
+    currentStyleFrame = -1;
+    
+    debugger.doFinish();
   }
 
   public void continueProcessing (Vector args)
