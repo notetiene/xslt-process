@@ -1,3 +1,10 @@
+2002-07-20  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java,
+	java/xslt/debugger/saxon/XSLTDebugger.java,
+	lisp/xslt-process.el: Output resulting from XSLT stylesheet execution is
+	displayed during debugging and incrementally updated in an emacs window.
+
 2002-07-15  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
 	* java/avalon-framework-4.0.jar, java/avalon-framework-cvs-20020315.jar,
