@@ -1,3 +1,19 @@
+2001-03-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Start the XSLT debugger in Emacs
+	mode. Handle Emacs formatted output from the debugger. Now handles
+	step, next and continue operations in an XSLT debug mode
+	buffer. Automatically opens debugged files not present in Emacs
+	and switch them to the XSLT debug mode.
+
+	* java/xslt/debugger/cmdline/Controller.java: Allow specifying the
+	processor to be used and whether notifications should be formatted
+	for Emacs.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Prints messages
+	formatted such that they contain code that can be executed
+	directly by Emacs.
+
 2001-03-28  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Correctly display the mode
