@@ -37,6 +37,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Stack;
 import java.util.Vector;
@@ -70,8 +71,8 @@ public class Controller
     = "Usage: dis (<breakpoint number> | filename lineno)";
   static final String enableBreakpointUsage
     = "Usage: ena (<breakpoint number> | filename lineno)";
-  static final String debugUsage = "Usage: debug -xml filename [-a | -xsl filename] [-o <output filename>]";
-  static final String runUsage = "Usage: run -xml filename [-a | -xsl filename] [-o <output filename>]";
+  static final String debugUsage = "Usage: debug -xml filename [-a | -xsl filename] [-o <output filename>] [-p n params]";
+  static final String runUsage = "Usage: run -xml filename [-a | -xsl filename] [-o <output filename>] [-p n params]";
   static final String toPDFUsage = "Usage: toPDF -errorlevel -xml filename -o <output filename>";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
@@ -460,6 +461,27 @@ public class Controller
       else if (arg.equals("-a")) {
         manager.setXSLTStylesheet(null);
         i++;
+      }
+      else if (arg.equals("-p")) {
+        if (i + 1 >= size) {
+          System.out.println("Required parameter argument is missing!");
+          System.out.println(helpString);
+          return false;
+        }
+	int numberOfParams = Integer.parseInt((String)args.get(i+1));
+	if (i + 1 + numberOfParams >= size) {
+          System.out.println("Required parameter argument is missing!");
+          System.out.println(helpString);
+          return false;
+        }
+	Hashtable transformParameters = new Hashtable();
+	for (int p = 0; p < numberOfParams; p++) {
+	    String parameter = (String)args.get(i+2+p);
+	    int sep = parameter.indexOf('=');
+	    transformParameters.put(parameter.substring(0, sep), parameter.substring(sep+1));
+	}
+	manager.setTransformParameters(transformParameters);
+        i += 2 + numberOfParams;
       }
       else {
         System.out.println("Unknown argument: " + arg + "\n" + helpString);

@@ -29,6 +29,7 @@ package xslt.debugger;
 
 import java.util.Stack;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.net.URL;
@@ -153,6 +154,11 @@ public class Manager
    * The XSLT stylesheet to use to process the XML document.
    */
   String xslFilename = null;
+  
+  /**
+   * The XSLT stylesheet parameters.
+   */
+  Hashtable transformParameters  = null;
   
   /**
    * Creates a new <code>Manager</code> instance.
@@ -414,6 +420,16 @@ public class Manager
   }
 
   /**
+   * Set the XSLT transform parameters. If there are no such
+   * parameters the parameter is null.
+   * @param transformParameters a <code>Hashtable</code> value
+   */
+    public void setTransformParameters(Hashtable transformParameters)
+  {
+    this.transformParameters = transformParameters;
+  }
+
+  /**
    * <code>startXSLTProcessing</code> start a new XSLT processing. It
    * starts a new thread under the command line tool that will execute
    * the actual processing. This will run either in debug or non-debug
@@ -433,6 +449,7 @@ public class Manager
 
     debugger.setXMLFilename(xmlFilename);
     debugger.setXSLTStylesheet(xslFilename);
+    debugger.setTransformParameters(transformParameters);
     this.forDebug = forDebug;
     if (!debugger.isStarted()) {
       Thread worker = new Thread(debugger);

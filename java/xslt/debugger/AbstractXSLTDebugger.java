@@ -39,6 +39,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Enumeration;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.ErrorListener;
@@ -90,6 +92,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
   protected String xslFilename;
   protected StreamResult result;
   protected String stylesheetId;
+  protected Hashtable transformParameters = null;
 
   protected int state = NOT_RUNNING;
   protected int action = DO_NOTHING;
@@ -192,8 +195,15 @@ public abstract class AbstractXSLTDebugger implements Runnable
         transformer.setErrorListener(getTrAXErrorListener(manager));
         prepareTransformerForDebugging(transformer, manager.forDebug);
 
-        if (transformer != null)
+        if (transformer != null) {
+	  if (transformParameters != null) {
+	    for (Enumeration pnames = transformParameters.keys(); pnames.hasMoreElements();) {
+	      String name = (String)pnames.nextElement();
+	      transformer.setParameter(name, (String)transformParameters.get(name));
+	    }
+	  }
           transformer.transform(saxSource, result);
+	}
       }
     }
     catch (TransformerException ex) {
@@ -398,6 +408,11 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public void setProcessorName(String name)
   {
     this.processorName = name;
+  }
+
+  public void setTransformParameters(Hashtable transformParameters)
+  {
+    this.transformParameters = transformParameters;
   }
 
   public String getProcessorName()
