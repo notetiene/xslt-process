@@ -37,7 +37,7 @@ copyright notice remains intact and unchanged on all copies.
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 2000, 2001 Ovidiu Predescu.
-Copyright @copyright{} 2002 Tony Addyman.
+@par Copyright @copyright{} 2002 Tony Addyman.
 @par All rights reserved.
 
 @sp 1
@@ -81,13 +81,13 @@ Installation and setup
 * Package installation under XEmacs::  
 * Generic installation::        
 * Setting up XSLT-process::   
+* Convenience Settings::
 
 Generic installation
 
 * Installing Elib::             
 * Installing Speedbar::         
 * Installing XSLT-process::     
-* Convenience Settings::
 
 Running the XSLT processor
 
@@ -174,7 +174,8 @@ this to be the most stable one.
 @menu
 * Package installation under XEmacs::  
 * Generic installation::        
-* Setting up XSLT-process::     
+* Setting up XSLT-process::
+* Convenience Settings::     
 @end menu
 
 @c =========================================================================
@@ -220,8 +221,7 @@ The @emph{XSLT-process} package depends on two other packages:
 @menu
 * Installing Elib::             
 * Installing Speedbar::         
-* Installing XSLT-process::
-* Convenience Settings::     
+* Installing XSLT-process::     
 @end menu
 
 @c =========================================================================
@@ -368,11 +368,11 @@ modeline.
 @end ifnotinfo
 
 @c =========================================================================
-@node  Convenience Settings,  , Setting up XSLT-process, Generic installation
+@node  Convenience Settings,  , Setting up XSLT-process, Installation and setup
 @comment  node-name,  next,  previous,  up
-@subsection Convenience Settings
+@section Convenience Settings
 
-Many of the benefits of of Emacs, in general, and the @emph{XSLT-process}
+Many of the benefits of Emacs in general, and the @emph{XSLT-process}
 mode in particular, require the use of a three-button mouse. Under Linux
 the emulation of the middle button can be provided by the operating system.
 If you are using Windows you can configure Emacs to provide the same
@@ -425,7 +425,7 @@ menu. The default XSLT processor is Saxon.
 
 The main functionality of the @emph{XSLT-process} mode is to allow you
 to edit an XML document, apply an XSLT stylesheet to the document, and
-view the results either in a buffer, in Web browser, or a PDF viewer.
+view the results in a buffer, a Web browser, or a PDF viewer.
 
 @ifnotinfo
 @ifnothtml
@@ -468,8 +468,12 @@ be created in your temporary directory. These are @code{xslt-process-output.fo} 
 being displayed when a new version of the file is generated the outcome depends
 on the PDF viewer being used: either a second window may be opened, so both
 versions of the file are displayed, or only the original file
-is displayed. The @code{xslt-process-output.pdf} file must be closed and
-re-opened manually to view the new version.
+is displayed. If a second window is not opened the @code{xslt-process-output.pdf}
+file must be closed and re-opened manually to view the new version.
+
+@strong{Note:} This use of your temporary directory will fail if the path to the
+temporary directory contains spaces. This is the default setting for some versions
+of Windows.
 
 @c =========================================================================
 @node  Dealing with errors, Associating an XSLT stylesheet with an XML document, Viewing the results of the XSLT processing, Running the XSLT processor
@@ -484,7 +488,8 @@ When you encounter an error, just click using the middle-button
 (assuming an X-Windows system or suitable three-button emulation)
 on the error message. Emacs will move the cursor point at the place that
 caused the error. If you only have a two-button mouse you should can emulate
-the third button using the operating system (Linux) or Emacs (Windows).
+the third button using the operating system (Linux) or Emacs (Windows)
+(see @ref{Convenience Settings}).
 
 @ifnotinfo
 @ifnothtml
@@ -622,8 +627,9 @@ Emacs, you need to save it. You can do this from ``XSLT'' @result{}
 
 If you want to experiment what are the results of applying your
 stylesheets using different XSLT processors, you can change the
-processor using the menu ``XSLT'' @result{} ``XSLT Processor''. If you
-are in the middle of a debugging session, this action will not have
+processor using the menu ``XSLT'' @result{} ``XSLT Processor'', or by using
+the customization interface (see @ref{Customizing the XSLT-process mode}). If you
+are in the middle of a debugging session, the change will not take
 effect until the session is finished.
 
 In certain cases, there are XSLT stylesheets that works only when
@@ -807,7 +813,7 @@ this as the source document, and will not be able to find the associated
 stylesheet.
 
 The XSLT processor starts. As soon as the XSLT processor generates some
-output the @samp{*xslt-output*} window will be opened to display that output.
+output the @code{*xslt-output*} window will be opened to display that output.
 The processor continues running in the background until the execution
 reaches an enabled breakpoint. 
 
@@ -999,6 +1005,9 @@ ways. There are several groups of customizations you can do:
 @itemize @bullet
 
 @item
+Select the XSLT processor to be used by the @emph{XSLT-process} mode.
+
+@item
 Customize the environment for the Java process that's running the XSLT
 processor.
 
@@ -1110,8 +1119,8 @@ putting the point on it.
 
 This would be a very useful tool for novice XSLT users to learn XPath
 (and Emacs ;-). This is a non-trivial enhancement, but one of the
-developers would like to have in for teaching purposes in January 2003.
-Don't hold your breath!
+developers would like to have it for teaching purposes in January 2003.
+However, don't hold your breath! :-)
 
 @item
 Add the ability to process and debug JSPs and Cocoon's XSP. This would
