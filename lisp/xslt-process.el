@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June  5, 2001 08:49:22 ovidiu>
+;; Time-stamp: <June  6, 2001 22:18:28 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -176,7 +176,13 @@ directory structure looks a little different."
 
 (defgroup xslt-process nil
   "Run an XSLT processor on an Emacs buffer."
-  :group 'tools)
+  :group 'tools
+  :prefix "xslt-process-")
+
+(defgroup xslt-process-key-bindings nil
+  "The key bindings of the XSLT-process mode."
+  :group 'xslt-process
+  :prefix "xslt-process-")
 
 (defcustom xslt-process-default-processor (list 'Saxon)
   "*The default XSLT processor to be applied to an XML document."
@@ -244,85 +250,85 @@ To enter a normal key, enter its corresponding character. To enter a
 key with a modifier, either type C-q followed by the desired modified
 keystroke, e.g. C-q C-c to enter Control c. To enter a function key,
 use the [f1], [f2] etc. notation."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-invoke-browser-view "\C-c\C-xn"
   "*Keybinding for invoking the XSLT processor and viewing the results
 in a browser."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-toggle-debug-mode "\C-c\C-xd"
   "*Keybinding for toggling the debug mode."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-set-breakpoint-key "b"
   "*Keybinding for setting up a breakpoint at line in the current buffer.
 The buffer has to be in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-delete-breakpoint-key "d"
   "*Keybinding for deleting the breakpoint at line in the current buffer.
 The buffer has to be in the debug mode for this key to work"
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-enable-disable-breakpoint-key "e"
   "*Keybinding for enabling or disabling the breakpoint at line in the
 current buffer. The buffer has to be in the debug mode for this key
 to work"
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-quit-debug-key "q"
   "*Keybinding for exiting from the debug mode. The buffer has to be
 in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-run-key "r"
   "*Keybinding for running the XSLT debugger on an XML file. The
 buffer has to be in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-step-key "s"
   "*Keybinding for doing STEP in the debug mode. The buffer has to be
 in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-next-key "n"
   "*Keybinding for doing NEXT in the debug mode. The buffer has to be
 in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-finish-key "f"
   "*Keybinding for doing FINISH in the debug mode. The buffer has to be
 in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-continue-key "c"
   "*Keybinding for doing CONTINUE in the debug mode. The buffer has to be
 in the debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-stop-key "a"
   "*Keybinding for aborting a long XSLT processing. The buffer has to
 be in debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-do-quit-key "x"
   "*Keybing for exiting the debugger process. The buffer has to be in
 debug mode for this key to work."
-  :group 'xslt-process
+  :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
 (defface xslt-process-enabled-breakpoint-face
@@ -615,6 +621,9 @@ hook functions should take no argument.")
 	       :active t]
 	      ["Faces"
 	       (customize-apropos-faces "xslt-process-*")
+	       :active t]
+	      ["Key bindings"
+	       (customize-group 'xslt-process-key-bindings)
 	       :active t]
 	      ["Browser"
 	       (customize-variable 'browse-url-browser-function)
