@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 26, 2001 23:13:57 ovidiu>
+;; Time-stamp: <April 29, 2001 08:42:06 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -32,7 +32,7 @@
 ;; To use this package, put the lisp/ directory from this package in
 ;; your Emacs load-path and do:
 ;;
-;; (autoload 'xslt-process-mode "xslt-process" "Run XSLT processor on buffer" t)
+;; (autoload 'xslt-process-mode "xslt-process" "Emacs XSLT processing" t)
 ;;
 ;; Then, while being in an XML buffer, use the XSLT menu to either:
 ;;
@@ -45,19 +45,35 @@
 
 (require 'cl)
 (require 'browse-url)
-(require 'setnu)
 (require 'easymenu)
+;(require 'setnu)
 (require 'xslt-speedbar)
 
-(if setnu-running-under-xemacs
+(if (featurep 'xemacs)
     nil
-  (fset 'remassoc 'rassoc)
+  (defun remassoc (key list)
+    "Delete any elements in LIST whose car is `equal' to KEY. This
+function has no side effects as in XEmacs, so use `setq' to setup the
+modified value to the result of this function."
+    (if (null list)
+	nil
+      (let* ((elem (car list))
+	     (elem-key (car elem)))
+	(if (equal key elem-key)
+	    (remassoc key (cdr list))
+	  (cons elem (remassoc key (cdr list)))))))
   (defun mapvector (function seq)
     "Apply FUNCTION to each element in SEQUENCE."
     (let (result)
       (loop for elem across seq do
 	    (setq result (append result (cons elem nil))))
       (vconcat result))))
+
+(defun xslt-process-make-glyph (glyph)
+  "GNU Emacs compatibility function for the make-glyph function of XEmacs."
+  (if (featurep 'xemacs)
+      (make-glyph glyph)
+    glyph))
 
 (defconst xslt-process-version "2.0"
   "The version of the XSLT-process mode.")
@@ -179,68 +195,68 @@ use the [f1], [f2] etc. notation."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-set-breakpoint "b"
+(defcustom xslt-process-set-breakpoint-key "b"
   "*Keybinding for setting up a breakpoint at line in the current buffer.
 The buffer has to be in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-delete-breakpoint "d"
+(defcustom xslt-process-delete-breakpoint-key "d"
   "*Keybinding for deleting the breakpoint at line in the current buffer.
 The buffer has to be in the debug mode for this key to work"
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-enable-disable-breakpoint "e"
+(defcustom xslt-process-enable-disable-breakpoint-key "e"
   "*Keybinding for enabling or disabling the breakpoint at line in the
 current buffer. The buffer has to be in the debug mode for this key
 to work"
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-quit-debug "q"
+(defcustom xslt-process-quit-debug-key "q"
   "*Keybinding for exiting from the debug mode. The buffer has to be
 in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-run "r"
+(defcustom xslt-process-do-run-key "r"
   "*Keybinding for running the XSLT debugger on an XML file. The
 buffer has to be in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-step "s"
+(defcustom xslt-process-do-step-key "s"
   "*Keybinding for doing STEP in the debug mode. The buffer has to be
 in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-next "n"
+(defcustom xslt-process-do-next-key "n"
   "*Keybinding for doing NEXT in the debug mode. The buffer has to be
 in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-finish "f"
+(defcustom xslt-process-do-finish-key "f"
   "*Keybinding for doing FINISH in the debug mode. The buffer has to be
 in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-continue "c"
+(defcustom xslt-process-do-continue-key "c"
   "*Keybinding for doing CONTINUE in the debug mode. The buffer has to be
 in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-stop "a"
+(defcustom xslt-process-do-stop-key "a"
   "*Keybinding for aborting a long XSLT processing. The buffer has to
 be in debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-do-quit "x"
+(defcustom xslt-process-do-quit-key "x"
   "*Keybing for exiting the debugger process. The buffer has to be in
 debug mode for this key to work."
   :group 'xslt-process
@@ -304,6 +320,8 @@ indicator."
 ;;;###autoload
 (defvar xslt-process-debug-mode-map (make-sparse-keymap)
   "Keyboard bindings for the XSLT debug mode.")
+
+(set-keymap-parent xslt-process-debug-mode-map xslt-process-mode-map)
 
 (make-variable-buffer-local 'xslt-process-mode)
 (make-variable-buffer-local 'xslt-process-debug-mode)
@@ -402,10 +420,10 @@ goes to.")
   "The name of the buffer to which the messages generated using
 xsl:message go to.")
 
-(defvar xslt-process-enter-glyph (setnu-make-glyph "=>")
+(defvar xslt-process-enter-glyph (xslt-process-make-glyph "=>")
   "Graphic indicator for entering inside an element.")
 
-(defvar xslt-process-exit-glyph (setnu-make-glyph "<=")
+(defvar xslt-process-exit-glyph (xslt-process-make-glyph "<=")
   "Graphic indicator for exiting from an element.")
 
 (defvar xslt-process-breakpoint-set-hooks nil
@@ -436,32 +454,28 @@ filename line) that indicate the new style frame stack.")
 
 ;; Setup the keymap used for debugging
 (define-key xslt-process-debug-mode-map
-  xslt-process-key-binding 'xslt-process-invoke)
+  xslt-process-quit-debug-key 'xslt-process-quit-debug)
 (define-key xslt-process-debug-mode-map
-  xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
+  xslt-process-set-breakpoint-key 'xslt-process-set-breakpoint)
 (define-key xslt-process-debug-mode-map
-  xslt-process-quit-debug 'xslt-process-quit-debug)
+  xslt-process-delete-breakpoint-key 'xslt-process-delete-breakpoint)
 (define-key xslt-process-debug-mode-map
-  xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
-(define-key xslt-process-debug-mode-map
-  xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
-(define-key xslt-process-debug-mode-map
-  xslt-process-enable-disable-breakpoint
+  xslt-process-enable-disable-breakpoint-key
   'xslt-process-enable-disable-breakpoint)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-run 'xslt-process-do-run)
+  xslt-process-do-run-key 'xslt-process-do-run)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-step 'xslt-process-do-step)
+  xslt-process-do-step-key 'xslt-process-do-step)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-next 'xslt-process-do-next)
+  xslt-process-do-next-key 'xslt-process-do-next)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-finish 'xslt-process-do-finish)
+  xslt-process-do-finish-key 'xslt-process-do-finish)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-continue 'xslt-process-do-continue)
+  xslt-process-do-continue-key 'xslt-process-do-continue)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-stop 'xslt-process-do-stop)
+  xslt-process-do-stop-key 'xslt-process-do-stop)
 (define-key xslt-process-debug-mode-map
-  xslt-process-do-quit 'xslt-process-do-quit)
+  xslt-process-do-quit-key 'xslt-process-do-quit)
 
 (defvar xslt-process-menu-definition
   (list "XSLT"
@@ -511,29 +525,30 @@ filename line) that indicate the new style frame stack.")
 
 	(list "Customize"
 	      ["XSLT Process"
-	       (lambda () (interactive) (customize-group 'xslt-process))
+	       (customize-group 'xslt-process)
 	       :active t]
 	      ["Faces"
-	       (lambda ()
-		 (interactive) (customize-apropos-faces "xslt-process-*"))
+	       (customize-apropos-faces "xslt-process-*")
 	       :active t])
 	(list "Help"
 	      (concat "XSLT-process " xslt-process-version)
 	      "--"
 	      ["Info file" (xslt-process-visit-info-file) :active t]
 	      ["Home Web site"
-	       (lambda ()
-		 (interactive)
-		 (browse-url xslt-process-home-web-site))
+	       (browse-url xslt-process-home-web-site)
 	       :active t]
 	      ["Mailing lists"
-	       (lambda ()
-		 (interactive)
-		 (browse-url xslt-process-web-mailing-list))
+	       (browse-url xslt-process-web-mailing-list)
 	       :active t]
 	      ["Submit bug report" (xslt-process-submit-bug-report)
 	       :active t]))
   "XSLT-process menu definition.")
+
+(easy-menu-define xslt-process-menu xslt-process-debug-mode-map
+		  "XSLT-process menu"
+		  xslt-process-menu-definition)
+;(easy-menu-define xslt-process-debug-menu xslt-process-debug-mode-map
+;		  "XSLT-process debug menu" xslt-process-menu-definition)
 
 (defun xslt-process-visit-info-file ()
   "Visit the info file for XSLT-process."
@@ -630,7 +645,8 @@ document element path changes.
 For more information please check:
 
 xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
-"
+
+\\{xslt-process-mode-map}"
   (interactive "P")
   (setq xslt-process-mode
 	(if (null arg)
@@ -638,14 +654,13 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
 	  (> (prefix-numeric-value arg) 0)))
   (if xslt-process-mode
       (progn
+	(easy-menu-add xslt-process-menu)
 	(xslt-process-setup-minor-mode xslt-process-mode-map
 				       xslt-process-mode-line-string)
-	(easy-menu-define
-	 xslt-process-menu xslt-process-mode-map "XSLT-process menu"
-	 xslt-process-menu-definition)
-	(easy-menu-add xslt-process-menu))
-    (remassoc 'xslt-process-mode minor-mode-alist)
-    (remassoc 'xslt-process-mode minor-mode-map-alist)
+	)
+    (setq minor-mode-alist (remassoc 'xslt-process-mode minor-mode-alist))
+    (setq minor-mode-map-alist
+	  (remassoc 'xslt-process-mode minor-mode-map-alist))
     (easy-menu-remove '("XSLT"))
     (xslt-process-toggle-debug-mode 0))
   ;; Force modeline to redisplay
@@ -1024,16 +1039,40 @@ buffers. It doesn't affect the current state of the breakpoints."
 	     (xslt-process-unhighlight-breakpoint breakpoint)))))
    xslt-process-breakpoints))
 
+(defun xslt-process-make-extent (from to &optional buffer)
+  "Make an XEmacs extent or GNU Emacs overlay in BUFFER or the current
+buffer, if none is specified."
+  (if (featurep 'xemacs)
+      (make-extent from to buffer)
+    (make-overlay from to buffer)))
+
+(defun xslt-process-delete-extent (extent)
+  "Delete XEmacs extent or GNU Emacs overlay identified by EXTENT."
+  (if (featurep 'xemacs)
+      (delete-extent extent)
+    (delete-overlay extent)))
+
+(defun xslt-process-set-extent-property (extent prop value)
+  "Set a property for a XEmacs extent or GNU Emacs overlay. The
+property names are those of the XEmacs extents, they areir GNU Emacs
+correspondents."
+  (if (featurep 'xemacs)
+      (set-extent-property extent prop value)
+    (cond ((eq prop 'begin-glyph) (overlay-put extent 'before-string value))
+	  ((eq prop 'begin-glyph-layout) nil)
+	  (t (overlay-put extent prop value)))))
+
 (defun xslt-process-make-annotation (glyph)
   "Make a GLYPH annotation at POINT. We use normal extents here
 instead of XEmacs annotations to be able to achieve GNU Emacs
-compatibility (by using setnu defined functions)."
-  (let ((annotation (setnu-make-extent (point) (point) (current-buffer))))
-    (setnu-set-extent-property annotation 'begin-glyph glyph)
-    (setnu-set-extent-property annotation 'begin-glyph-layout 'text)
-    (setnu-set-extent-property annotation 'face 'xslt-process-indicator-face)
-    (setnu-set-extent-property annotation 'priority 3)
-    (setnu-set-extent-property annotation 'read-only t)
+compatibility."
+  (let ((annotation (xslt-process-make-extent (point) (point))))
+    (xslt-process-set-extent-property annotation 'begin-glyph glyph)
+    (xslt-process-set-extent-property annotation 'begin-glyph-layout 'text)
+    (xslt-process-set-extent-property annotation
+				      'face 'xslt-process-indicator-face)
+    (xslt-process-set-extent-property annotation 'priority 3)
+    (xslt-process-set-extent-property annotation 'read-only t)
     annotation))
 
 (defun xslt-process-change-current-line-highlighting (flag)
@@ -1053,7 +1092,7 @@ indicator."
 	  (if flag
 	      ;; Highlight the last selected line
 	      (let ((extent (xslt-process-highlight-line
-			     'xslt-process-current-line-face 2)))
+			     'xslt-process-current-line-face 99)))
 		(setq
 		 annotation
 		 (if (eq action 'is-entering)
@@ -1096,7 +1135,7 @@ indicator."
 		       (if (or (not (null state)) (eq state 'enabled))
 			   'xslt-process-enabled-breakpoint-face
 			 'xslt-process-disabled-breakpoint-face)
-		       1)))
+		       99)))
 	  ;; Intern the extent in the extents table
 	  (cl-puthash breakpoint extent xslt-process-breakpoint-extents))))))
 
@@ -1110,7 +1149,7 @@ indicator."
 			       xslt-process-breakpoint-extents)))
       (if extent
 	  (progn
-	    (setnu-delete-extent extent)
+	    (xslt-process-delete-extent extent)
 	    (cl-remhash (cons filename line)
 			xslt-process-breakpoint-extents))))))
 
@@ -1122,12 +1161,12 @@ highlights the line."
       (if (eq face 'default)
 	  nil
 	;; Otherwise setup a new a new extent at the current line
-	(let* ((to (or (end-of-line) (point)))
-	       (from (or (beginning-of-line) (point)))
-	       (extent (setnu-make-extent from to)))
-	  (setnu-set-extent-property extent 'face face)
+	(let* ((to (line-end-position))
+	       (from (line-beginning-position))
+	       (extent (xslt-process-make-extent from to)))
+	  (xslt-process-set-extent-property extent 'face face)
 	  (if priority
-	      (setnu-set-extent-property extent 'priority priority))
+	      (xslt-process-set-extent-property extent 'priority priority))
 	  extent))))
 
 ;;;
@@ -1321,9 +1360,9 @@ the output to the XSLT process buffer."
   (if xslt-process-selected-position
       (let ((extent (xslt-process-selected-position-extent))
 	    (annotation (xslt-process-selected-position-annotation)))
-	(if extent (setnu-delete-extent extent))
+	(if extent (xslt-process-delete-extent extent))
 ;	(if annotation (delete-annotation annotation))
-	(if annotation (setnu-delete-extent annotation))
+	(if annotation (xslt-process-delete-extent annotation))
 	;; Remove extent and annotation from the
 	;; last-selected-position. Need to use aset as there is no way
 	;; for the setter functions to detect between programmer
@@ -1465,13 +1504,15 @@ the modeline."
 		      keymap
 		      nil
 		      'xslt-process-mode)
-    (remassoc 'xslt-process-mode minor-mode-alist)
-    (or (assoc 'xslt-process-mode minor-mode-alist)
+    (setq minor-mode-alist (remassoc 'xslt-process-mode minor-mode-alist))
+    (or (assq 'xslt-process-mode minor-mode-alist)
 	(setq minor-mode-alist
-	      (cons '(xslt-process-mode mode-line-string)
+	      (cons (list 'xslt-process-mode mode-line-string)
 		    minor-mode-alist)))
-    (remassoc 'xslt-process-mode minor-mode-map-alist)
-    (or (assoc 'xslt-process-mode minor-mode-map-alist)
+
+    (setq minor-mode-map-alist
+	  (remassoc 'xslt-process-mode minor-mode-map-alist))
+    (or (assq 'xslt-process-mode minor-mode-map-alist)
 	(setq minor-mode-map-alist
 	      (cons (cons 'xslt-process-mode keymap)
 		    minor-mode-map-alist))))
