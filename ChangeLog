@@ -1,3 +1,19 @@
+2001-06-05  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-speedbar.el: Use images to denote the type instead of
+	displaying the type as text after the variable name.
+
+	* lisp/xslt-process.el: Correctly handle killing the xslt
+	process. Push the etc directory in the load-path so that speedbar
+	finds the images.
+
+	* etc/boolean.xpm: Added.
+	* etc/number.xpm: Added.
+	* etc/string.xpm: Added.
+	* etc/tree.xpm: Added.
+	* etc/type.xpm: Added.
+	* etc/object.xpm: Added.
+
 2001-06-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Minor changes and cleanup to support the
