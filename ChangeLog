@@ -1,5 +1,9 @@
 2001-06-20  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* Makefile: Updated the dist target.
+
+	* doc/Makefile: Removed the homepage target.
+
 	* lisp/xslt-process.el: Fixed typo: use fboundp instead of fbound.
 
 	* doc/xslt-process.texi.in: Added subsection on installing elib.
