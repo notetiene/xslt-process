@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 29, 2001 17:48:36 ovidiu>
+;; Time-stamp: <May 29, 2001 21:46:22 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -85,20 +85,21 @@ names conform to the URI definition."
 
 (defun xslt-process-unescape (string)
   "Translate the escape sequences in the corresponding characters."
+  (message "xslt-process-unescape '%s'" string)
   (save-excursion
     (let ((tmpbuf (get-buffer-create " xslt-process-temp"))
-	  (rex "\\(\\\\b\\)"))
+	  (rex "\\(\\\\\\\\\\|\\\\b\\|\\\\d\\|\\\\e\\)"))
       (set-buffer tmpbuf)
       (erase-buffer)
       (goto-char (point-min))
       (insert-string string)
       (goto-char (point-min))
       (while (re-search-forward rex (point-max) t)
-	(message "point is now %s, string '%s'" (point) (match-string 1))
 	(goto-char (- (point) 2))
-	(cond ((looking-at "\\\\b")
-	       (replace-match "^")
-	       (message "replaced \\b, point at %d" (point)))))
+	(cond ((looking-at "\\\\b") (replace-match "^"))
+	      ((looking-at "\\\\d") (replace-match "\""))
+	      ((looking-at "\\\\e") (replace-match "$"))
+	      ((looking-at "\\\\\\\\") (replace-match "\\\\"))))
       (buffer-string))))
 
 (defvar xslt-process-dir-separator
