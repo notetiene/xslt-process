@@ -32,6 +32,7 @@ public class SaxonTraceListener implements TraceListener
   int currentLine = -1;
   int currentColumn = -1;
   StyleFrame styleFrameToStop = null;
+  String indent = "";
   
   public SaxonTraceListener (XSLTDebugger debugger)
   {
@@ -39,29 +40,19 @@ public class SaxonTraceListener implements TraceListener
     manager = debugger.getManager();
   }
 
-  // implementation of com.icl.saxon.trace.TraceListener interface
-
-  String indent = "";
-
   /**
    * Called at start
    */
-
-  public void open()
-  {
-    System.err.println("<trace>");
-  }
+  public void open() {}
 
   /**
    * Called at end
    */
+  public void close() {}
 
-  public void close()
-  {
-    System.err.println("</trace>");
-  }
-
-  public synchronized void debuggerStopped(NodeInfo element, String message)
+  public synchronized void debuggerStopped(NodeInfo element,
+                                           boolean leaving,
+                                           String message)
   {
     String name = element.getDisplayName();
     String filename = element.getSystemId();
@@ -73,22 +64,19 @@ public class SaxonTraceListener implements TraceListener
     currentLine = line;
     currentColumn = column;
 
-    // Transform any 'next' command in 'step' if the XSL element
-    // is not the apply-templates or call-template instruction
     if (debugger.getAction() == AbstractXSLTDebugger.DO_NEXT) {
       System.out.println("Got a NEXT action for element "
                          + element.getClass());
-        
-//       if (element instanceof XSLApplyTemplates
-//           || element instanceof XSLCallTemplate
-//           || element instanceof XSLAttribute) {
-      {
+      if (leaving) {
+        // We were invoked when exiting from a frame. We want to
+        // continue and enter in the next element or stop again when
+        // we exit from the next element.
+        debugger.setAction(AbstractXSLTDebugger.DO_DEFERRED_STOP);
+      }
+      else {
         styleFrameToStop = manager.peekStyleFrame();
         System.out.println("Setting up style frame to stop to " + name);
       }
-//       else {
-//         debugger.setAction(AbstractXSLTDebugger.DO_STEP);
-//       }
     }
   }
 
@@ -170,7 +158,7 @@ public class SaxonTraceListener implements TraceListener
 
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
-      debuggerStopped(element, "entering " + element.getDisplayName());
+      debuggerStopped(element, false, "entering " + name);
     }
     else {
       switch (debugger.getAction()) {
@@ -179,13 +167,13 @@ public class SaxonTraceListener implements TraceListener
           // We reached a line different from the last one we were
           // on when the step command was issued. We need to give
           // back the control to the command line
-          debuggerStopped(element, "entering " + element.getDisplayName());
+          debuggerStopped(element, false, "entering " + name);
         }
         break;
 
       case AbstractXSLTDebugger.DO_DEFERRED_STOP:
         System.out.println("stopped in deferred stop with element " + name);
-        debuggerStopped(element, "entering " + element.getDisplayName());
+        debuggerStopped(element, false, "entering " + name);
         break;
         
       default:
@@ -218,7 +206,7 @@ public class SaxonTraceListener implements TraceListener
 
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
-      debuggerStopped(element, "leaving " + element.getDisplayName());
+      debuggerStopped(element, true, "leaving " + name);
     }
     else {
       switch (debugger.getAction()) {
@@ -227,7 +215,7 @@ public class SaxonTraceListener implements TraceListener
           // We reached a line different from the last one we were
           // on when the step command was issued. We need to give
           // back the control to the command line
-          debuggerStopped(element, "leaving " + element.getDisplayName());
+          debuggerStopped(element, true, "leaving " + name);
         }
         break;
 
@@ -237,12 +225,18 @@ public class SaxonTraceListener implements TraceListener
           // We reached the end of the element after which we have to
           // stop. Set the action to STEP so that we stop right after this
           // node and continue
-          debugger.setAction(AbstractXSLTDebugger.DO_DEFERRED_STOP);
+          debuggerStopped(element, true, "leaving " + name);
           System.out.println("Leaving " + name
                              + ", setting up deferred breakpoint");
           styleFrameToStop = null;
         }
         break;
+
+      case AbstractXSLTDebugger.DO_DEFERRED_STOP:
+        System.out.println("stopped in deferred stop with element " + name);
+        debuggerStopped(element, true, "leaving " + name);
+        break;
+        
       }
     }
     manager.popStyleFrame();
