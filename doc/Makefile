@@ -86,12 +86,6 @@ xslt-process.texi: xslt-process.texi.in sizes.sed
 	  echo convert -page $$size $< $@; \
 	  convert -page $$size $< $@)
 
-homepage: html
-	sed -e 's/<BODY[^>]*>/<BODY>/g' \
-	  -e 's^</BODY>^<p><a HREF=../index.html><img src=../../images/back.gif border=0%> Other (X)Emacs hacks</a><br><a href=../../index.html><img src=../../images/home.gif border=0%> Home</a></body>^g' -e 's/xslt-process.html/index.html/g' <$(HTML) >$(HTML).tmp
-	mv $(HTML).tmp index.html
-	-tidy -asxml -i -wrap 72 -m -f /dev/null index.html
-
 clean:
 	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr version.texi \
 	    $(PDFIMAGES) $(EPSIMAGES) *.dvi sizes.sed xslt-process.texi \
