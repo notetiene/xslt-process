@@ -82,6 +82,7 @@ Installation and setup
 
 Generic installation
 
+* Installing Elib::             
 * Installing Speedbar::         
 * Installing XSLT-process::     
 
@@ -162,6 +163,10 @@ The @emph{XSLT-process} mode is part of XEmacs, but it works with both
 XEmacs and GNU Emacs. The installation differs slighly between the two
 editors as we will see shortly.
 
+The mode was tested on Linux and Windows 2000, with XEmacs and GNU
+Emacs. The development platform however is XEmacs under Linux, so expect
+this to be the most stable one.
+
 @menu
 * Package installation under XEmacs::  
 * Generic installation::        
@@ -196,32 +201,66 @@ This section describes how to install @emph{XSLT-process} on your Emacs
 editor, assuming either it is not already installed, or you want to
 install a new version.
 
+The @emph{XSLT-process} package depends on two other packages:
+
+@itemize @bullet
+
+@item
+@uref{ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz,elib 1.0}
+
+@item
+@uref{http://cedet.sourceforge.net/speedbar.shtml,speedbar}
+
+@end itemize
+
 @menu
+* Installing Elib::             
 * Installing Speedbar::         
 * Installing XSLT-process::     
 @end menu
 
 @c =========================================================================
-@node  Installing Speedbar, Installing XSLT-process, Generic installation, Generic installation
+@node  Installing Elib, Installing Speedbar, Generic installation, Generic installation
+@comment  node-name,  next,  previous,  up
+@subsection Installing Elib
+
+If you're running XEmacs, you don't need to install @emph{Elib}, as
+XEmacs by default comes with it.
+
+@emph{Elib} provides some useful functionality to Emacs, among other
+things a compatibility layer between GNU Emacs and XEmacs.
+
+To install, download it from
+@uref{ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz,ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz},
+and unpack it into your @kbd{~/emacs} directory. If you don't have a
+@kbd{~/emacs} directory, create one now.
+
+Go to the @kbd{elib-1.0} directory and run
+
+@example
+make
+@end example
+
+@c =========================================================================
+@node  Installing Speedbar, Installing XSLT-process, Installing Elib, Generic installation
 @comment  node-name,  next,  previous,  up
 @subsection Installing Speedbar
 
-@emph{XSLT-process} depends on another package, @emph{Speedbar}, for
-displaying breakpoints, stack frames and global and local variables. You
-need to obtain and install this package first, in case you don't have it
-already installed.
+@emph{XSLT-process} depends on @emph{Speedbar}, for displaying
+breakpoints, stack frames and global and local variables. You need to
+obtain and install this package first, in case you don't have it already
+installed.
 
 To verify if you have this package installed, type @kbd{M-x
 speedbar-version}; this will give either an error, if the package is not
 installed, or the version number of the @emph{speedbar} package if it's
-already installed. You should have at least version 0.13 for
+already installed. You should have at least version 0.13a for
 @emph{XSLT-process} to work.
 
 In case you don't have the @emph{speedbar} package, you can obtain it
 from its @uref{http://cedet.sourceforge.net/speedbar.shtml,Web
-site}. Unpack the package in your @kbd{~/emacs} directory. If you don't
-have a @kbd{~/emacs} directory, create one now. Then go to the speedbar
-directory and run
+site}. Unpack the package in your @kbd{~/emacs} directory. Then go to
+the @kbd{speedbar} directory and run
 
 @example
 $ make
@@ -260,12 +299,13 @@ create one now):
         (pushnew (expand-file-name x) load-path))
       (list "~/emacs"
             "~/emacs/xslt-process-@value{version}/lisp"
-            "~/emacs/speedbar-0.13"))
+            "~/emacs/elib-1.0"
+            "~/emacs/speedbar-0.13a"))
 @end example
 
-You can remove the reference to @kbd{speedbar-0.13} in the lines above,
-if you didn't have to install @emph{speedbar} as described in the
-previous section (@ref{Installing Speedbar}).
+You can remove the reference to @kbd{elib-1.0} or @kbd{speedbar-0.13} in
+the lines above, if you didn't have to install either @emph{elib} or
+@emph{speedbar} as described in the previous sections.
 
 @c =========================================================================
 @node  Setting up XSLT-process,  , Generic installation, Installation and setup
