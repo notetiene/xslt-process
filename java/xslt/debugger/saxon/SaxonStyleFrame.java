@@ -78,10 +78,7 @@ public class SaxonStyleFrame extends StyleFrame
    */
   public ArrayList getGlobalVariables()
   {
-    if (globalVariables == null) {
-      getVariableNames();
-      return globalVariables;
-    }
+    getVariableNames();
     return globalVariables;
   }
 
