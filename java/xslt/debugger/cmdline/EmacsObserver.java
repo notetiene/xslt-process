@@ -74,7 +74,7 @@ public class EmacsObserver implements Observer
       // created is used for the XSLT generated output.
       clientSocket = serverSocket.accept();
       OutputStream outputStream = clientSocket.getOutputStream();
-      manager.setOutStream(outputStream);
+      controller.setOutputStream(outputStream);
 
       // Wait for another incoming connection. This second client
       // socket connection is for outputing xsl:message.
