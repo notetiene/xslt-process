@@ -89,6 +89,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
   protected String xmlFilename;
   protected String xslFilename;
   protected StreamResult result;
+  protected String stylesheetId;
 
   protected int state = NOT_RUNNING;
   protected int action = DO_NOTHING;
@@ -170,7 +171,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
 
       // create result to receive generated output - may be overridden later
       result = new StreamResult(manager.getOutputStream());
-      String stylesheetId = stylesheetInputSource.getSystemId();
+      stylesheetId = stylesheetInputSource.getSystemId();
 
       // Check for a Templates object already created for this
       // stylesheet
@@ -402,6 +403,11 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public String getProcessorName()
   {
     return processorName;
+  }
+
+  public String getStylesheetId()
+  {
+    return stylesheetId;
   }
 
   /**
