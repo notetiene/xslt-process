@@ -39,7 +39,7 @@ public class EmacsObserver implements Observer
       InetAddress localhost = InetAddress.getByName("localhost");
       ServerSocket serverSocket = new ServerSocket(0, 5, localhost);
       int port = serverSocket.getLocalPort();
-      System.out.println("<<(xslt-process-set-output-port " + port + ")>>");
+      System.out.println("^(xslt-process-set-output-port " + port + ")$");
       System.out.flush();
 
       AbstractXSLTDebugger debugger = controller.getDebugger();
@@ -68,7 +68,7 @@ public class EmacsObserver implements Observer
 
   public void debuggerProcessStarted()
   {
-    System.out.println("<<(xslt-process-debugger-process-started)>>");
+    System.out.println("^(xslt-process-debugger-process-started)$");
   }
 
   /**
@@ -88,11 +88,11 @@ public class EmacsObserver implements Observer
   {
     if (filename.startsWith("file:"))
       filename = filename.substring(5);
-    System.out.println("<<(xslt-process-debugger-stopped-at "
+    System.out.println("^(xslt-process-debugger-stopped-at "
                        + "\"" + filename
                        + "\" " + line
                        + " " + column
-                       + " \"" + message + "\")>>");
+                       + " \"" + message + "\")$");
   }
 
   public void breakpointSetAt(String filename, int line) {}
@@ -109,7 +109,7 @@ public class EmacsObserver implements Observer
     Stack sourceFrames = manager.getSourceFrames();
 
     buffer.delete(0, buffer.length());
-    buffer.append("<<(xslt-process-source-frames-stack-changed [");
+    buffer.append("^(xslt-process-source-frames-stack-changed [");
     for (int i = 0; i < sourceFrames.size(); i++) {
       SourceFrame frame = (SourceFrame)sourceFrames.get(i);
       String filename = frame.getFilename();
@@ -124,7 +124,7 @@ public class EmacsObserver implements Observer
                     + " " + i
                     + "]");
     }
-    buffer.append("])>>");
+    buffer.append("])$");
     System.out.println(buffer);
     System.out.flush();
   }
@@ -135,7 +135,7 @@ public class EmacsObserver implements Observer
     Stack styleFrames = manager.getStyleFrames();
 
     buffer.delete(0, buffer.length());
-    buffer.append("<<(xslt-process-style-frames-stack-changed [");
+    buffer.append("^(xslt-process-style-frames-stack-changed [");
     for (int i = 0; i < styleFrames.size(); i++) {
       StyleFrame frame = (StyleFrame)styleFrames.get(i);
       String filename = frame.getFilename();
@@ -150,14 +150,14 @@ public class EmacsObserver implements Observer
                     + " " + i
                     + "]");
     }
-    buffer.append("])>>");
+    buffer.append("])$");
     System.out.println(buffer);
     System.out.flush();
   }
 
   public void processorFinished()
   {
-    System.out.println("<<(xslt-process-processor-finished)>>");
+    System.out.println("^(xslt-process-processor-finished)$");
   }
 
   public void caughtException(Exception e)
@@ -166,10 +166,10 @@ public class EmacsObserver implements Observer
     PrintWriter pWriter = new PrintWriter(strWriter);
     e.printStackTrace(pWriter);
     pWriter.flush();
-    System.out.println("<<(xslt-process-report-error \""
+    System.out.println("^(xslt-process-report-error \""
                        + e.getMessage()
                        + "\" \""
                        + strWriter.getBuffer().toString()
-                       + "\")>>");
+                       + "\")$");
   }
 }
