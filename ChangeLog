@@ -1,5 +1,26 @@
 2001-03-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Better handling of menu items enabling and
+	disabling. Added initial support for restarting the XSLT debugger
+	process. Correctly handle unhighlighting of breakpoints. Print
+	notification message when the XSLT processor finishes processing
+	or when it encounters an error.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Invoke the observer
+	instance to handle errors.
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Comment out
+	unnecessary printlns.
+
+	* java/xslt/debugger/cmdline/Controller.java: Removed the code to
+	handle the restarting during a processor run. Expect this to
+	happen in the front-end code, where there's much more control.
+
+	* java/xslt/debugger/Observer.java: Added processorFinished and
+	caughtException.
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Likewise.
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Likewise.
+
 	* lisp/xslt-process.el: Start the XSLT debugger in Emacs
 	mode. Handle Emacs formatted output from the debugger. Now handles
 	step, next and continue operations in an XSLT debug mode
