@@ -5,7 +5,7 @@
 ;; Author: Tony Addyman <A.M.Addyman@salford.ac.uk>
 
 ;; Created: December 2, 2000
-;; Time-stamp: <March 11, 2003 16:26:59 ovidiu>
+;; Time-stamp: <2003-04-21 20:13:32 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 21.2
@@ -1326,7 +1326,7 @@ normally returns 'started."
 		       proc-type))
 	      (xslt-process-do-quit t)
 	    (return 'quit)))
-      (setq xslt-process-output-to-filename out-filename)
+      (setq xslt-process-output-to-filename (urlize out-filename))
       (let* ((filename (urlize (buffer-file-name)))
 	     (xsl-filename
 	      (cdr (assoc filename xslt-process-xml-xslt-associations)))
