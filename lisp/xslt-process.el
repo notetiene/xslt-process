@@ -254,6 +254,11 @@ directory structure looks a little different."
       (mswindows-shell-execute "open" file)
     (w32-shell-execute "open" file)))
 
+(defun xslt-process-set-default-processor (processor)
+  "Set the default XSLT processor to be used."
+  (interactive)
+  (setq xslt-process-default-processor processor))
+
 (defun xslt-process-create-xslt-processor-submenu ()
   "Return the submenu with the available XSLT processors."
   (let* ((custom-type (plist-get (symbol-plist 'xslt-process-default-processor)
@@ -263,10 +268,7 @@ directory structure looks a little different."
      (lambda (x)
        (let ((name (caddr x))
 	     (sym (car (cdddr x))))
-	 (vector name
-		 `(lambda ()
-		    (interactive)
-		    (setq xslt-process-default-processor (list ',sym)))
+	 (vector name `(xslt-process-set-default-processor (list ',sym))
 		 :style 'radio
 		 :selected `(equal xslt-process-default-processor
 				   (list ',sym)))))
@@ -304,6 +306,14 @@ Each XML document will use the XSLT stylesheet declared as a value "
   "*The name of the java program to invoke when starting the XSLT processor."
   :group 'xslt-process
   :type '(string :tag "Program"))
+
+(defcustom xslt-process-transform-parameters nil
+  "*Specify parameter values.
+Enter the parameters which get passed to the transformation."
+  :group 'xslt-process
+  :type '(repeat (cons :tag "Parameter"
+		  (string :tag "Name") 
+		  (string :tag "Value"))))
 
 (defcustom xslt-process-jvm-arguments nil
   "*Additional arguments to be passed to the JVM.
@@ -795,6 +805,9 @@ hook functions should take no argument.")
 	(cons "XSLT Processor"
 	      (xslt-process-create-xslt-processor-submenu))
 
+	["Transformation parameters" xslt-process-manage-transform-parameters
+	 :active t]
+
 	(list "Customize"
 	      ["XSLT Process"
 	       (customize-group 'xslt-process)
@@ -952,6 +965,7 @@ xslt-process:    http://xslt-process.sourceforge.net/
 	  (> (prefix-numeric-value arg) 0)))
   (if xslt-process-mode
       (progn
+	(setq easy-menu-precalculate-equivalent-keybindings nil)
 	(easy-menu-add xslt-process-menu)
 	(xslt-process-setup-minor-mode xslt-process-mode-map
 				       xslt-process-mode-line-string)
@@ -1341,6 +1355,14 @@ normally returns 'started."
 	    (setq complete-command
 		  (concat complete-command " -o "
 			  (xslt-process-escape out-filename))))
+	(if xslt-process-transform-parameters
+	    (setq complete-command
+		  (concat complete-command " -p "
+			  (number-to-string (length xslt-process-transform-parameters)) " "
+			  (mapconcat (lambda (x)
+				     (xslt-process-escape (concat (car x) "=" (cdr x))))
+				     xslt-process-transform-parameters " "))))
+
 	;; Prepare the buffers
 	(save-some-buffers)
 	;; Set the XSLT processor to be used
@@ -1815,7 +1837,10 @@ processing do not come in this function; but in the
   "Invoked at the beginning of each XSLT processing or debugging
 action. When the processing completes, the
 `xslt-process-processing-finished' method is invoked."
-  (setq xslt-process-output-generated nil))
+; use filename in place of nil, so false message is not produced when
+; output goes to browser or PDF viewer. Is this a good fix? Can the
+; variable be set effectively after processing by the browser/fo code?
+  (setq xslt-process-output-generated xslt-process-output-to-filename))
 
 (defun xslt-process-processing-finished (&optional killed)
   "Called by the XSLT debugger process when the XSLT processing finishes."
@@ -2180,6 +2205,20 @@ add or remove stylesheets in the registry."
 files. You can add or remove associations in the registry."
   (interactive)
   (customize-variable 'xslt-process-xml-xslt-associations))
+
+;;;
+;;; Processor and tranform parameter selection
+;;;
+
+(defun xslt-process-manage-processor ()
+  "*Displays the buffer to select the XSLT processor."
+  (interactive)
+  (customize-variable 'xslt-process-xml-xslt-associations))
+
+(defun xslt-process-manage-transform-parameters ()
+  "*Displays the buffer to manage the tranform parameters"
+  (interactive)
+  (customize-variable 'xslt-process-transform-parameters))
 
 ;;;
 ;;; DocBook support
