@@ -12,8 +12,16 @@ import xslt.debugger.Observer;
 
 public class EmacsObserver implements Observer
 {
-  public EmacsObserver()
+  Controller controller;
+  
+  public EmacsObserver(Controller controller)
   {
+    this.controller = controller;
+  }
+
+  public void debuggerProcessStarted()
+  {
+    System.out.println("<<(xslt-process-debugger-process-started)>>");
   }
 
   /**
