@@ -228,7 +228,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
     if (systemId.startsWith("file:"))
       systemId = systemId.substring(5);
     String message = originalMessage;
-    if (!message.startsWith(systemId)) {
+    if (message != null && !message.startsWith(systemId)) {
       message = systemId + ":" + lineNumber;
       if (columnNumber != -1)
         message += ":" + columnNumber;
