@@ -277,4 +277,11 @@ public class EmacsObserver implements Observer
                          + Utils.escape(strWriter.getBuffer().toString())
                          + "\")$");
   }
+
+  public void displayInfo(String info)
+  {
+    System.out.println("^(xslt-process-show-in-minibuffer \""
+                       + Utils.escape(info)
+                       + "\")$");
+  }
 }
