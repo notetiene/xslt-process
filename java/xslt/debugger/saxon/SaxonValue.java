@@ -24,17 +24,20 @@
 
 package xslt.debugger.saxon;
 
+
 import com.icl.saxon.Binding;
 import com.icl.saxon.Context;
 import com.icl.saxon.expr.Value;
 import com.icl.saxon.expr.XPathException;
 import com.icl.saxon.om.NamePool;
 import com.icl.saxon.style.StyleElement;
-
 import xslt.debugger.Manager;
 import xslt.debugger.StyleFrame;
-import xslt.debugger.Variable;
 import xslt.debugger.Type;
+import xslt.debugger.Variable;
+import com.icl.saxon.Controller;
+import com.icl.saxon.Bindery;
+import com.icl.saxon.expr.StaticContext;
 
 public class SaxonValue extends xslt.debugger.Value
 {
@@ -53,38 +56,39 @@ public class SaxonValue extends xslt.debugger.Value
     this.context = context;
     this.element = element;
     this.frameId = frameId;
-  }
 
-  public String getValue()
-  {
     try {
       if (value == null) {
-        System.out.println("element is " + element.getClass());
-        
-        NamePool namePool = element.getNamePool();
-        System.out.println("namePool = " + namePool);
-        
-        int fprint = namePool.getCodeForURI(variable.getName());
-        System.out.println("fingerprint for name " + variable.getName()
-                           + " is " + fprint);
+        Controller controller = context.getController();
+        StaticContext staticContext = context.getStaticContext();
+        Bindery bindery = context.getBindery();
+
+        int fprint = staticContext.makeNameCode(variable.getName(), false);
+//         System.out.println("fingerprint for name " + variable.getName()
+//                            + " is " + fprint);
         
         Binding b = element.getVariableBinding(fprint);
-        System.out.println("binding is " + b);
+//         System.out.println("binding is " + b);
         
         if (b != null) {
-          Value v = context.getBindery().getValue(b, frameId);
-          System.out.println("saxon value: " + v);
+          Value v = bindery.getValue(b, frameId);
+//           System.out.println("saxon value: " + v.asString());
           
           if (v != null) {
             value = v.asString();
             type = new SaxonType(v.getDataType());
           }
         }
+        System.out.println("");
       }
     }
     catch (XPathException e) {
+      System.out.println("Got exception while trying to get value: " + e);
     }
-
+  }
+  
+  public String getValue()
+  {
     return value;
   }
 }
