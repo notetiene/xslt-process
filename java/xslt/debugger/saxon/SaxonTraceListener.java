@@ -25,8 +25,7 @@
 package xslt.debugger.saxon;
 
 import com.icl.saxon.Context;
-import com.icl.saxon.handlers.NodeHandler;
-import com.icl.saxon.om.ElementInfo;
+import com.icl.saxon.NodeHandler;
 import com.icl.saxon.om.NodeInfo;
 import com.icl.saxon.style.StyleElement;
 import com.icl.saxon.style.XSLApplyTemplates;
@@ -69,7 +68,7 @@ public class SaxonTraceListener implements TraceListener
     String name = element.getDisplayName();
     String filename = element.getSystemId();
     int line = element.getLineNumber();
-    int column = element.getColumnNumber();
+    int column = -1;
 
     manager.debuggerStopped(filename, line, column, message);
     currentFilename = filename;
@@ -121,7 +120,7 @@ public class SaxonTraceListener implements TraceListener
     String name = element.getDisplayName();
     String filename = element.getSystemId();
     int line = element.getLineNumber();
-    int column = element.getColumnNumber();
+    int column = -1;
 
     if (elementType == SOURCE) {
       SourceFrame frame = new SourceFrame(name, filename, line, column,
@@ -181,13 +180,13 @@ public class SaxonTraceListener implements TraceListener
     
     debugger.checkRequestToStop();
 
-    if (!(element instanceof ElementInfo))
-      return;
+    if (element.getNodeType()!= NodeInfo.ELEMENT )
+	return;
 
     String name = element.getDisplayName();
     String filename = element.getSystemId();
     int line = element.getLineNumber();
-    int column = element.getColumnNumber();
+    int column = -1;
 
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
