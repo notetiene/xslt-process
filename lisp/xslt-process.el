@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June 14, 2001 00:35:10 ovidiu>
+;; Time-stamp: <June 17, 2001 00:12:21 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -91,6 +91,11 @@ names conform to the URI definition."
 (unless (fboundp 'line-end-position)
   (if (fbound 'point-at-eol)
       (defalias 'line-end-position 'point-at-eol)))
+
+(defun xslt-process-escape (string)
+  "Escape double quotes within STRING."
+  (let ((lst (split-string string "\"")))
+    (concat "\"" (mapconcat (lambda (x) x) lst "\\\"") "\"")))
 
 (defun xslt-process-unescape (string)
   "Translate the escape sequences in the corresponding characters."
@@ -665,7 +670,8 @@ hook functions should take no argument.")
 	      ["Manage stylesheets..."
 	       xslt-process-manage-stylesheets :active t]
 	      ["Manage XML/XSLT associations..."
-	       xslt-process-manage-associations :active t])
+	       xslt-process-manage-associations :active t]
+	      ["Save registry" customize-save-customized :active t])
 
 	"--"
 
@@ -1138,7 +1144,7 @@ on its state."
 ;;;
 (defvar xslt-process-output-to-filename nil
   "The name of the filename to which the output goes, nil if the
-output comes to Emacs directly.")
+output goes to Emacs directly.")
 
 (defun xslt-process-do-run (&optional no-debug out-filename)
   "*Send the run/debug command to the command line interpreter to start
@@ -1155,9 +1161,18 @@ either a normal, no debug, XSLT processing, or a debugging session."
 	    (return)))
       (setq xslt-process-output-to-filename out-filename)
       (let* ((filename (urlize (buffer-file-name)))
-	     (complete-command (concat command " " filename)))
+	     (xsl-filename
+	      (cdr (assoc filename xslt-process-xml-xslt-associations)))
+	     (complete-command
+	      (concat command " -xml " (xslt-process-escape filename))))
+	(if (and xsl-filename (not (eq xsl-filename 'default)))
+	    (setq complete-command
+		  (concat complete-command " -xsl "
+			  (xslt-process-escape xsl-filename))))
 	(if out-filename
-	    (setq complete-command (concat complete-command " " out-filename)))
+	    (setq complete-command
+		  (concat complete-command " -o "
+			  (xslt-process-escape out-filename))))
 	;; Prepare the buffers
 	(save-some-buffers)
 	;; Set the XSLT processor to be used
@@ -1878,13 +1893,19 @@ of the selected item is set in the SELECTED-VALUE variable. If
 'Cancel' is selected, FUNCTION is not invoked. In both cases the
 buffer displaying the radio buttons is killed."
   `(unwind-protect
-       (let ((buffer (get-buffer-create ,buffer-name))
-	     (items ,items))
+       (let* ((buffer (get-buffer-create ,buffer-name))
+	      (items ,items)
+	      (current-selection (assoc xslt-process-selected-xml-file
+					xslt-process-xml-xslt-associations))
+	      (value
+	       (if current-selection
+		   (cdr current-selection)
+		 (cdar items))))
 	 (setq ,selected-value (cdar items))
-	 (switch-to-buffer (set-buffer buffer))
+	 (switch-to-buffer-other-window (set-buffer buffer))
 	 (if ,title (widget-insert (concat ,title "\n\n")))
 	 (apply 'widget-create 'radio-button-choice
-		:value (cdar items)
+		:value value
 		:notify (lambda (widget &rest ignore)
 			  (setq ,selected-value (widget-value widget)))
 		(mapcar (lambda (item)
@@ -1926,13 +1947,13 @@ selection buffer. The selected XSLT file is stored in
   (customize-set-variable 'xslt-process-xml-xslt-associations
 			  (cons
 			   (cons xslt-process-selected-xml-file
-				 xslt-process-selected-xsl-file)
+				 (urlize xslt-process-selected-xsl-file))
 			   xslt-process-xml-xslt-associations)))
 
 (defun xslt-process-associate-stylesheet ()
   "*Associate an XML buffer with a previously registered stylesheet."
   (interactive)
-  (setq xslt-process-selected-xml-file (buffer-file-name (current-buffer)))
+  (setq xslt-process-selected-xml-file (urlize (buffer-file-name)))
   (setq xslt-process-selected-xsl-file nil)
   (if (not xslt-process-selected-xml-file)
       (error "Current buffer does not have a filename!")
