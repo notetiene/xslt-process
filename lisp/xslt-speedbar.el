@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April 29, 2001 19:23:07 ovidiu>
+;; Time-stamp: <May  3, 2001 23:22:20 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -141,15 +141,16 @@ and an expression to test whether the list of items is empty.")
   "Function called whenever the breakpoint list changes as a result of
 adding, removing, enabling or disabling a breakpoint. Redisplays the
 list of breakpoints with the appropriate faces."
-  (if xslt-process-breakpoints-item-expanded
+  (let ((speedbar-buffer (get-buffer xslt-process-speedbar-bufname)))
+    (if (and speedbar-buffer xslt-process-breakpoints-item-expanded)
       (speedbar-with-writable
 	(save-excursion
-	  (set-buffer (get-buffer xslt-process-speedbar-bufname))
+	  (set-buffer speedbar-buffer)
 	  (beginning-of-buffer)
 	  (xslt-process-select-menu-item 0 "Breakpoints")
 	  (speedbar-delete-subblock 0)
 	  (forward-line 1)
-	  (xslt-process-speedbar-show-breakpoints "" 0)))))
+	  (xslt-process-speedbar-show-breakpoints "" 0))))))
 
 (defun xslt-process-select-menu-item (indent text)
   "Searches for TEXT at INDENT level in the speedbar menu and
@@ -287,7 +288,8 @@ the breakpoints in speedbar."
     (if (= index (- (length xslt-process-source-frames-stack) 1))
 	(setq xslt-process-selected-source-frame nil)
       (setq xslt-process-selected-source-frame index))
-    (xslt-process-speedbar-source-frames-changed t)))
+;    (xslt-process-speedbar-source-frames-changed t)
+    (xslt-process-send-command (format "sf %s" index))))
 
 (defun xslt-process-speedbar-change-style-frame (text index indent)
   "Changes the currently selected frame."
@@ -297,7 +299,8 @@ the breakpoints in speedbar."
     (if (= index (1- (length xslt-process-style-frames-stack)))
 	(setq xslt-process-selected-style-frame nil)
       (setq xslt-process-selected-style-frame index))
-    (xslt-process-speedbar-style-frames-changed t)))
+;    (xslt-process-speedbar-style-frames-changed t))
+    (xslt-process-send-command (format "xf %s" index))))
 
 (defun xslt-process-speedbar-show-source-frames-stack (text indent)
   "Show the source stack frames."
@@ -349,30 +352,32 @@ the breakpoints in speedbar."
 
 (defun xslt-process-speedbar-source-frames-changed (&optional dont-reset)
   "Called by the debugger when the source frame stack changes."
-  (if xslt-process-source-frames-item-expanded
-      (speedbar-with-writable
-	(save-excursion
-	  (if (not dont-reset)
-	      (setq xslt-process-selected-source-frame nil))
-	  (set-buffer (get-buffer xslt-process-speedbar-bufname))
-	  (beginning-of-buffer)
-	  (xslt-process-select-menu-item 0 "Source frames")
-	  (speedbar-delete-subblock 0)
-	  (forward-line 1)
-	  (xslt-process-speedbar-show-source-frames-stack "" 0)))))
+  (let ((speedbar-buffer (get-buffer xslt-process-speedbar-bufname)))
+    (if (and speedbar-buffer xslt-process-source-frames-item-expanded)
+	(speedbar-with-writable
+	  (save-excursion
+	    (if (not dont-reset)
+		(setq xslt-process-selected-source-frame nil))
+	    (set-buffer speedbar-buffer)
+	    (beginning-of-buffer)
+	    (xslt-process-select-menu-item 0 "Source frames")
+	    (speedbar-delete-subblock 0)
+	    (forward-line 1)
+	    (xslt-process-speedbar-show-source-frames-stack "" 0))))))
 
 (defun xslt-process-speedbar-style-frames-changed (&optional dont-reset)
   "Called by the debugger when the style frame stack changes."
-  (if xslt-process-style-frames-item-expanded
-      (speedbar-with-writable
-	(save-excursion
-	  (if (not dont-reset)
-	      (setq xslt-process-selected-style-frame nil))
-	  (set-buffer (get-buffer xslt-process-speedbar-bufname))
-	  (beginning-of-buffer)
-	  (xslt-process-select-menu-item 0 "Style frames")
-	  (speedbar-delete-subblock 0)
-	  (forward-line 1)
-	  (xslt-process-speedbar-show-style-frames-stack "" 0)))))
+  (let ((speedbar-buffer (get-buffer xslt-process-speedbar-bufname)))
+    (if (and speedbar-buffer xslt-process-style-frames-item-expanded)
+	(speedbar-with-writable
+	  (save-excursion
+	    (if (not dont-reset)
+		(setq xslt-process-selected-style-frame nil))
+	    (set-buffer speedbar-buffer)
+	    (beginning-of-buffer)
+	    (xslt-process-select-menu-item 0 "Style frames")
+	    (speedbar-delete-subblock 0)
+	    (forward-line 1)
+	    (xslt-process-speedbar-show-style-frames-stack "" 0))))))
 
 (provide 'xslt-speedbar)
