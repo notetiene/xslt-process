@@ -1,3 +1,9 @@
+2002-08-10  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/Makefile: Properly check for Windows: use "cygwin", instead
+	of "win", to avoid confusion on MacOS X, whose uname reports
+	"Darwin".
+
 2002-08-07  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
 	* doc/Makefile: Changed to work with ImageMagik-5.4.3
