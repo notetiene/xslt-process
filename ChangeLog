@@ -1,3 +1,22 @@
+2001-04-29  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: More GNU Emacs compatibility. Define
+	remassoc instead of using rassoc, which I mistakenly believed has
+	the same functionality. Use our own functions for dealing with
+	XEmacs extends or GNU Emacs overlays, instead of using setnu.
+
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Set the
+	TraceListener only if forDebug is true.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Use only one
+	TransformerFactory instance. Set the TRACE_LISTENER attribute
+	depending on the forDebug value.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Pass forDebug in
+	prepareTransformerForDebugging and always call this method.
+
+	* java/Makefile: Added the clean target.
+
 2001-04-26  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Define the menu as a variable, so it can
