@@ -1,3 +1,15 @@
+2003-01-04  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+	* doc/xslt-process.texi.in: Updated to reflect changes to software.
+	* java/xslt.jar: reflect changes
+	* lisp/xslt-process.el: Added setting of global transformation
+	parameters, Display keybindings under GNU Emacs (still not working
+	for debug mode), Processor selection menu now works under GNU Emacs
+	Prevent display of erroneous "no output generated" messages
+	* java/xslt/debugger/xalan/XalanValue.java: Map Java object type
+	* java/xslt/debugger/AbstractXSLTDebugger.java,
+	* java/xslt/debugger/Manager.java,
+	* java/xslt/debugger/cmdline/Controller.java: Added setting of global
+	transformation 	parameters
 2003-01-01  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 	* doc/processors.png: Show new version number.
 2002-21-31  Tony Addyman  <A.M.Addyman@salford.ac.uk>
@@ -6,8 +18,8 @@
 	* lisp/xslt-process.el: support Java 1.4
 	* java/xslt/debugger/xalan/XalanTraceListener.java:
 	new local variable discovery algorithm
-	* java/xslt/debugger/xalan/XalanValue: support of Java objects
-	* java/xslt/debugger/xalan/XalanStyleFrame:
+	* java/xslt/debugger/xalan/XalanValue.java: support of Java objects
+	* java/xslt/debugger/xalan/XalanStyleFrame.java:
 	new local variable discovery algorithm
 	* java/xslt/debugger/AbstractXSLTDebugger.java: added
 	getStyleSheetId method
