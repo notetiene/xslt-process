@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June 19, 2001 10:08:54 ovidiu>
+;; Time-stamp: <August 15, 2001 15:01:41 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -265,6 +265,15 @@ needed for the XSLT processor to function correctly."
   :group 'xslt-process
   :type '(repeat (string :tag "Argument")))
 
+(defcustom xslt-process-jvm-option-properties nil
+  "*Specify property values.
+Enter the properties which get passed to the Java Virtual Machine as 
+\"-D\" properties."
+  :group 'xslt-process
+  :type '(repeat (cons :tag "Property"
+		  (string :tag "Name") 
+		  (string :tag "Value"))))
+
 (defcustom xslt-process-additional-classpath nil
   "*Additional Java classpath to be passed to the JVM that runs the
 XSLT processor. Note that modifying this won't have any effect until
@@ -275,6 +284,7 @@ You need to setup this only if you plan on using extension functions
 which make use of your own Java classes."
   :group 'xslt-process
   :type '(repeat (file :must-match t :tag "Path")))
+
 
 (defcustom xslt-process-invoke-buffer-view "\C-c\C-xv"
   "*Keybinding for invoking the XSLT processor, and viewing the results
@@ -1488,7 +1498,9 @@ already started."
 				  ";" path-separator))
 	 (classpath (mapconcat (lambda (x) x)
 			       xslt-process-external-java-libraries
-			       classpath-separator)))
+			       classpath-separator))
+	 (command nil))
+    
     (if xslt-process-additional-classpath
 	(setq classpath
 	      (concat
@@ -1496,16 +1508,19 @@ already started."
 			  xslt-process-additional-classpath
 			  classpath-separator)
 	       classpath-separator classpath)))
-    (message (concat xslt-process-java-program nil " "
-		     "-classpath" " " classpath " "
-		     "xslt.debugger.cmdline.Controller" " " "-emacs" " "
-		     (format "-%s" xslt-process-current-processor)))
+    
+    (setq command
+	  (append (list xslt-process-java-program)
+		  '(nil)
+		  xslt-process-jvm-arguments
+		  (mapcar (lambda (x)
+			    (concat "-D" (car x) "=" (cdr x)))
+			  xslt-process-jvm-option-properties)
+		  (list "-classpath" classpath
+			"xslt.debugger.cmdline.Controller" "-emacs")
+		  (list (format "-%s" xslt-process-current-processor))))
     (setq xslt-process-comint-buffer
-	  (make-comint xslt-process-comint-process-name
-		       xslt-process-java-program nil
-		       "-classpath" classpath
-		       "xslt.debugger.cmdline.Controller" "-emacs"
-		       (format "-%s" xslt-process-current-processor)))
+	  (apply 'make-comint xslt-process-comint-process-name command))
     (message "Starting XSLT process...")
     (setq xslt-process-comint-process
 	  (get-buffer-process xslt-process-comint-buffer))
