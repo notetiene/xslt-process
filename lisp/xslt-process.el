@@ -207,6 +207,9 @@ entered.")
 (defvar xslt-process-comint-process nil
   "The XSLT debugger process.")
 
+(defvar xslt-process-comint-buffer nil
+  "The buffer within which the XSLT debugger process runs.")
+
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
   xslt-process-key-binding 'xslt-process-invoke)
@@ -261,8 +264,8 @@ Java Bean Shell: http://www.beanshell.org/
   (add-submenu
    nil
    '("XSLT"
-     ["Run" xslt-process-invoke :active t]
-     ["--:singleLine" nil]
+     ["Run XSLT processor" xslt-process-invoke :active t]
+     ["--:shadowEtchedIn" nil]
      ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
      ["Set breakpoint" xslt-process-set-breakpoint
       :active (and xslt-process-debug-mode
@@ -276,12 +279,13 @@ Java Bean Shell: http://www.beanshell.org/
       :active (and xslt-process-debug-mode
 		   (xslt-process-is-breakpoint
 		    (xslt-process-new-breakpoint-here)))]
-     ["--:singleLine" nil]
-     ["Start Debugger" xslt-process-run-debugger :active t]
+     ["--:shadowEtchedIn" nil]
+     ["Run debugger" xslt-process-run-debugger :active t]
      ["Step" xslt-process-do-next :active nil]
      ["Next" xslt-process-do-next :active nil]
      ["Finish" xslt-process-do-next :active nil]
-     ["Continue" xslt-process-do-next :active nil]))
+     ["Continue" xslt-process-do-next :active nil]
+     ["Stop" nil]))
   (setq xslt-process-mode
 	(if (null arg) (not xslt-process-mode)
 	  (> (prefix-numeric-value arg) 0)))
@@ -491,6 +495,7 @@ message if a breakpoint is already setup."
 	 (line (xslt-process-breakpoint-line breakpoint)))
     (if (xslt-process-is-breakpoint breakpoint)
 	(message (format "Breakpoint already set in %s at %s" filename line))
+      (xslt-process-send-command (format "b %s %s" filename line))
       (xslt-process-intern-breakpoint breakpoint t)
       (xslt-process-highlight-line 'xslt-process-enabled-breakpoint-face)
       (message (format "Set breakpoint in %s at %s." filename line)))))
@@ -504,6 +509,9 @@ message if a breakpoint is already setup."
     (if (xslt-process-is-breakpoint breakpoint)
 	(progn
 	  (xslt-process-remove-breakpoint breakpoint)
+	  ;; Send the command to the XSLT debugger, but don't start it
+	  ;; if it's not started.
+	  (xslt-process-send-command (format "d %s %s" filename line) t)
 	  (xslt-process-highlight-line 'default)
 	  ;; Remove the extent that exists at this line
 	  (save-excursion
@@ -530,14 +538,16 @@ on its state."
 	  ;; breakpoint and print informative message
 	  (xslt-process-highlight-line
 	   (if (xslt-process-breakpoint-is-enabled breakpoint)
-	       (and
-		 (message (format "Enabled breakpoint in %s at %s"
-				  filename line))
-		 'xslt-process-enabled-breakpoint-face)
-	     (and
-	      (message (format "Disabled breakpoint in %s at %s"
-			       filename line))
-	      'xslt-process-disabled-breakpoint-face))))
+	       (progn
+		(xslt-process-send-command (format "ena %s %s" filename line))
+		(message (format "Enabled breakpoint in %s at %s"
+				 filename line))
+		'xslt-process-enabled-breakpoint-face)
+	     (progn
+	       (xslt-process-send-command (format "dis %s %s" filename line))
+	       (message (format "Disabled breakpoint in %s at %s"
+				filename line))
+	       'xslt-process-disabled-breakpoint-face))))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 (defun xslt-process-change-breakpoints-highlighting (flag)
@@ -568,16 +578,49 @@ breakpoints."
 	   (to (or (end-of-line) (point)))
 	   (extent (or (extent-at from)
 		       (make-extent from to))))
+      (message (format "from %s, to %s" from to))
       (set-extent-face extent face))))
 
+(defun xslt-process-send-command (string &optional dont-start-process?)
+  "Sends a command to the XSLT process. Start this process if not
+already started. "
+  (if (and (not dont-start-process?)
+	   (or (null xslt-process-comint-process)
+	       (not (eq (process-status xslt-process-comint-process) 'run))))
+      (progn
+	(xslt-process-start-debugger-process)
+	;; Set any breakpoints which happen to be setup in the
+	;; breakpoints hash table at this time in the XSLT debugger
+	(maphash
+	 (lambda (breakpoint status)
+	   (let ((filename (xslt-process-breakpoint-filename breakpoint))
+		 (line (xslt-process-breakpoint-line breakpoint)))
+	     (comint-simple-send xslt-process-comint-process
+				 (format "b %s %s" filename line))
+	     (if (eq status 'disabled)
+		 (comint-simple-send xslt-process-comint-process
+				     (format "dis %s %s" filename line)))))
+	 xslt-process-breakpoints)))
+  (if (eq (process-status xslt-process-comint-process) 'run)
+      (comint-simple-send xslt-process-comint-process string)))
 
-; comint-simple-send (string)
-(defun xslt-process-run-debugger ()
+(defun xslt-process-start-debugger-process ()
   "*Start the XSLT debugger process."
-  (let ((buffer
-	 (make-comint xslt-process-comint-process-name
-		      "java" nil "xslt.debugger.cmdline.Controller")))
-    (setq xslt-process-comint-process (get-buffer-process buffer))))
+  (setq xslt-process-comint-buffer
+	(make-comint xslt-process-comint-process-name
+		     "java" nil "xslt.debugger.cmdline.Controller"))
+  (message "Started XSLT process.")
+  (setq xslt-process-comint-process
+	(get-buffer-process xslt-process-comint-buffer))
+  (save-excursion
+    (set-buffer xslt-process-comint-buffer)
+    (setq comint-output-filter-functions '(xslt-process-output-from-process))
+    (setq comint-prompt-regexp "^xslt> ")
+    (setq comint-delimiter-argument-list '(? ))))
+
+(defun xslt-process-output-from-process (string)
+  "This function is called each time output is generated from the XSLT process"
+  (message (format "got %s" string)))
 
 (defun xslt-process-setup-minor-mode (keymap mode-line-string)
   "Setup the XSLT-process minor mode. KEYMAP specifies the keybindings
