@@ -1039,6 +1039,19 @@ processor, and do some magic to get to the right context.
 @comment  node-name,  next,  previous,  up
 @chapter Changes
 
+These are the changes since the 2.0 release:
+
+@itemize @bullet
+
+@item
+Added the ability to pass JVM arguments and properties. Thanks to
+@email{p.lord@@russet.org.uk, Phillip Lord} for the idea and initial
+patch.
+
+@end itemize
+
+@sp 1
+
 These are the changes since the 1.2.2 release:
 
 @itemize @bullet
