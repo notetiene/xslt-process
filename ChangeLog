@@ -1,3 +1,9 @@
+2001-08-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added the ability to automatically
+	register Docbook-XSL files by specifying the installation
+	directory of DocBook-XSL.
+
 2001-08-16  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* doc/xslt-process.texi.in: Added change log item about the FOP
