@@ -89,7 +89,7 @@ names conform to the URI definition."
   (if (fboundp 'point-at-bol)
       (defalias 'line-beginning-position 'point-at-bol)))
 (unless (fboundp 'line-end-position)
-  (if (fbound 'point-at-eol)
+  (if (fboundp 'point-at-eol)
       (defalias 'line-end-position 'point-at-eol)))
 
 (defun xslt-process-escape (string)
