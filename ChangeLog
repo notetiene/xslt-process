@@ -1,3 +1,22 @@
+2002-21-31  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+	* java/xslt.jar: reflects changes
+	* lisp/xslt-speedbar.el: updated to work with XEmacs
+	* lisp/xslt-process.el: support Java 1.4
+	* java/xslt/debugger/xalan/XalanTraceListener.java:
+	new local variable discovery algorithm
+	* java/xslt/debugger/xalan/XalanValue: support of Java objects
+	* java/xslt/debugger/xalan/XalanStyleFrame:
+	new local variable discovery algorithm
+	* java/xslt/debugger/AbstractXSLTDebugger.java: added
+	getStyleSheetId method
+	* java/xslt/debugger/SourceFrame.java,
+	* java/xslt/debugger/StyleFrame.java: check for
+	null references in equals() methods
+	* tests/test5.xsl: further mods for Xalan debugger
+	* tests/fo/glossary.xml: link to stylesheet
+	* tests/fo/glossary.xsl: correct coding of link to simple-page-master
+	in page-sequence.
+
 2002-12-07  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 	* java/Makefile: Changed for Xalan-2.4.1
 	* doc/xslt-process.texi.in: update Xalan version numbers.
@@ -37,7 +56,6 @@
 	Update copyright notices. Add missing GPL. Tidy code layout. No functional
 	changes.
 2002-08-04  Tony Addyman   <A.M.Addyman@salford.ac.uk>
-	
 	* java/Makefile: Updated CLASSPATH to point to new jar files. Saxon jar
 	at start to provide line numbers for Xalan debugger.
 	* tests/test5.xsl: Modified to suit Xalan as well as Saxon: different
