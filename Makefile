@@ -19,5 +19,5 @@ dist:
 	 rm -rf /tmp/xslt-process-$(VERSION); \
 	 tag=release_`echo $(VERSION) | sed 's/\./_/g'`; \
 	 echo "Tagging the repository with tag '$$tag'"; \
-	 cvs -d $$repository rtag -F $$tag xslt; \
+	 cvs -d $$repository rtag -F $$tag xslt-process; \
 	 echo "The distribution is in /tmp/xslt-process-$(VERSION).tar.gz")
