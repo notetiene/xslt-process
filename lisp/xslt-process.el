@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <2001-04-26 11:10:54 ovidiu>
+;; Time-stamp: <April 26, 2001 13:10:50 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -51,7 +51,13 @@
 
 (if setnu-running-under-xemacs
     nil
-  (fset 'remassoc 'rassoc))
+  (fset 'remassoc 'rassoc)
+  (defun mapvector (function seq)
+    "Apply FUNCTION to each element in SEQUENCE."
+    (let (result)
+      (loop for elem across seq do
+	    (setq result (append result (cons elem nil))))
+      (vconcat result))))
 
 (defconst xslt-process-version "2.0"
   "The version of the XSLT-process mode.")
@@ -1117,7 +1123,7 @@ highlights the line."
 	       (extent (setnu-make-extent from to)))
 	  (setnu-set-extent-property extent 'face face)
 	  (if priority
-	      (set-extent-property extent 'priority priority))
+	      (setnu-set-extent-property extent 'priority priority))
 	  extent))))
 
 ;;;
