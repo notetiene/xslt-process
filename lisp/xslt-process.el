@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <August 20, 2001 00:11:10 ovidiu>
+;; Time-stamp: <August 20, 2001 01:05:25 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -2166,7 +2166,7 @@ files. You can add or remove associations in the registry."
       ;; Before uninstalling DocBook, remove the old stylesheets from
       ;; the registry, so that it doesn't become cluttered with
       ;; garbage.
-      (if (and (null val) xslt-process-docbook-install-dir)
+      (if (and (null val) (boundp 'xslt-process-docbook-install-dir))
 	  (let ((old-xsl-fo
 		 (file-truename (concat xslt-process-docbook-install-dir
 					"/fo/docbook.xsl")))
