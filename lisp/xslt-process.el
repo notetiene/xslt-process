@@ -41,6 +41,8 @@
 (require 'jde)
 (require 'cl)
 
+(require 'xslt-debug)
+
 ;;; User defaults
 
 (defgroup xslt-process nil
@@ -84,6 +86,21 @@ To enter a normal key, enter its corresponding character. To enter a
 key with a modifier, either type C-q followed by the desired modified
 keystroke, e.g. C-q C-c to enter Control c. To enter a function key,
 use the [f1], [f2] etc. notation."
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-debug-start-debugger "\C-c\C-x\C-r"
+  "*Keybinding for starting the XSLT debugger."
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-debug-set-breakpoint "\C-c\C-x\C-b"
+  "*Keybinding for setting up a breakpoint at line in the current buffer."
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-debug-delete-breakpoint "\C-c\C-x\C-d"
+  "*Keybinding for deleting the breakpoint at line in the current buffer."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
@@ -133,11 +150,28 @@ Emacs JDE:       http://sunsite.dk/jde/
 Java Bean Shell: http://www.beanshell.org/
 "
   (interactive "P")
+  (add-submenu
+   nil
+   '("XSLT"
+     ["%_Run" xslt-process-invoke :active t]
+     ["--:singleLine" nil]
+     ["Set %_breakpoint" xslt-debug-set-breakpoint
+      :active (xslt-debug-is-breakpoint)]
+     ["%_Delete breakpoint" xslt-debug-delete-breakpoint
+      :active (not (xslt-debug-is-breakpoint))]
+     ["---" nil]
+     ["%_Start Debugger" xslt-debug-mode :active t]))
   (setq xslt-process-mode
 	(if (null arg) (not xslt-process-mode)
 	  (> (prefix-numeric-value arg) 0)))
   (define-key xslt-process-mode-map
     xslt-process-key-binding 'xslt-process-invoke)
+  (define-key xslt-process-mode-map
+    xslt-debug-start-debugger 'xslt-debug-mode)
+  (define-key xslt-process-mode-map
+    xslt-debug-set-breakpoint 'xslt-debug-set-breakpoint)
+  (define-key xslt-process-mode-map
+    xslt-debug-delete-breakpoint 'xslt-debug-delete-breakpoint)
 					; Force modeline to redisplay
   (set-buffer-modified-p (buffer-modified-p)))
 
