@@ -85,12 +85,12 @@ public class SaxonTraceListener implements TraceListener
    */
   public void toplevel(NodeInfo element)
   {
-    StyleElement e = (StyleElement)element;
-    System.err.println("<Top-level element=\""
-                       + e.getDisplayName() + "\" line=\"" + e.getLineNumber()
-                       + "\" file=\"" + e.getSystemId()
-                       + "\" precedence=\"" + e.getPrecedence()
-                       +"\"/>");
+//     StyleElement e = (StyleElement)element;
+//     System.err.println("<Top-level element=\""
+//                        + e.getDisplayName() + "\" line=\"" + e.getLineNumber()
+//                        + "\" file=\"" + e.getSystemId()
+//                        + "\" precedence=\"" + e.getPrecedence()
+//                        +"\"/>");
   }
 
   /**
@@ -105,9 +105,9 @@ public class SaxonTraceListener implements TraceListener
     String filename = curr.getSystemId();
     int line = curr.getLineNumber();
     int column = curr.getColumnNumber();
-    System.err.println(indent + "<Source node=\""  + curr.getPath()
-		       + "\" line=\"" + curr.getLineNumber()
-		       + "\" mode=\"" + getModeName(context) + "\">");
+//     System.err.println(indent + "<Source node=\""  + curr.getPath()
+// 		       + "\" line=\"" + curr.getLineNumber()
+// 		       + "\" mode=\"" + getModeName(context) + "\">");
     indent += " ";
 
     SourceFrame frame = new SourceFrame(name, filename, line, column, manager);
