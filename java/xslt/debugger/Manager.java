@@ -42,6 +42,10 @@ import org.apache.fop.messaging.MessageHandler;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.apps.Driver;
 
+import org.apache.avalon.framework.logger.Logger;
+import org.apache.avalon.framework.logger.ConsoleLogger;
+
+import xslt.debugger.FOPLogger;
 /**
  * <code>Manager</code> manages the breakpoints, and local and global
  * variables. It contains an {@link AbstractXSLTDebugger} instance,
@@ -112,6 +116,12 @@ public class Manager
    * with xsl:message are sent.
    */
   protected OutputStream messageStream = System.out;
+
+  /**
+   * <code>fopLogLevel</code> specifies the level of logging to be reported
+   * when FOP is run.
+   */
+  protected int fopLogLevel = FOPLogger.LEVEL_INFO;
 
   /**
    * <code>forDebug</code> indicates whether the XSLT processor should
@@ -442,23 +452,28 @@ public class Manager
   }
 
   public void convertToPDF(String outputFilename)
-    throws MalformedURLException, IOException, FOPException
   {
-    InputSource xmlSource = new InputSource(new URL(xmlFilename).toString());
-    File file = new File(outputFilename);
-    boolean created = file.createNewFile();
-    file.deleteOnExit();
-    FileOutputStream fileStream = new FileOutputStream(file);
+    try {
+      InputSource xmlSource = new InputSource(new URL(xmlFilename).toString());
+      File file = new File(outputFilename);
+      boolean created = file.createNewFile();
+      file.deleteOnExit();
+      FileOutputStream fileStream = new FileOutputStream(file);
 
-    MessageHandler.setOutputMethod(MessageHandler.EVENT);
-    MessageHandler.addListener(new FOPMessageListener(observer));
-
-    Driver driver = new Driver(xmlSource, fileStream);
-    driver.setRenderer(Driver.RENDER_PDF);
-    driver.run();
-
-    fileStream.flush();
-    fileStream.close();
+      Driver driver = new Driver(xmlSource, fileStream);
+      Logger logger = new FOPLogger(observer, getFopLogLevel());
+      MessageHandler.setScreenLogger(logger);
+      driver.setLogger(logger);
+      MessageHandler.setOutputMethod(MessageHandler.EVENT);
+      MessageHandler.addListener(new FOPMessageListener(observer));
+      driver.setRenderer(Driver.RENDER_PDF);
+      driver.setErrorDump(getFopLogLevel() == FOPLogger.LEVEL_DEBUG);
+      driver.run();
+      fileStream.flush();
+      fileStream.close();
+    } catch (Exception e) {
+      observer.caughtException(e);
+    }
     observer.processorFinished();
   }
   
@@ -577,5 +592,13 @@ public class Manager
   public void setXSLTStylesheet(String filename)
   {
     xslFilename = filename;
+  }
+
+  public void setFopLogLevel(int logLevel) {
+    this.fopLogLevel = logLevel;
+  }
+
+  public int getFopLogLevel() {
+    return this.fopLogLevel;
   }
 }

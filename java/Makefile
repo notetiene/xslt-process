@@ -12,7 +12,7 @@ endif
 
 JAVA = $(shell find xslt/debugger -name '*.java' -type f -print)
 CLASSES = $(JAVA:.java=.class)
-CLASSPATH = xalan-2.1.0.jar$(SEP)xalanj1compat.jar$(SEP)xerces-1.2.3.jar$(SEP)bsf.jar$(SEP)saxon-6.5.2.jar$(SEP)fop-0.20.3.jar$(SEP)avalon-framework-4.0.jar
+CLASSPATH = xalan-2.3.1.jar$(SEP)xalanj1compat.jar$(SEP)xercesImpl-2.0.1.jar$(SEP)bsf.jar$(SEP)batik.jar$(SEP)jimi-1.0.jar$(SEP)saxon-6.5.2.jar$(SEP)fop.jar$(SEP)avalon-framework-cvs-20020315.jar
 
 all: $(JAR)
 

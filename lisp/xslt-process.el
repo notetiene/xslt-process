@@ -211,7 +211,19 @@ directory structure looks a little different."
   :type '(list
 	  (radio-button-choice
 	   (const :tag "Saxon 6.5.2" Saxon)
-	   (const :tag "Xalan 2.1.0" Xalan))))
+	   (const :tag "Xalan 2.3.1" Xalan))))
+
+(defcustom xslt-process-fop-log-level (list 'info)
+  "*The logging level used when running FOP."
+  :group 'xslt-process
+  :type '(list
+	  (radio-button-choice
+	   (const :tag "Debug" debug)
+	   (const :tag "Info" info)
+	   (const :tag "Warn" warn)
+	   (const :tag "Error" error)
+	   (const :tag "Fatal Error" fatal)
+	   (const :tag "Disabled" disabled))))
 
 (if (or (eq system-type 'windows-nt)
 	(eq system-type 'cygwin32))
@@ -592,9 +604,9 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "xerces-1.2.3.jar" "xalan-2.1.0.jar" "saxon-6.5.2.jar"
-	    "xalanj1compat.jar" "batik.jar" "fop-0.20.3.jar"
-	    "logkit-1.0.jar" "avalon-framework-4.0.jar" "xslt.jar"))
+	  '("bsf.jar" "xercesImpl-2.0.1.jar" "xalan-2.3.1.jar" "saxon-6.5.2.jar"
+	    "xalanj1compat.jar" "batik.jar" "fop.jar"
+	    "avalon-framework-cvs-20020315.jar" "xslt.jar"))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
@@ -1063,7 +1075,8 @@ end of the XSLT processing to continue with the FOP processing."
 		      (xslt-process-temp-directory)))
 	(pdf-filename (expand-file-name
 		       "xslt-process-output.pdf"
-		       (xslt-process-temp-directory))))
+		       (xslt-process-temp-directory)))
+	(log-level (symbol-name (car xslt-process-fop-log-level))))
     (message "XSLT processing finished, running FOP processor...")
     ;; Set the internal state to 'running' to avoid starting a new
     ;; processing in the meantime.
@@ -1072,7 +1085,8 @@ end of the XSLT processing to continue with the FOP processing."
     (add-hook 'xslt-process-xslt-processing-finished-hooks
 	      'xslt-process-do-invoke-pdf-viewer)
     (xslt-process-send-command
-     (format "toPDF -xml %s -o %s" fo-filename pdf-filename))))
+     (format "toPDF -%s -xml %s -o %s" log-level
+	     fo-filename pdf-filename))))
 
 (defun xslt-process-do-invoke-pdf-viewer ()
   "Private function invoked at the end of the FOP processing to start
@@ -1939,7 +1953,7 @@ in the current XSLT template have changed."
 (defun xslt-process-show-in-minibuffer (string)
   "Called from the Java process to display status information in the
 minibuffer area"
-  (message string))
+  (message (xslt-process-unescape string)))
 
 (defun xslt-process-process-filter (process string)
   "Function called whenever the XSLT processor sends results to its

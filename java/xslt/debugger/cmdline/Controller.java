@@ -48,6 +48,7 @@ import xslt.debugger.Type;
 import xslt.debugger.Utils;
 import xslt.debugger.Value;
 import xslt.debugger.Variable;
+import xslt.debugger.FOPLogger;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 
@@ -69,7 +70,7 @@ public class Controller
     = "Usage: ena (<breakpoint number> | filename lineno)";
   static final String debugUsage = "Usage: debug -xml filename [-a | -xsl filename] [-o <output filename>]";
   static final String runUsage = "Usage: run -xml filename [-a | -xsl filename] [-o <output filename>]";
-  static final String toPDFUsage = "Usage: toPDF -xml filename -o <output filename>";
+  static final String toPDFUsage = "Usage: toPDF -errorlevel -xml filename -o <output filename>";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
   static final String printLocalVariableUsage = "Usage: pl <name>";
@@ -552,6 +553,30 @@ public class Controller
         outputFilename = (String)args.get(i + 1);
         i += 2;
       }
+      else if (arg.equals("-info")) {
+	manager.setFopLogLevel(FOPLogger.LEVEL_INFO);
+	i += 1;
+      }
+      else if (arg.equals("-warn")) {
+	manager.setFopLogLevel(FOPLogger.LEVEL_WARN);
+	i += 1;
+      }
+      else if (arg.equals("-debug")) {
+	manager.setFopLogLevel(FOPLogger.LEVEL_DEBUG);
+	i += 1;
+      }
+      else if (arg.equals("-error")) {
+	manager.setFopLogLevel(FOPLogger.LEVEL_ERROR);
+	i += 1;
+      }
+      else if (arg.equals("-fatal")) {
+	manager.setFopLogLevel(FOPLogger.LEVEL_FATAL);
+	i += 1;
+      }
+      else if (arg.equals("-disabled")){
+    	manager.setFopLogLevel(FOPLogger.LEVEL_DISABLED);
+	i += 1;
+      }
       else {
         System.out.println("Unknown argument: " + arg + "\n" + toPDFUsage);
         return;
@@ -568,7 +593,6 @@ public class Controller
       System.out.println(toPDFUsage);
       return;
     }
-
     manager.convertToPDF(outputFilename);
   }
   

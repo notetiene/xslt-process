@@ -23,8 +23,8 @@ public class FOPMessageListener implements MessageListener
   
   public void processMessage(MessageEvent event)
   {
-    if (event.getMessageType() != MessageEvent.LOG)
-      return;
+    //    if (event.getMessageType() != MessageEvent.LOG && event.getMessageType() != MessageEvent.ERROR)
+    //      return;
 
     String message = event.getMessage();
     // Check for a \n character in the message. If there's no such
@@ -35,12 +35,13 @@ public class FOPMessageListener implements MessageListener
     
     while ((endIndex = message.indexOf("\n", fromIndex)) != -1) {
       line.append(message.substring(fromIndex, endIndex));
-      observer.displayInfo(line.toString());
+      observer.displayInfo("Message: " + line.toString());
       line.delete(0, line.length());
       fromIndex = endIndex + 1;
     }
 
     line.append(message.substring(fromIndex));
-    observer.displayInfo(line.toString());
+    observer.displayInfo("Message: " + line.toString());
+    line.delete(0, line.length());
   }
 }
