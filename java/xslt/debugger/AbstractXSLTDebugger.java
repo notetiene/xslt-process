@@ -9,11 +9,23 @@
 package xslt.debugger;
 
 
-import java.util.ArrayList;
-import java.lang.Runnable;
 import java.io.OutputStream;
-
+import java.lang.Runnable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import javax.xml.transform.Templates;
 import xslt.debugger.Manager;
+import java.io.File;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerConfigurationException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.MalformedURLException;
+import java.io.IOException;
+import javax.xml.transform.Transformer;
 
 public abstract class AbstractXSLTDebugger implements Runnable
 {
@@ -36,6 +48,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public static final int DO_DEFERRED_STOP = 6;
 
   String processorName = null;
+  protected HashMap sheetCache = new HashMap();
+  
   protected Manager manager = null;
   protected String xmlFilename;
 
@@ -62,6 +76,42 @@ public abstract class AbstractXSLTDebugger implements Runnable
   }
 
   abstract public void run();
+  abstract public TransformerFactory getTransformerFactory();
+
+  public Transformer getTransformer(String xmlFilename)
+  {
+    Transformer transformer = null;
+    
+    try {
+      TransformerFactory tFactory = getTransformerFactory();
+      File inFile = new File(xmlFilename);
+      StreamSource in = new StreamSource(xmlFilename);
+      StreamResult result = new StreamResult(outStream);
+
+      String media = null, title = null, charset = null;
+      Source stylesheet
+        = tFactory.getAssociatedStylesheet(in, media, title, charset);
+      String stylesheetId = stylesheet.getSystemId();
+
+      // Check for a Templates object already created for this
+      // stylesheet
+      XSLTSheetInfo sheetInfo = (XSLTSheetInfo)sheetCache.get(stylesheetId);
+      Templates template = null;
+      
+      if (sheetInfo == null) {
+        sheetInfo = new XSLTSheetInfo(stylesheet);
+        sheetCache.put(stylesheetId, sheetInfo);
+        template = sheetInfo.template;
+      }
+      else {
+        template = sheetInfo.getTemplates(stylesheet);
+      }
+    }
+    catch (Exception e) {
+    }
+
+    return transformer;
+  }
 
   public synchronized void checkRequestToStop()
   {
@@ -184,5 +234,78 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public String getProcessorName()
   {
     return processorName;
+  }
+
+  /**
+   * <code>XSLTSheetInfo</code> is used by {@link
+   * AbstractXSLTDebugger} to maintain cached templates.
+   */
+  class XSLTSheetInfo
+  {
+    Templates template = null;
+    long lastModified = Long.MIN_VALUE;
+
+    public XSLTSheetInfo(Source stylesheet)
+    {
+      try {
+        lastModified = getLastModified(stylesheet.getSystemId());
+        template = getTransformerFactory().newTemplates(stylesheet);
+      }
+      catch (TransformerConfigurationException e) {}
+    }
+
+    long getLastModified(String stylesheetId)
+    {
+      long lastModified = Long.MIN_VALUE;
+      URL url = null;
+
+      try {
+        url = new URL(stylesheetId);
+        if (url.getProtocol().equals("file")) {
+          File file = new File(url.getFile());
+          lastModified = file.lastModified();
+        }
+        else {
+          URLConnection conn = url.openConnection();
+          conn.connect();
+          lastModified = conn.getLastModified();
+        }
+      }
+      catch (MalformedURLException e) {
+        System.err.println("Invalid URL " + url + ": " + e.toString());
+      }
+      catch (IOException e) {
+        System.err.println("Cannot access " + url + ": "+ e.toString());
+      }
+
+      return lastModified;
+    }
+
+    public Templates getTemplates(Source stylesheet)
+    {
+      String stylesheetId = stylesheet.getSystemId();
+      long currentTime = Long.MIN_VALUE;
+
+      currentTime = getLastModified(stylesheetId);
+
+      if (currentTime <= lastModified && template != null) {
+        // The XSLT sheet has not been modified since the last access,
+        // return the cached one
+        return template;
+      }
+
+      // The XSLT sheet has been modified, create a new template
+      // and return it
+      try {
+        template = getTransformerFactory().newTemplates(stylesheet);
+        lastModified = currentTime;
+      }
+      catch (TransformerConfigurationException e) {
+        System.out.println("Could not create transformer for: "
+                           + stylesheetId);
+      }
+
+      return template;
+    }
   }
 }
