@@ -57,8 +57,6 @@ public class XSLTDebugger extends AbstractXSLTDebugger
   {
     if (tFactory == null)
       tFactory = new org.apache.xalan.processor.TransformerFactoryImpl();
-    System.out.println("tFactory = " + tFactory);
-
     return tFactory;
   }
 
