@@ -1,5 +1,10 @@
 2001-08-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* java/xslt/debugger/FOPMessageListener.java: Remove the println
+	statements.
+
+	* java/xslt/debugger/Manager.java: Remove the println statements.
+
 	* lisp/xslt-process.el: Updated version to 2.1. Added options to
 	customize the PDF viewer and the DocBook installation directory.
 
