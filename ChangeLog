@@ -1,3 +1,8 @@
+2001-03-24  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Fixed the next
+	operation.
+
 2001-03-22  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java/xslt/debugger/saxon/SaxonValue.java: Use SaxonType to store
