@@ -56,18 +56,17 @@ public class Manager
   Observer observer = null;
 
   /**
+   * Mapping between processor name to an instance of
+   * AbstractXSLTDebugger.
+   */
+  HashMap processors = new HashMap();
+
+  /**
    * <code>debugger</code> is an actual instance of AbstractXSLTDebugger
    * wrapper for the real XSLT processor.
    *
    */
   AbstractXSLTDebugger debugger = null;
-
-  /**
-   * <code>worker</code> points to the thread object where the
-   * <code>debugger</code> is running.
-   *
-   */
-  Thread worker = null;
 
   /**
    * Creates a new <code>Manager</code> instance.
@@ -89,10 +88,14 @@ public class Manager
   {
     try {
       processorName = processorName.toLowerCase();
-      Class debuggerClass = Class.forName("xslt.debugger."
-					 + processorName
-                                         + ".XSLTDebugger");
-      debugger = (AbstractXSLTDebugger)debuggerClass.newInstance();
+      debugger = (AbstractXSLTDebugger)processors.get(processorName);
+      if (debugger == null) {
+        Class debuggerClass = Class.forName("xslt.debugger."
+                                            + processorName
+                                            + ".XSLTDebugger");
+        debugger = (AbstractXSLTDebugger)debuggerClass.newInstance();
+        processors.put(processorName, debugger);
+      }
     }
     catch (ClassNotFoundException e) {
       System.out.println("Cannot find the " + processorName
@@ -331,7 +334,7 @@ public class Manager
   {
     debugger.setXmlFilename(xmlFilename);
     if (!debugger.isStarted()) {
-      worker = new Thread(debugger);
+      Thread worker = new Thread(debugger);
       worker.start();
     }
   }
