@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <2001-04-29 12:31:44 ovidiu>
+;; Time-stamp: <May  3, 2001 16:43:28 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -80,6 +80,10 @@ names conform to the URI definition."
     "On Unix systems the file names already conform to the URI definition."
     filename))
 
+(defvar xslt-process-dir-separator
+  (if (eq system-type 'windows-nt) "\\" "/")
+  "The directory separator. Usually / on Unix systems and \\ on Windows.")
+
 (defun xslt-process-make-glyph (glyph)
   "GNU Emacs compatibility function for the make-glyph function of XEmacs."
   (if (featurep 'xemacs)
@@ -101,11 +105,21 @@ names conform to the URI definition."
 (defconst xslt-process-mailing-list "xslt-process-users@lists.sourceforge.net"
   "The email address of the mailing list.")
 
-;; Small function needed later during the customization phase
-(defun xslt-process-find-xslt-directory ()
-  "Return the path to the xslt-process directory."
-  (file-truename
-   (concat (file-name-directory (locate-library "xslt-process")) "../")))
+(defun xslt-process-find-xslt-data-directory ()
+  "Return the path to the xslt-process directory. On XEmacs check
+whether XSLT-process is installed as a package, in which case the
+directory structure looks a little different."
+  (let ((xemacs-dir (if (featurep 'xemacs)
+			(file-truename (locate-data-directory "xslt-process"))
+		      nil))
+	(package-dir (file-truename (concat (file-name-directory
+					     (locate-library "xslt-process"))
+					    ".." xslt-process-dir-separator))))
+    (if (null xemacs-dir)
+	package-dir
+      (if (equal xemacs-dir package-dir)
+	  xemacs-dir
+	package-dir))))
 
 ;; From "custom" web page at http://www.dina.dk/~abraham/custom/
 (eval-and-compile
@@ -400,9 +414,8 @@ job.")
 
 (defvar xslt-process-external-java-libraries
   (mapcar (lambda (f)
-	    (let ((dir-separator (if (eq system-type 'windows-nt) "\\" "/")))
-	      (concat (xslt-process-find-xslt-directory)
-		      "java" dir-separator f)))
+	    (concat (xslt-process-find-xslt-data-directory)
+		      "java" xslt-process-dir-separator f))
 	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
 	    "xalanj1compat.jar" "xerces.jar" ""))
   "Defines the classpath to the XSLT processors that do the real work
@@ -566,9 +579,9 @@ filename line) that indicate the new style frame stack.")
 (defun xslt-process-visit-info-file ()
   "Visit the info file for XSLT-process."
   (require 'info)
-  (Info-find-node (concat (xslt-process-find-xslt-directory)
-			       "doc/xslt-process.info")
-		       "Top"))
+  (Info-find-node (concat (xslt-process-find-xslt-data-directory)
+			  "doc" xslt-process-dir-separator "xslt-process.info")
+		  "Top"))
 
 (defun xslt-process-dump-hashtable (sym buffer)
   "Dump a hash table in BUFFER. Used by the
@@ -1244,7 +1257,8 @@ already started."
 
 (defun xslt-process-start-debugger-process ()
   "*Start the XSLT debugger process."
-  (let* ((classpath-separator (if (eq system-type 'windows-nt) ";" ":"))
+  (let* ((classpath-separator (if (eq system-type 'cygwin32)
+				  ";" path-separator))
 	 (classpath (mapconcat (lambda (x) x)
 			       xslt-process-external-java-libraries
 			       classpath-separator)))
@@ -1467,6 +1481,24 @@ stack has changed. The STACK argument contains the new style frame
 stack as a list of (name filename line)."
   (setq xslt-process-style-frames-stack stack)
   (run-hooks 'xslt-process-style-frames-changed-hooks))
+
+(defun xslt-process-stack-frames-changed (source-frame style-frame)
+  "Called by the debugger when either the source or the style frame
+changes. This happens as an effect of user's actions, usually choosing
+a new source/style frame in the speedbar or by entering the
+appropriate commands in the command line. The SOURCE-FRAME and
+STYLE-FRAME arguments represent indices of the selected frame in the
+corresponding stack frame."
+  (message "stack frames changed %s %s" source-frame style-frame)
+  (setq xslt-process-selected-source-frame source-frame)
+  (setq xslt-process-selected-style-frame style-frame)
+  (run-hook-with-args 'xslt-process-source-frames-changed-hooks t)
+  (run-hook-with-args 'xslt-process-style-frames-changed-hooks t))
+
+(defun xslt-process-local-variables-changed (variables)
+  "Called by the debugger process to inform that the local variables
+in the current XSLT template have changed."
+  (message "xslt-process-local-variables-changed: %s" variables))
 
 (defun xslt-process-process-filter (process string)
   "Function called whenever the XSLT processor sends results to its
