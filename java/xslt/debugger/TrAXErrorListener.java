@@ -63,7 +63,18 @@ public class TrAXErrorListener implements ErrorListener
     reportError("Fatal error", ex);
   }
 
-  public void reportError(String type, TransformerException ex)
+  /**
+   * <code>reportError</code> reformats the error to include line and
+   * column numbers, and reports the error to the observer. Returns a
+   * new exception instance that includes this information. This gives
+   * an opportunity to the specific XSLT processor to override the
+   * handler of the error.
+   *
+   * @param type a <code>String</code> value
+   * @param ex a <code>TransformerException</code> value
+   * @exception TransformerException if an error occurs
+   */
+  public TransformerException reportError(String type, TransformerException ex)
     throws TransformerException
   {
     SourceLocator locator = ex.getLocator();
@@ -79,6 +90,6 @@ public class TrAXErrorListener implements ErrorListener
     }
       
     manager.getObserver().caughtException(ex);
-    //throw ex;
+    return ex;
   }
 }

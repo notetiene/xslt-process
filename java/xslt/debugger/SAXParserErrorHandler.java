@@ -61,7 +61,7 @@ public class SAXParserErrorHandler implements ErrorHandler
     reportError("Fatal error", ex);
   }
 
-  public void reportError(String type, SAXParseException ex)
+  public SAXException reportError(String type, SAXParseException ex)
     throws SAXException
   {
     String message = Utils.uriNoProtocol(ex.getSystemId()) + ":"
@@ -73,6 +73,6 @@ public class SAXParserErrorHandler implements ErrorHandler
     message += " " + type + ": " + ex.getMessage() + "\n";
     SAXException newEx = new SAXException(message, ex);
     manager.getObserver().caughtException(newEx);
-    throw newEx;
+    return newEx;
   }
 }
