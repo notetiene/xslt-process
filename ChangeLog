@@ -1,3 +1,8 @@
+2002-07-21  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Display of global variables corrected.
+	* lisp/xslt-speedbar.el: Removed message interfering with mini-buffer display.
+
 2002-07-20  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
 	* java/xslt/debugger/AbstractXSLTDebugger.java,
