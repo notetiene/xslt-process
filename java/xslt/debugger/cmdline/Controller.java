@@ -100,8 +100,6 @@ public class Controller
   public void createXSLTDebugger()
   {
     String processorName = (String)parameters.get("processor");
-    System.out.println("Create a new processor for " + processorName);
-    
     manager.setXSLTProcessorType(processorName);
     debugger = manager.getDebugger();
   }
