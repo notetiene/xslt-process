@@ -24,13 +24,15 @@
 
 package xslt.debugger;
 
+import java.io.OutputStream;
 import java.lang.ClassNotFoundException;
 import java.lang.IndexOutOfBoundsException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Stack;
-import java.io.OutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * <code>Manager</code> manages the breakpoints, and local and global
@@ -95,6 +97,7 @@ public class Manager
    * <code>System.out</code>.
    */
   protected OutputStream outStream = System.out;
+  protected boolean closeOnFinish = false;
 
   /**
    * <code>messageStream</code> is the stream where messages generated
@@ -420,6 +423,16 @@ public class Manager
     startXSLTProcessing(xmlFilename, false);
   }
 
+  public void processorFinished()
+  {
+    if (closeOnFinish) {
+      try {
+        outStream.close();
+      }
+      catch (IOException e) {}
+    }
+  }
+  
   /**
    * <code>debuggerStopped</code> is called by the debugger's trace
    * listener instance when it stops the XSLT processing.
@@ -497,12 +510,13 @@ public class Manager
     return observer;
   }
 
-  public void setOutStream(OutputStream stream)
+  public void setOutputStream(OutputStream stream, boolean closeOnFinish)
   {
     outStream = stream;
+    this.closeOnFinish = closeOnFinish;
   }
 
-  public OutputStream getOutStream()
+  public OutputStream getOutputStream()
   {
     return outStream;
   }
