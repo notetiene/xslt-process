@@ -746,4 +746,9 @@ public class Controller
     this.observer = observer;
     manager.setObserver(this.observer);
   }
+
+  public AbstractXSLTDebugger getDebugger()
+  {
+    return debugger;
+  }
 }
