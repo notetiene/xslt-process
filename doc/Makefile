@@ -6,16 +6,14 @@ DVI = $(TEXI:.texi=.dvi)
 PS = $(TEXI:.texi=.ps)
 PDF = $(TEXI:.texi=.pdf)
 PDFIMAGES = $(IMAGES:.png=.pdf)
+EPSIMAGES = $(IMAGES:.png=.eps)
+JPGIMAGES = $(IMAGES:.png=.jpg)
 HTML = $(TEXI:.texi=.html)
 
-.SUFFIXES: .texi .png .info .dvi .ps .pdf .html
+.SUFFIXES: .texi .png .info .dvi .ps .pdf .eps .jpg .html
 
 .texi.info:
 	makeinfo $<
-	info --output=../README --subnodes --file $@
-	sed -e '/^File:.*/d' -e '/[ 	]*,Top[ 	]*/d' <../README >../README.tmp
-	info --file=$@ --node=Installation --node='Setting up PSGML with XSLT-process' --output ../INSTALL
-	mv ../README.tmp ../README
 
 .texi.dvi:
 	texi2dvi $<
@@ -36,12 +34,22 @@ version.texi:
 	(cd ..; make doc/version.texi)
 
 info: $(INFO)
-dvi: $(DVI)
-ps: $(PS)
+dvi: $(EPSIMAGES) $(DVI)
+ps: $(EPSIMAGES) $(PS)
 pdf: $(PDFIMAGES) $(PDF)
-html: $(HTML)
+html: $(JPGIMAGES) $(HTML)
 
 .png.pdf:
+	@(size=`identify $< | awk '{print $$2}'`; \
+	  echo convert -page $$size $< $@; \
+	  convert -page $$size $< $@)
+
+.png.jpg:
+	@(size=`identify $< | awk '{print $$2}'`; \
+	  echo convert -page $$size $< $@; \
+	  convert -page $$size $< $@)
+
+.png.eps:
 	@(size=`identify $< | awk '{print $$2}'`; \
 	  echo convert -page $$size $< $@; \
 	  convert -page $$size $< $@)
@@ -56,4 +64,4 @@ clean:
 	    $(PDFIMAGES)
 
 distclean: clean
-	rm -f *.dvi *.html *.pdf *.ps *.info
+	rm -f *.dvi *.html *.pdf *.ps *.eps *.jpg *.info *.cps
