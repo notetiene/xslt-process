@@ -35,13 +35,13 @@ public class Manager
    * element at index 0 is considered to be the top of the template,
    * or the global scope.
    */
-  Stack styleFrames = new Stack();
+  Stack styleFrames;
 
   /**
    * <code>sourceFrames</code> keeps the stack of frames in the source
    * XML document.
    */
-  Stack sourceFrames = new Stack();
+  Stack sourceFrames;
 
   /**
    * <code>breakpoints</code> keeps an association between filename
@@ -75,6 +75,12 @@ public class Manager
    * <code>System.out</code>.
    */
   protected OutputStream outStream = System.out;
+
+  /**
+   * <code>messageStream</code> is the stream where messages generated
+   * with xsl:message are sent.
+   */
+  protected OutputStream messageStream = System.out;
 
   /**
    * <code>forDebug</code> indicates whether the XSLT processor should
@@ -358,6 +364,8 @@ public class Manager
   public void startDebugger(String xmlFilename)
     throws InterruptedException
   {
+    sourceFrames = new Stack();
+    styleFrames = new Stack();
     startXSLTProcessing(xmlFilename, true);
   }
 
@@ -406,5 +414,15 @@ public class Manager
   public OutputStream getOutStream()
   {
     return outStream;
+  }
+
+  public void setMessageStream(OutputStream stream)
+  {
+    messageStream = stream;
+  }
+
+  public OutputStream getMessageStream()
+  {
+    return messageStream;
   }
 }
