@@ -1,3 +1,47 @@
+2001-04-11  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-speedbar.el: Added xslt-process-selected-style-frame
+	to point to the last selected style frame.
+	
+	Added xslt-process-speedbar-current-line-face, face for displaying
+	the current line in the speedbar.
+	
+	(xslt-process-speedbar-change-style-frame): New function to select the
+	line of the selected style frame.
+	
+	(xslt-process-speedbar-show-style-frames-stack): Invoke the
+	xslt-process-speedbar-change-style-frame function when an item in
+	the speedbar is clicked. Display the speedbar style frame item
+	with appropriate face. Pass the index of the frame to this
+	function.
+
+	* lisp/xslt-process.el: Renamed
+	xslt-process-last-selected-position-filename to
+	xslt-process-style-selected-position-filename. Modified to account
+	for the frame object now being an array rather than a list. Added
+	xslt-process-frame-is-exiting? and xslt-process-frame-position.
+	
+	Moved functionality from do-quit to
+	xslt-process-debugger-buffer-killed. do-quit now calls this
+	method. The buffer-killed function now calls
+	xslt-process-processor-finished.
+	
+	(xslt-process-processor-finished): Reset the source and style frames
+	stack and invoke the hooks.
+	
+	(xslt-process-results-process-filter): Simplified, no longer use
+	markers.
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java (leave): Mark
+	the frame as exiting.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Generate arrays
+	instead of lists for faster access. Add isExiting and position in
+	the frame array.
+
+	* java/xslt/debugger/StyleFrame.java: Added isExiting.
+	* java/xslt/debugger/SourceFrame.java: Likewise.
+
 2001-04-09  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Added some key bindings in the speedbar's
