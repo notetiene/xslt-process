@@ -1,3 +1,13 @@
+2001-06-03  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added customization for the Web browser.
+
+	* doc/Makefile: Automatically resize the images in the dvi, ps,
+	and pdf versions of the documentation from the .texi.in document.
+
+	* doc/xslt-process.texi: Renamed to xslt-process.texi.in to be
+	able to automatically resize images.
+
 2001-06-01  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el (xslt-process-invoke-browser-view): Check
