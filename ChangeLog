@@ -1,3 +1,24 @@
+2001-04-12  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Created.
+
+	* lisp/xslt-process.el: Send the 'debug' command instead or 'r' to
+	run the XSLT debugger.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Create an instance
+	of the Saxon's TransformerFactoryImpl explicitly.
+
+	* java/xslt/debugger/cmdline/Controller.java: Renamed the run
+	method to 'debug'. Added the 'set' and 'show' methods. Create the
+	XSLT debugger instance based on the processor name that's set at
+	runtime.
+
+	* java/xslt/debugger/Manager.java: Set the processor name in the
+	debugger instance.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Added
+	processorName and accessor methods.
+
 2001-04-11  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java/saxon-6.2.2-fix.jar: Added.
