@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 29, 2001 21:46:22 ovidiu>
+;; Time-stamp: <May 30, 2001 10:44:19 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -85,7 +85,6 @@ names conform to the URI definition."
 
 (defun xslt-process-unescape (string)
   "Translate the escape sequences in the corresponding characters."
-  (message "xslt-process-unescape '%s'" string)
   (save-excursion
     (let ((tmpbuf (get-buffer-create " xslt-process-temp"))
 	  (rex "\\(\\\\\\\\\\|\\\\b\\|\\\\d\\|\\\\e\\)"))
