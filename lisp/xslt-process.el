@@ -215,7 +215,7 @@ directory structure looks a little different."
   :type '(list
 	  (radio-button-choice
 	   (const :tag "Saxon 6.5.2" Saxon)
-	   (const :tag "Xalan 2.4.D1" Xalan))))
+	   (const :tag "Xalan 2.4.1" Xalan))))
 
 (defcustom xslt-process-fop-log-level (list 'info)
   "*The logging level used when running FOP."
@@ -608,7 +608,7 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("saxon-6.5.2.jar" "bsf.jar" "xercesImpl-2.0.1.jar" "xalan-2.4.D1.jar"
+	  '("saxon-6.5.2.jar" "bsf.jar" "xml-apis.jar" "xercesImpl.jar" "xalan.jar"
 	    "batik.jar" "fop.jar" "avalon-framework-cvs-20020315.jar" "xslt.jar"))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when

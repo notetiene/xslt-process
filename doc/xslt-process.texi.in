@@ -307,10 +307,10 @@ create one now):
       (list "~/emacs"
             "~/emacs/xslt-process-@value{version}/lisp"
             "~/emacs/elib-1.0"
-            "~/emacs/speedbar-0.13a"))
+            "~/emacs/speedbar-0.14beta4"))
 @end example
 
-You can remove the reference to @kbd{elib-1.0} or @kbd{speedbar-0.13a} in
+You can remove the reference to @kbd{elib-1.0} or @kbd{speedbar-0.14beta4} in
 the lines above, if you didn't have to install either @emph{elib} or
 @emph{speedbar} as described in the previous sections.
 
@@ -403,7 +403,7 @@ emulation by adding the following lines in your @kbd{~/.emacs} file:
 
 The @emph{XSLT-process} mode comes by default with two different Java
 XSLT processors, Saxon and Xalan. These particular versions of the XSLT
-processors (Saxon-6.5.2 and Xalan-2.4.D1) have been tested and work with
+processors (Saxon-6.5.2 and Xalan-2.4.1) have been tested and work with
 the @emph{XSLT-process} mode. Different versions of the processors may not
 work with the @emph{XSLT-process} mode.
 
@@ -1152,7 +1152,7 @@ These are the changes since the 2.1 release:
 
 @item
 Updated the versions of Saxon, Xalan and FOP supported to be 6.5.2,
-2.4.D1, and 0.20.4 respectively.
+2.4.1, and 0.20.4 respectively.
 
 @item
 Debugging using Xalan is now supported.
