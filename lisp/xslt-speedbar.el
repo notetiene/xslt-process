@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <June  5, 2001 09:03:25 ovidiu>
+;; Time-stamp: <June  6, 2001 00:22:32 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -430,17 +430,18 @@ inserting in the speedbar."
   "Called to display the global variables in the speedbar window."
   (mapvector
    (lambda (variable)
-     (let ((name (aref variable 0))
-	   (type (aref variable 1))
-	   (value (aref variable 2)))
-	 (speedbar-make-tag-line 'braket ??
-				 nil
-				 nil
-				 (concat name " :" type "  " value)
-				 nil
-				 nil
-				 'speedbar-file-face
-				 (1+ indent))))
+     (let* ((name (aref variable 0))
+	    (type (aref variable 1))
+	    (value (aref variable 2))
+	    (item (xslt-process-speedbar-item type)))
+       (speedbar-make-tag-line (car item) (cadr item)
+			       nil
+			       nil
+			       (concat name "  " value)
+			       nil
+			       nil
+			       'speedbar-file-face
+			       (1+ indent))))
    xslt-process-global-variables))
 
 (defun xslt-process-speedbar-global-variables-changed ()
@@ -464,6 +465,7 @@ inserting in the speedbar."
 	    (type (aref variable 1))
 	    (value (aref variable 2))
 	    (item (xslt-process-speedbar-item type)))
+       (message "name %s, type %s, value %s" name type value)
        (speedbar-make-tag-line (car item) (cadr item)
 			       nil
 			       nil
