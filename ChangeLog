@@ -2,7 +2,7 @@
 
 	* lisp/xslt-process.el: Added the initial GNU Emacs compatibility
 	support:
-	
+
 	- renamed all the variables and functions to remove special
 	characters like / or ? from their name (uf, why doesn't GNU Emacs
 	support them?)
@@ -19,10 +19,14 @@
 	
 	- use the easymenu to get XEmacs-like menus under GNU Emacs
 
+	- define mapvector for GNU Emacs.
+
 	* lisp/xslt-speedbar.el: Use the string package to get common
 	functionality for string replace in both GNU Emacs and XEmacs. Use
 	cl's hashtables instead of XEmacs' only hashtables. Renamed the
-	variables to remove special characters out of their name.
+	variables to remove special characters out of their name. Use
+	buffer-substring instead of buffer-string, to be compatible with
+	GNU Emacs.
 
 2001-04-22  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
