@@ -8,29 +8,31 @@
 
 package xslt.debugger.saxon;
 
-
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Source;
-
-import java.util.Stack;
-import java.util.ArrayList;
-import java.lang.Runnable;
-import java.io.FileOutputStream;
-import java.io.File;
-
-import xslt.debugger.Manager;
-import xslt.debugger.AbstractXSLTDebugger;
-
-import com.icl.saxon.trace.TraceListener;
-import com.icl.saxon.style.StyleElement;
-import com.icl.saxon.StyleSheet;
-import com.icl.saxon.ParameterSet;
-import com.icl.saxon.FeatureKeys;
+import com.icl.saxon.Controller;
 import com.icl.saxon.ExtendedInputSource;
+import com.icl.saxon.FeatureKeys;
+import com.icl.saxon.ParameterSet;
+import com.icl.saxon.StyleSheet;
+import com.icl.saxon.output.Emitter;
+import com.icl.saxon.style.StyleElement;
+import com.icl.saxon.trace.TraceListener;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.lang.Runnable;
+import java.util.ArrayList;
+import java.util.Stack;
+import javax.xml.transform.Source;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import xslt.debugger.AbstractXSLTDebugger;
+import xslt.debugger.Manager;
+import xslt.debugger.Observer;
+import xslt.debugger.cmdline.EmacsObserver;
+import com.icl.saxon.output.MessageEmitter;
+import java.io.PrintWriter;
 
 public class XSLTDebugger extends AbstractXSLTDebugger
 {
@@ -54,46 +56,22 @@ public class XSLTDebugger extends AbstractXSLTDebugger
   }
   
   /**
-   * In Saxon nothing needs to be done to prepare a transformer for
-   * debugging. The debugging transformer is obtained initially from
-   * the TransformerFactory.
+   * Prepares the transformer for debugging.
+   *
+   * If the observer is an EmacsObserver, changes the Saxon
+   * <code>Emitter</code>, used to output <code>xsl:message</code>, to
+   * <code>EmacsEmitter</code>.
    */
-  public void prepareTransformerForDebugging(Transformer transformer) {}
-
-//   public synchronized void run()
-//   {
-//     state = RUNNING;
-//     notifyAll();
-
-//     try {
-//       TransformerFactory tFactory = new com.icl.saxon.TransformerFactoryImpl();
-
-//       TraceListener traceListener = new SaxonTraceListener(this);
-//       tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
-//       tFactory.setAttribute(FeatureKeys.LINE_NUMBERING, Boolean.TRUE);
-
-//       File inFile = new File(xmlFilename);
-//       StreamSource in = new StreamSource(xmlFilename);
-//       StreamResult result = new StreamResult(outStream);
-
-//       String media = null, title = null, charset = null;
-//       Source stylesheet
-//         = tFactory.getAssociatedStylesheet(in, media, title, charset);
-//       String stylesheetId = stylesheet.getSystemId();
-
-//       Transformer transformer = tFactory.newTransformer(stylesheet);
-//       if (transformer != null)
-//         transformer.transform(in, result);
-
-//       manager.getObserver().processorFinished();
-//     }
-//     catch(Exception e) {
-//       manager.getObserver().caughtException(e);
-//     }
-
-//     state = NOT_RUNNING;
-//     notifyAll();
-//   }
+  public void prepareTransformerForDebugging(Transformer transformer)
+  {
+    Observer observer = manager.getObserver();
+    if (observer instanceof EmacsObserver) {
+      MessageEmitter emitter = new MessageEmitter();
+      emitter.setWriter(new PrintWriter(manager.getMessageStream()));
+      emitter.setOutputStream(manager.getMessageStream());
+      ((Controller)transformer).setMessageEmitter(emitter);
+    }
+  }
 
   /**
    * Return the list of global variables.
