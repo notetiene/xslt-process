@@ -49,8 +49,9 @@ html: $(DEPEND) $(PNGIMAGES) $(HTML)
 $(PNGIMAGES):
 	(cd ../etc/; make)
 
-version.texi:
-	(cd ..; make doc/version.texi)
+version.texi: xslt-process.texi.in
+	@echo "@set version $(VERSION)" >$@
+	@echo "@set update-month `date +'%B %Y'`" >> $@
 
 # Generate a texinfo file containing width definitions for the
 # images. This is used by main texinfo file when including the image
