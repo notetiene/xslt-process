@@ -79,6 +79,6 @@ public class TrAXErrorListener implements ErrorListener
     }
       
     manager.getObserver().caughtException(ex);
-    throw ex;
+    //throw ex;
   }
 }
