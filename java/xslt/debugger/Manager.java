@@ -88,8 +88,9 @@ public class Manager
   public void setXSLTProcessorType(String processorName)
   {
     try {
+      processorName = processorName.toLowerCase();
       Class debuggerClass = Class.forName("xslt.debugger."
-					 + processorName.toLowerCase()
+					 + processorName
                                          + ".XSLTDebugger");
       debugger = (AbstractXSLTDebugger)debuggerClass.newInstance();
     }
@@ -105,6 +106,7 @@ public class Manager
     }
       
     debugger.setManager(this);
+    debugger.setProcessorName(processorName);
   }
 
   /**
@@ -328,7 +330,6 @@ public class Manager
     throws InterruptedException
   {
     debugger.setXmlFilename(xmlFilename);
-    //    debugger.setOutFilename(outputFilename);
     if (!debugger.isStarted()) {
       worker = new Thread(debugger);
       worker.start();
