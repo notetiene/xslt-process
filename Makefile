@@ -1,29 +1,13 @@
 VERSION = $(shell egrep 'defconst[ ]*xslt-process-version' lisp/xslt-process.el | awk '{print $$NF}')
 
-all: jar doc elc
-
-.PHONY: doc
-
-jar:
-	(cd java; make)
+all clean distclean: doc/version.texi
+	for d in java etc doc; do \
+	  (cd $$d; make $@); \
+	done
 
 doc/version.texi:
 	@echo "@set version $(VERSION)" >doc/version.texi
 	@echo "@set update-month `date +'%B %Y'`" >> doc/version.texi
-
-doc: doc/version.texi
-	(cd doc; make)
-
-elc:
-
-clean:
-	(cd doc; make $@)
-	rm -f lisp/*.elc
-	find java -name '*.class' -exec rm -f {} \;
-
-distclean: clean
-	(cd doc; make $@)
-	rm -f java/xslt.jar
 
 dist:
 	@(repository=`cat CVS/Root`; \
