@@ -1,3 +1,28 @@
+2001-08-16  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added support for PDF rendering using
+	Apache's FOP processor.
+
+	* java/Makefile: Added the FOP jar file in the classpath.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Implemented
+	displayInfo.
+
+	* java/xslt/debugger/cmdline/Controller.java: Added the toPDF
+	command. Generate proper help messages.
+
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Implement
+	displayInfo.
+
+	* java/xslt/debugger/Observer.java: Added displayInfo for messages
+	to be displayed by the observer.
+
+	* java/xslt/debugger/Manager.java: Added support for Apache's FOP
+	processor.
+
+	* java/xslt/debugger/FOPMessageListener.java: Added. Handles
+	displaying of messages from the FOP processor.
+
 2001-08-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* doc/xslt-process.texi.in: Added change item for the JVM
