@@ -108,6 +108,7 @@ public class Controller
                        + "pg\t print value of global variable\n"
                        + "sf\t set current source frame\n"
                        + "xf\t set current style frame\n"
+                       + "sbt\t show source stack frames\n"
                        + "xbt\t show XSLT stack frames\n"
                        + "stop\t stop (useful with long processings)\n"
                        + "q\t quit\n");
@@ -480,7 +481,7 @@ public class Controller
       Object[] msgArgs = {
         new Integer(i),
         currentSourceFrame == i ? "*" : " ",
-        sourceFrame.getName() 
+        sourceFrame.getName()
       };
       String line = MessageFormat.format("{0,number,##} {1} {2}", msgArgs);
       System.out.println(line);
@@ -750,5 +751,10 @@ public class Controller
   public AbstractXSLTDebugger getDebugger()
   {
     return debugger;
+  }
+
+  public Manager getManager()
+  {
+    return manager;
   }
 }
