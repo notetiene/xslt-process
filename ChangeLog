@@ -1,3 +1,38 @@
+2001-04-17  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Define the version, various email
+	addresses and the public Web site. Added support for specifying
+	the desired XSLT processor through the menus. Rearranged the state
+	variables. Added menu entries for customization and for viewing
+	various information. Added support for submitting bug
+	reports. Fixed the way the output buffer is chosen when output
+	from the XSLT process occurs.
+
+	* lisp/xslt-speedbar.el: Require speedbar right at the top of the
+	file.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Set the outStream
+	on the manager instance.
+
+	* java/xslt/debugger/cmdline/Controller.java (createXSLTDebugger):
+	Removed superfluous messages.
+
+	* java/xslt/debugger/Manager.java: outStream is not setup in this
+	class instead of being setup in a debugger instance.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Moved the
+	outStream instance variable to Manager.
+
+	* Makefile: The version of the package now lives in the
+	lisp/xslt-process.el file. The update date in
+	doc/xslt-process.texi is now generated automatically.
+	* doc/Makefile: Likewise.
+
+	* doc/xslt-process.texi: Take the version and update-month
+	variables from version.texi, an automatically generated file.
+
+	* doc/.cvsignore: Added version.texi.
+
 2001-04-16  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Pass in the classpath the java/ directory
