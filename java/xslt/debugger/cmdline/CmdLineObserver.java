@@ -12,7 +12,14 @@ import xslt.debugger.Observer;
 
 public class CmdLineObserver implements Observer
 {
-  public CmdLineObserver()
+  Controller controller;
+  
+  public CmdLineObserver(Controller controller)
+  {
+    this.controller = controller;
+  }
+
+  public void debuggerProcessStarted()
   {
   }
 
