@@ -24,11 +24,11 @@
 
 package xslt.debugger.cmdline;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.NoSuchMethodException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -48,6 +48,8 @@ import xslt.debugger.Type;
 import xslt.debugger.Utils;
 import xslt.debugger.Value;
 import xslt.debugger.Variable;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 
 /**
  * This is the public class used by the command line interface to
@@ -66,7 +68,7 @@ public class Controller
   static final String enableBreakpointUsage
     = "Usage: ena (<breakpoint number> | filename lineno)";
   static final String debugUsage = "Usage: debug filename";
-  static final String runUsage = "Usage: run filename";
+  static final String runUsage = "Usage: run filename [<output filename>]";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
   static final String printLocalVariableUsage = "Usage: pl <name>";
@@ -84,6 +86,7 @@ public class Controller
   int currentStyleFrame = -1;
   Observer observer = null;
   HashMap parameters = new HashMap();
+  OutputStream outputStream = System.out;
 
   public Controller()
   {
@@ -214,7 +217,7 @@ public class Controller
       return;
     }
 
-    filename = getAbsoluteFilename((String)args.get(1));
+    filename = getAbsoluteFilename((String)args.get(1), true);
     line = getPositiveInteger((String)args.get(2), breakpointUsage, true);
 
     manager.setBreakpoint(filename, line);
@@ -253,7 +256,7 @@ public class Controller
       line = bkp.getLine();
     }
     else {
-      filename = getAbsoluteFilename((String)args.get(1));
+      filename = getAbsoluteFilename((String)args.get(1), true);
       line = getPositiveInteger((String)args.get(2),
                                 deleteBreakpointUsage, true);
     }
@@ -290,7 +293,7 @@ public class Controller
     if (index >= 0)
       bkp = getBreakpointNo(index);
     else {
-      filename = getAbsoluteFilename((String)args.get(1));
+      filename = getAbsoluteFilename((String)args.get(1), true);
       line = getPositiveInteger((String)args.get(2),
                                 disableBreakpointUsage, true);
       bkp = manager.getBreakpointAt(filename, line);
@@ -331,7 +334,7 @@ public class Controller
     if (index >= 0)
       bkp = getBreakpointNo(index);
     else {
-      filename = getAbsoluteFilename((String)args.get(1));
+      filename = getAbsoluteFilename((String)args.get(1), true);
       line = getPositiveInteger((String)args.get(2),
                                 enableBreakpointUsage, true);
       bkp = manager.getBreakpointAt(filename, line);
@@ -424,17 +427,19 @@ public class Controller
       System.out.print("XSLT processor already running, aborting.");
       debugger.stopProcessing();
     }
+
+    manager.setOutputStream(outputStream, false);
     String currentProcessorName = (String)parameters.get("processor");
     if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
       createXSLTDebugger();
 
-    manager.startDebugger(getAbsoluteFilename((String)args.get(1)));
+    manager.startDebugger(getAbsoluteFilename((String)args.get(1), true));
   }
 
   public void runXSLTProcessor(Vector args)
     throws IOException, InterruptedException
   {
-    if (args.size() != 2) {
+    if (args.size() < 2 && args.size() > 3) {
       System.out.println(runUsage);
       return;
     }
@@ -443,11 +448,29 @@ public class Controller
       System.out.print("XSLT processor already running, aborting.");
       debugger.stopProcessing();
     }
+
+    if (args.size() == 3) {
+      try {
+        String outputFilename = (String)args.get(2);
+        File file = new File(outputFilename);
+        boolean created = file.createNewFile();
+        file.deleteOnExit();
+        FileOutputStream fileStream = new FileOutputStream(file);
+        manager.setOutputStream(fileStream, true);
+      }
+      catch (IOException ex) {
+        System.out.println("Cannot create output file: " + ex);
+        throw ex;
+      }
+    }
+    else
+      manager.setOutputStream(outputStream, false);
+      
     String currentProcessorName = (String)parameters.get("processor");
     if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
       createXSLTDebugger();
 
-    manager.startProcessor(getAbsoluteFilename((String)args.get(1)));
+    manager.startProcessor(getAbsoluteFilename((String)args.get(1), true));
   }
   
   public void doStep(Vector args)
@@ -736,7 +759,7 @@ public class Controller
     debugger.stopProcessing();
   }
 
-  protected String getAbsoluteFilename(String filename)
+  protected String getAbsoluteFilename(String filename, boolean checkExistance)
     throws IOException
   {
     File file = new File(filename);
@@ -752,7 +775,7 @@ public class Controller
       throw e;
     }
 
-    if (!file.exists()) {
+    if (checkExistance && !file.exists()) {
       System.out.println("Filename doesn't exists: " + canonicalName);
       throw new IOException();
     }
@@ -845,6 +868,7 @@ public class Controller
       catch (Exception e) {
         System.out.println("Error invoking method '"
                            + method.getName() + "': " + e);
+        observer.processorFinished();
       }
     }
   }
@@ -863,5 +887,10 @@ public class Controller
   public Manager getManager()
   {
     return manager;
+  }
+
+  public void setOutputStream(OutputStream stream)
+  {
+    outputStream = stream;
   }
 }
