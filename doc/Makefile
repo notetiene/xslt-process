@@ -28,7 +28,10 @@ HTML = $(TEXI:.texi=.html)
 .texi.pdf:
 	texi2pdf $<
 
-all: info dvi ps pdf html
+all: version.texi info dvi ps pdf html
+
+version.texi:
+	(cd ..; make doc/version.texi)
 
 info: $(INFO)
 dvi: $(DVI)
@@ -42,7 +45,7 @@ homepage: html
 	mv $(HTML).tmp index.html
 
 clean:
-	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr
+	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr version.texi
 
 distclean: clean
 	rm -f *.dvi *.html *.pdf *.ps *.info

@@ -1,4 +1,4 @@
-VERSION = $(shell grep '@set'  doc/xslt-process.texi | grep version | awk '{print $$NF}')
+VERSION = $(shell egrep 'defconst[ ]*xslt-process-version' lisp/xslt-process.el | awk '{print $$NF}')
 
 all: jar doc elc
 
@@ -7,7 +7,11 @@ all: jar doc elc
 jar:
 	(cd java; make)
 
-doc:
+doc/version.texi:
+	@echo "@set version $(VERSION)" >doc/version.texi
+	@echo "@set update-month `date +'%B %Y'`" >> doc/version.texi
+
+doc: doc/version.texi
 	(cd doc; make)
 
 elc:
