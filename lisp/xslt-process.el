@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 30, 2001 22:38:37 ovidiu>
+;; Time-stamp: <May 31, 2001 09:11:07 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -447,7 +447,7 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "xerces.jar" "xalan-2.1.0-modif.jar" "saxon-6.3.jar"
+	  '("bsf.jar" "xerces.jar" "xalan-2.1.0.jar" "saxon-6.3.jar"
 	    "xalanj1compat.jar" "xslt.jar"))
   "Defines the classpath to the XSLT processors thyat do the real work
 of processing an XML document. Be sure you know what you're doing when
