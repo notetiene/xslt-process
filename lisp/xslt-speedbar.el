@@ -28,11 +28,11 @@
 ;; 02111-1307, USA.
 
 
+(require 'speedbar)
+
 ;;;; Speedbar support
 (speedbar-add-supported-extension ".xml")
 (speedbar-add-supported-extension ".xsl")
-
-(require 'speedbar)
 
 (or (boundp 'speedbar-dynamic-tags-function-list)
     (error "Speedbar 0.11 or newer is required to use xslt-speedbar."))
