@@ -43,6 +43,7 @@ public class XalanStyleFrame extends StyleFrame
   VariableStack varStack;
   ElemTemplateElement element;
   StylesheetRoot stylesheetRoot;
+  XalanTraceListener traceListener;
 
   public XalanStyleFrame(StylesheetRoot stylesheetRoot,
 			 VariableStack varStack,
@@ -51,13 +52,16 @@ public class XalanStyleFrame extends StyleFrame
                          String filename,
                          int line,
                          int column,
-                         Manager manager)
+                         Manager manager,
+			 XalanTraceListener traceListener)
+
   {
     super(name, filename, line, column, manager);
     this.varStack = varStack;
     this.element = element;
     this.stylesheetRoot = stylesheetRoot;
     isTemplate = element instanceof ElemTemplate;
+    this.traceListener = traceListener;
   }
 
   /**
@@ -67,9 +71,18 @@ public class XalanStyleFrame extends StyleFrame
    */
   public ArrayList getLocalVariables()
   {
+    ElemVariable variable;
+    String name;
+    Variable xvar;
     if (localVariables == null) {
       localVariables = new ArrayList();
-      findNames(findTemplate(element), localVariables);
+      Vector variables = traceListener.getLocalVariables();
+      for (Enumeration e = variables.elements(); e.hasMoreElements();) {
+	  variable = (ElemVariable)e.nextElement();
+	  name = variable.getName().getLocalName();
+	  xvar = new XalanVariable(name, varStack, variable, this);
+	  localVariables.add(xvar);
+      }
     }
     return localVariables;
   }
@@ -81,41 +94,6 @@ public class XalanStyleFrame extends StyleFrame
   public ElemTemplateElement getElement()
   {
     return element;
-  }
-
-  protected ElemTemplateElement findTemplate(ElemTemplateElement element)
-  {
-    ElemTemplateElement template = element;
-    while (!(element instanceof ElemTemplate)) {
-      element = element.getParentElem();
-    }
-    return element;
-  }
-
-
-  /**
-   * <code>findNames</code> collects the variable names from
-   * Xalan and places them in the internal data structures for later
-   * reuse. There doesn't appear to be any method which provides this
-   * information so the tree representation of the stylesheet is walked
-   * to find the variables and params.
-   */
-  protected void findNames(ElemTemplateElement element,
-				  ArrayList localVars)
-  {
-    ElemVariable variable;
-    Variable xvar;
-    String name;
-    for (ElemTemplateElement child = element.getFirstChildElem();
-	 child != null; child = child.getNextSiblingElem()) {
-      if (child instanceof ElemVariable || child instanceof ElemParam) {
-	variable = (ElemVariable)child;
-	name = variable.getName().getLocalName();
-	xvar = new XalanVariable(name, varStack, variable, this);
-	localVars.add(xvar);
-      }
-      findNames(child, localVars);
-    }
   }
 
 }
