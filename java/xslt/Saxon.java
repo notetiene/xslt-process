@@ -45,7 +45,7 @@ public class Saxon
   {
     try {
       URL top = new URL("file:/");
-      URL url = new URL(top, filename);
+      URL url = new URL(top, "file:" + filename);
       filename = url.toExternalForm();
       Processor processor = Processor.newInstance("xslt");
       InputSource docSource = new InputSource(filename);

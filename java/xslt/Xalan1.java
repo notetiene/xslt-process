@@ -56,9 +56,8 @@ public class Xalan1
     try {
       XSLTProcessor processor = XSLTProcessorFactory.getProcessor();
       URL top = new URL("file:/");
-      URL xmlDocURL = new URL(top, filename);
-      
-      //      InputStream xmlDocStream = new URL(context, filename).openStream();
+      URL xmlDocURL = new URL(top, "file:" + filename);
+
       XSLTInputSource xmlDoc = new XSLTInputSource(xmlDocURL.openStream());
       Node document = processor.getSourceTreeFromInput(xmlDoc);
       String xslDocFilename = null;
