@@ -4,6 +4,8 @@
 
 @include version.texi
 
+@finalout
+
 @ifinfo
 @dircategory Miscellaneous
 @direntry
@@ -91,6 +93,11 @@ Running the XSLT processor
 * Associating an XSLT stylesheet with an XML document::  
 * Changing the XSLT processor::  
 
+Associating an XSLT stylesheet with an XML document
+
+* Using the associated stylesheet::  
+* The stylesheet registry::     
+
 The XSLT debugger
 
 * Entering the debug mode::     
@@ -130,8 +137,7 @@ what are the local and global variables, set breakpoints in both the XML
 source file and the XSLT program.
 
 @html
-<a href="http://sourceforge.net/projects/xslt-process/"> <img
-src="sflogo.png" width="88" height="31" border="0" alt="SourceForge
+<a href="http://sourceforge.net/projects/xslt-process/"> <img src="sflogo.jpg" width="88" height="31" border="0" alt="SourceForge
 Logo"></a>
 @end html
 
@@ -299,7 +305,9 @@ You can check the modeline to see whether Emacs is in the
 modeline.
 
 @ifnotinfo
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{xslt-mode}
 @end ifnotinfo
 
@@ -332,7 +340,9 @@ by selecting one from the ``XSLT'' @result{} ``XSLT Processor''
 menu. The default XSLT processor is Saxon.
 
 @ifnotinfo
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{processors}
 @end ifnotinfo
 
@@ -346,7 +356,9 @@ to edit an XML document, apply an XSLT stylesheet on the document, and
 view the results either in a buffer or in Web browser.
 
 @ifnotinfo
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{apply-xslt}
 @end ifnotinfo
 
@@ -376,7 +388,9 @@ When you encounter an error, just click using the middle-button
 cursor point at the place that caused the error.
 
 @ifnotinfo
-@sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{xslt-errors}
 @end ifnotinfo
 
@@ -384,6 +398,22 @@ cursor point at the place that caused the error.
 @node  Associating an XSLT stylesheet with an XML document, Changing the XSLT processor, Dealing with errors, Running the XSLT processor
 @comment  node-name,  next,  previous,  up
 @section Associating an XSLT stylesheet with an XML document
+
+There are two ways to specify a stylesheet to be used to process an XML
+file. The first method uses the so-called @samp{associated stylesheet},
+a XML specific feature, which is specified inside the XML file. The
+second method is external to the XML, and is specific to the
+@emph{XSLT-process} mode.
+
+@menu
+* Using the associated stylesheet::  
+* The stylesheet registry::     
+@end menu
+
+@c =========================================================================
+@node  Using the associated stylesheet, The stylesheet registry, Associating an XSLT stylesheet with an XML document, Associating an XSLT stylesheet with an XML document
+@comment  node-name,  next,  previous,  up
+@subsection Using the associated stylesheet
 
 The XSLT file that's used to process the file should be specified inside
 the XML file using the XML processing instruction @samp{xml-stylesheet},
@@ -415,9 +445,76 @@ following processing instruction:
 ...
 @end example
 
-Future versions of @emph{XSLT-process} will allow XSLT stylesheets to be
-associated to XML documents without having to have an
-@samp{xml-stylesheet} processing instruction in the XML document.
+@c =========================================================================
+@node  The stylesheet registry,  , Using the associated stylesheet, Associating an XSLT stylesheet with an XML document
+@comment  node-name,  next,  previous,  up
+@subsection The stylesheet registry
+
+Using the associated stylesheet in the XML document requires the XML
+document to have a @code{xml-processing} pseudo-instruction. This is not
+always convenient, so @emph{XSLT-process} provides a way to associate
+XSLT stylesheets with XML documents.
+
+The stylesheet registry functionality can be found in the menu under
+``XSLT'' @result{} ``Stylesheet Registry''.
+
+@ifnotinfo
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
+@image{xslt-registry}
+@end ifnotinfo
+
+Associating an XSLT stylesheet with and XML document requires the
+following steps:
+
+@itemize @bullet
+
+@item
+Registering the XSLT stylesheet into the stylesheet registry. Only
+stylesheets registered with the registry can be associated with an XML
+document.
+
+To register a stylesheet in the registry, type @kbd{C-c C-x b}. This
+will prompt you for the buffer name visiting the XSLT stylesheet. Select
+the buffer visiting the XSLT stylesheet you want; you can type @kbd{TAB
+TAB} for a list of buffers.
+
+@item
+Once you have registered stylesheets with the registry, you can
+associate XML documents with stylesheets registered with the
+registry. Select the buffer visiting the XML document you want and type
+@kbd{C-c C-x a}. You will be prompted in a buffer to choose which
+currently registered XSLT stylesheet you want to be associated with the
+current XML document.
+
+If you already have an association between the XML document and an XSLT
+stylesheet, it will be selected. If there is no association already
+established, the default is setup to use the associated stylesheet
+specified with the @code{xml-stylesheet} pseudo-instruction. There is no
+check being done to ensure you have such an instruction.
+
+@end itemize
+
+@ifnotinfo
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
+@image{assoc-stylesheet}
+@end ifnotinfo
+
+To remove or add new XSLT stylesheets, you can type @kbd{C-c C-x
+m}. This will present you a buffer that allows you to remove existing
+stylesheets, or to manually add new ones. Adding new ones may be easier
+though by visiting the file in a buffer, and typing @kbd{C-c C-x b}.
+
+Managing the associations between XML documents and XSLT stylesheets is
+done in a similar way. Just type @kbd{C-c C-x h}, and you'll get a
+buffer that shows you all the currently registered associations.
+
+If you want to persist the registry across multiple invocations of
+Emacs, you need to save it. You can do this from ``XSLT'' @result{}
+``Stylesheet Registry'' @result{} ``Save registry''.
 
 @c =========================================================================
 @node  Changing the XSLT processor,  , Associating an XSLT stylesheet with an XML document, Running the XSLT processor
@@ -507,7 +604,9 @@ mode''. Once you enter the debug mode, you will notice the modeline
 indicator changes from ``XSLT'' to ``XSLTd''.
 
 @ifnotinfo
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{xsltd-mode}
 @end ifnotinfo
 
@@ -517,7 +616,9 @@ disabled. Once you enable the debug mode, you will be able to setup
 breakpoints and run the XSLT debugger.
 
 @ifnotinfo
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 
 @multitable @columnfractions 0.5 0.5
 
@@ -657,7 +758,9 @@ to setup the appropriate breakpoints.
 @end itemize
 
 @ifnotinfo
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{xsltd-stopped}
 @end ifnotinfo
 
@@ -701,8 +804,10 @@ View the local and global variables declared with @code{xsl:variable} or
 Each entry for a variable has a little icon showing the type of the
 variable, its name and value. If images are not supported by your Emacs
 (GNU Emacs 20.x and lower), a text indication of the type is shown
-instead. Below are all the possible XSLT types and how they are
-displayed by speedbar:
+instead.
+
+Below are all the possible XSLT types and how they are displayed by
+speedbar:
 
 @itemize @bullet
 
@@ -749,7 +854,9 @@ displayed by speedbar:
 @ifnotinfo
 Here is a picture of the speedbar in the @emph{XSLT-process} mode:
 
-@c @sp 1
+@ifnothtml
+@ifpdf @sp 1 @fi
+@end ifnothtml
 @image{speedbar}
 @end ifnotinfo
 
@@ -810,6 +917,12 @@ XSLT stylesheets with it, instead of having them associated with the XML
 source document through a @samp{xml-stylesheet} processing instruction
 (see @ref{Future enhancements}).
 
+@item
+Under certain circumstances it is possible that the @emph{XSLT-process}
+mode will do an XSLT processing and print the message @samp{Done
+invoking Saxon; no output generated.}, yet there is a result
+buffer. This is a known problem, that will be fixed in a future release.
+
 @end itemize
 
 @c =========================================================================
@@ -822,21 +935,6 @@ specify any particular order in the priority, and the features may or
 may not be implemented.
 
 @itemize @bullet
-
-@item
-Add ability to evaluate XPath expressions. The context node could be
-either the top node of the XML document or it can be specified by
-putting the point on it.
-
-This would be a very useful tool for novice XSLT users to learn XPath
-(and Emacs ;-).
-
-@item
-Maintain a list of XSLT stylesheets, managed by the user, and specify
-the stylesheet to be applied on an XML document from this list. This
-eliminates the need to have an @samp{xml-stylesheet} processing
-instruction in the XML document, that specifies the XSLT stylesheet to
-be applied.
 
 @item
 Ability to pass parameters to the XSLT processor. This could be done at
@@ -862,11 +960,18 @@ The per XML document or XSLT stylesheet parameters can be specified
 using the @emph{Local Variables} section in file, the same way as the
 XSLT processor could be temporarily changed per file.
 
+@item
+Add ability to evaluate XPath expressions. The context node could be
+either the top node of the XML document or it can be specified by
+putting the point on it.
+
+This would be a very useful tool for novice XSLT users to learn XPath
+(and Emacs ;-).
 
 @item
 Add the ability to process and debug JSPs and Cocoon's XSP. This would
-be very useful and would improve the overall edit-run-debug process for
-these applications substantially.
+be very useful and would substantially improve the overall
+edit-run-debug cycle for this type of applications.
 
 @item
 Add the ability to go both forward and backwards in time during
