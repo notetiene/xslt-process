@@ -78,7 +78,7 @@ public class EmacsObserver implements Observer
                        + "\"" + filename
                        + "\" " + line
                        + " " + column
-                       + " \"" + message + "\")>>\n");
+                       + " \"" + message + "\")>>");
   }
 
   public void breakpointSetAt(String filename, int line) {}
@@ -108,7 +108,7 @@ public class EmacsObserver implements Observer
                     + "\" " + frame.getLine()
                     + ")");
     }
-    buffer.append("))>>\n");
+    buffer.append("))>>");
     System.out.println(buffer);
     System.out.flush();
   }
@@ -127,20 +127,20 @@ public class EmacsObserver implements Observer
                     + "\" " + frame.getLine()
                     + ")");
     }
-    buffer.append("))>>\n");
+    buffer.append("))>>");
     System.out.println(buffer);
     System.out.flush();
   }
 
   public void processorFinished()
   {
-    System.out.println("<<(xslt-process-processor-finished)>>\n");
+    System.out.println("<<(xslt-process-processor-finished)>>");
   }
 
   public void caughtException(Exception e)
   {
     System.out.println("<<(xslt-process-report-error \""
                        + e.getMessage()
-                       + "\")>>\n");
+                       + "\")>>");
   }
 }
