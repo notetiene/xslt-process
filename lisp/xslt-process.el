@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 30, 2001 10:44:19 ovidiu>
+;; Time-stamp: <May 30, 2001 20:52:20 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -177,8 +177,8 @@ directory structure looks a little different."
   :group 'xslt-process
   :type '(list
 	  (radio-button-choice
-	   (const :tag "Saxon 6.2.2" Saxon)
-	   (const :tag "Xalan 2.0.1" Xalan))))
+	   (const :tag "Saxon 6.3" Saxon)
+	   (const :tag "Xalan 2.1.0" Xalan))))
 
 (defun xslt-process-create-xslt-processor-submenu ()
   "Return the submenu with the available XSLT processors."
@@ -444,9 +444,9 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "xerces.jar" "xalan-2.0.1.jar" "saxon-6.3.jar"
+	  '("bsf.jar" "xerces.jar" "xalan-2.1.0-modif.jar" "saxon-6.3.jar"
 	    "xalanj1compat.jar" "xslt.jar"))
-  "Defines the classpath to the XSLT processors that do the real work
+  "Defines the classpath to the XSLT processors thyat do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
 
