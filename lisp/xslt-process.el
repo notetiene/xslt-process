@@ -58,7 +58,7 @@
 (require 'string)
 (require 'widget)
 
-(defconst xslt-process-version "2.1"
+(defconst xslt-process-version "2.2"
   "The version of the XSLT-process mode.")
 
 
