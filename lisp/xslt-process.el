@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April  3, 2001 11:36:34 ovidiu>
+;; Time-stamp: <April  4, 2001 01:54:41 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -827,10 +827,7 @@ indicator."
   "Highlight BREAKPOINT depending on it state."
   (let* ((filename (xslt-process-breakpoint-filename breakpoint))
 	 (line (xslt-process-breakpoint-line breakpoint))
-	 (buffer (or (xslt-process-get-file-buffer filename)
-		     (let ((buffer (find-file filename)))
-		       (xslt-process-toggle-debug-mode 1)
-		       buffer))))
+	 (buffer (xslt-process-get-file-buffer filename)))
     ;; Signal an error if there's no buffer
     (if (not buffer)
 	(error "Cannot find the buffer associated with %s" filename)
@@ -972,10 +969,7 @@ hits a breakpoint that causes it to stop."
 	(if annotation (delete-annotation annotation))))
   ;; Now select the new line. Create a buffer for the file, if one
   ;; does not exist already, and put it in the debug mode.
-  (let ((buffer (or (xslt-process-get-file-buffer filename)
-		    (let ((buffer (find-file (file-truename filename))))
-		      (xslt-process-toggle-debug-mode 1)
-		      buffer))))
+  (let ((buffer (xslt-process-get-file-buffer filename)))
     (progn
       (pop-to-buffer buffer)
       (goto-line line)
@@ -1058,7 +1052,10 @@ the modeline."
   "Searches through all the current buffers for a buffer whose true
 file name is the same as FILENAME. The true file name is the one in
 which all the symlinks in the original file name were expanded. We
-don't want to use get-file-buffer because it doesn't follow links."
+don't want to use get-file-buffer because it doesn't follow links.
+
+If the buffer does not exists, open the file in a new buffer and
+return the buffer."
   (let ((true-filename (file-truename filename))
 	(buffers-list (buffer-list))
 	(found nil))
@@ -1068,6 +1065,14 @@ don't want to use get-file-buffer because it doesn't follow links."
 	(if (equal true-filename (if filename (file-truename filename) nil))
 	    (setq found buffer)
 	  (setq buffers-list (cdr buffers-list)))))
-    found))
+    ;; Return the buffer if found, otherwise open the file and return it
+    (if found
+	found
+      (let ((buffer (find-file true-filename)))
+	(save-excursion
+	  (set-buffer buffer)
+	  (xslt-process-mode 1))
+	  (xslt-process-toggle-debug-mode 1))
+	buffer))))
 
 (provide 'xslt-process)
