@@ -192,13 +192,25 @@ public class EmacsObserver implements Observer
     System.out.println(buffer);
     System.out.flush();
   }
+
+  public void globalVariablesChanged(ArrayList globalVariables)
+  {
+    buffer.delete(0, buffer.length());
+    buffer.append("^(xslt-process-global-variables-changed [");
+    variablesChanged(globalVariables);
+  }
   
   public void localVariablesChanged(ArrayList localVariables)
   {
     buffer.delete(0, buffer.length());
     buffer.append("^(xslt-process-local-variables-changed [");
-    for (int i = 0; i < localVariables.size(); i++) {
-      Variable variable = (Variable)localVariables.get(i);
+    variablesChanged(localVariables);
+  }
+
+  protected void variablesChanged(ArrayList variables)
+  {
+    for (int i = 0; i < variables.size(); i++) {
+      Variable variable = (Variable)variables.get(i);
       String name = variable.getName();
       Value value = variable.getValue();
 
