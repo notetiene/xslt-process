@@ -39,6 +39,7 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Source;
+import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -54,7 +55,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import xslt.debugger.Manager;
-import javax.xml.transform.SourceLocator;
+import xslt.debugger.Utils;
 
 public abstract class AbstractXSLTDebugger implements Runnable
 {
@@ -107,28 +108,32 @@ public abstract class AbstractXSLTDebugger implements Runnable
 
   public synchronized void run()
   {
+    SAXSource saxSource = null;
+    
     state = RUNNING;
     notifyAll();
 
     try {
       TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
-      tFactory.setErrorListener(new TrAXErrorListener());
+      tFactory.setErrorListener(new TrAXErrorListener(manager));
 
-      //      File inFile = new File(xmlFilename);
-      //      StreamSource in = new StreamSource(xmlFilename);
-      System.out.println("run: xmlFilename = " + xmlFilename);
-      
-      //FileInputStream fis = new FileInputStream(xmlFilename);
       InputSource is = new InputSource(new URL(xmlFilename).toString());
-      SAXSource saxSource = new SAXSource(is);
+      saxSource = new SAXSource(is);
       setupXMLReader(saxSource);
+      System.out.println("After setting up XMLReader, saxSource " + saxSource);
       
       String media = null, title = null, charset = null;
       Source stylesheetSource
         = tFactory.getAssociatedStylesheet(saxSource, media, title, charset);
       // Set an error handler for the stylesheet parser
+      if (stylesheetSource == null)
+        throw new
+          TransformerConfigurationException
+          ("No matching <?xml-stylesheet?> processing instruction found");
+      
       if (stylesheetSource instanceof SAXSource)
         setupXMLReader((SAXSource)stylesheetSource);
+      System.out.println("After setting up XML reader for stylesheet, stylesheetSource = " + stylesheetSource);
 
       StreamResult result = new StreamResult(manager.getOutStream());
       String stylesheetId = stylesheetSource.getSystemId();
@@ -147,11 +152,46 @@ public abstract class AbstractXSLTDebugger implements Runnable
         template = sheetInfo.getTemplates(stylesheetSource);
       }
 
+      System.out.println("Got template = " + template);
+      
+      if (template == null)
+        return;
+      
       Transformer transformer = template.newTransformer();
       prepareTransformerForDebugging(transformer, manager.forDebug);
 
       if (transformer != null)
         transformer.transform(saxSource, result);
+    }
+    catch (TransformerException ex) {
+      // Kludge: check the error message for file name and line
+      // number; if they are not provided at the beginning, append
+      // them
+      SourceLocator location = ex.getLocator();
+      int lineNumber = 0;
+      int columnNumber = -1;
+      String systemId = saxSource.getSystemId();
+
+      if (location != null) {
+        systemId = location.getSystemId();
+        lineNumber = location.getLineNumber();
+        columnNumber = location.getColumnNumber();
+      }
+
+      String message = processErrorMessage(systemId, lineNumber, columnNumber,
+                                           ex.getMessage());
+      ex = new TransformerException(message);
+      manager.getObserver().caughtException(ex);
+    }
+    catch (SAXParseException ex) {
+      String systemId = ex.getSystemId();
+      int lineNumber = ex.getLineNumber();
+      int columnNumber = ex.getColumnNumber();
+
+      String message = processErrorMessage(systemId, lineNumber, columnNumber,
+                                           ex.getMessage());
+      ex = new SAXParseException(message, null);
+      manager.getObserver().caughtException(ex);
     }
     catch(Exception e) {
       manager.getObserver().caughtException(e);
@@ -164,6 +204,22 @@ public abstract class AbstractXSLTDebugger implements Runnable
     }
   }
 
+  protected String processErrorMessage(String systemId,
+                                       int lineNumber,
+                                       int columnNumber,
+                                       String originalMessage)
+  {
+    if (systemId.startsWith("file:"))
+      systemId = systemId.substring(5);
+    String message = originalMessage;
+    if (!message.startsWith(systemId)) {
+      message = systemId + ":" + lineNumber;
+      if (columnNumber != -1)
+        message += ":" + columnNumber;
+      message += ": " + originalMessage;
+    }
+    return message;
+  }
   /**
    * <code>setupXMLReader</code> sets up an ErrorHandler for a given
    * SAXSource object.
@@ -179,7 +235,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
         .newSAXParser().getXMLReader();
       saxSource.setXMLReader(xmlReader);
     }
-    xmlReader.setErrorHandler(new SaxParserErrorHandler());
+    xmlReader.setErrorHandler(new SAXParserErrorHandler(manager));
   }
 
   public synchronized void checkRequestToStop()
@@ -312,8 +368,6 @@ public abstract class AbstractXSLTDebugger implements Runnable
     public XSLTSheetInfo(Source stylesheetSource)
       throws TransformerConfigurationException
     {
-      System.out.println("new XSLTSheetInfo: " + stylesheetSource.getSystemId());
-      
       TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
       template = tFactory.newTemplates(stylesheetSource);
       lastModified = getLastModified(stylesheetSource.getSystemId());
@@ -367,89 +421,6 @@ public abstract class AbstractXSLTDebugger implements Runnable
       lastModified = currentTime;
 
       return template;
-    }
-  }
-
-  /**
-   * Implementation of the
-   * <code>java.xml.transform.ErrorListener</code> interface in the
-   * TrAX interface, and is used to report error to an
-   * <code>Observer</code> instance.
-   *
-   * @author <a href="mailto:ovidiu@cup.hp.com">Ovidiu Predescu</a>
-   */
-  class TrAXErrorListener implements ErrorListener
-  {
-    public TrAXErrorListener() {}
-    
-    public void error(TransformerException ex)
-      throws TransformerException
-    {
-      reportError("error", ex);
-    }
-
-    public void warning(TransformerException ex)
-      throws TransformerException
-    {
-      reportError("warning", ex);
-    }
-
-    public void fatalError(TransformerException ex)
-      throws TransformerException
-    {
-      reportError("fatal error", ex);
-    }
-
-    public void reportError(String type, TransformerException ex)
-      throws TransformerException
-    {
-      //      System.out.println("TrAXErrorListener " + type + ": " + ex);
-      SourceLocator locator = ex.getLocator();
-      String message = locator.getSystemId() + "\n"
-        + locator.getLineNumber() + ":" + locator.getColumnNumber();
-      TransformerException newEx = new TransformerException(message);
-      newEx.initCause(ex);
-      //      manager.getObserver().caughtException(newEx);
-      throw newEx;
-    }
-  }
-
-  /**
-   * <code>SaxParserErrorHandler</code> is an implementation of the
-   * <code>org.xml.sax.ErrorHandler</code> interface, and is used to
-   * report error to an <code>Observer</code> instance.
-   *
-   * @author <a href="mailto:ovidiu@cup.hp.com">Ovidiu Predescu</a>
-   */
-  class SaxParserErrorHandler implements ErrorHandler
-  {
-    public void error(SAXParseException ex)
-      throws SAXException
-    {
-      reportError("error", ex);
-    }
-
-    public void warning(SAXParseException ex)
-      throws SAXException
-    {
-      reportError("warning", ex);
-    }
-
-    public void fatalError(SAXParseException ex)
-      throws SAXException
-    {
-      reportError("fatal error", ex);
-    }
-
-    public void reportError(String type, SAXParseException ex)
-      throws SAXException
-    {
-      //      System.out.println("SaxParserErrorHandler " + type + ": " + ex);
-      String message = ex.getSystemId() + "\n"
-        + ex.getLineNumber() + ":" + ex.getColumnNumber();
-      SAXException newEx = new SAXException(message, ex);
-      //      manager.getObserver().caughtException(newEx);
-      throw newEx;
     }
   }
 }
