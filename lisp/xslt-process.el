@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May  4, 2001 10:56:06 ovidiu>
+;; Time-stamp: <May  8, 2001 21:31:37 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -96,7 +96,8 @@ names conform to the URI definition."
 (defconst xslt-process-home-web-site "http://xslt-process.sourceforge.net"
   "XSLT-process' home on the Web.")
 
-(defconst xslt-process-web-mailing-list "https://sourceforge.net/mail/?group_id=23425"
+(defconst xslt-process-web-mailing-list
+  "https://sourceforge.net/mail/?group_id=23425"
   "The public mailing lists of the XSLT-process mode.")
 
 (defconst xslt-process-maintainer-address "ovidiu@xemacs.org"
@@ -422,8 +423,8 @@ job.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
-	  '("bsf.jar" "saxon-6.3.jar" "xalan-2.0.1.jar"
-	    "xalanj1compat.jar" "xerces.jar" ""))
+	  '("bsf.jar" "xerces.jar" "xalan-2.0.1.jar" "saxon-6.3.jar"
+	    "xalanj1compat.jar" ""))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
