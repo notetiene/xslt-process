@@ -1,3 +1,11 @@
+2002-08-06  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+
+	* doc/xslt-process.texi.in: Updated to reflect changes made
+	since version 2.1 was released.
+
+	* lisp/xslt-process.el: Version number now 2.2
+	
+
 2002-08-05  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
 	* java/xslt.jar,
