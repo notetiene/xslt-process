@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June  2, 2001 14:01:48 ovidiu>
+;; Time-stamp: <June  3, 2001 12:51:50 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -591,9 +591,9 @@ hook functions should take no argument.")
 	 :active (eq xslt-process-process-state 'stopped)]
 	["Stop" xslt-process-do-stop
 	 :active (eq xslt-process-process-state 'running)]
-	["Quit debugger" xslt-process-do-quit
-	 :active xslt-process-debugger-process-started]
 	"--"
+	["Quit XSLT processor" xslt-process-do-quit
+	 :active xslt-process-debugger-process-started]
 	["Speedbar" xslt-process-speedbar-frame-mode
 	 :style toggle
 	 :selected (and (boundp 'speedbar-frame)
@@ -1116,7 +1116,7 @@ debugger from a long processing with no breakpoints setup."
   (interactive)
   (if xslt-process-comint-buffer
       (if (or dont-ask
-	      (yes-or-no-p "Really quit the XSLT debugger? "))
+	      (yes-or-no-p "Really quit the XSLT processor? "))
 	  (progn
 	    (xslt-process-send-command "q" t)
 	    (kill-buffer xslt-process-comint-buffer)
@@ -1129,7 +1129,7 @@ debugger from a long processing with no breakpoints setup."
 		  (cl-clrhash xslt-process-breakpoints)
 		  (run-hooks 'xslt-process-breakpoint-removed-hooks)))
 	    (xslt-process-debugger-buffer-killed)))
-    (message "XSLT debugger not running.")))
+    (message "XSLT processor not running.")))
 
 ;;;
 ;;; Dealing with the presentation of breakpoints and the current line
@@ -1370,7 +1370,7 @@ already started."
 	   (xslt-process-debugger-buffer-killed))))
     (save-excursion
       (set-buffer xslt-process-comint-buffer)
-      (make-variable-buffer-local 'kill-buffer-hook)
+;      (make-variable-buffer-local 'kill-buffer-hook)
 ;      (add-hook 'kill-buffer-hook 'xslt-process-debugger-buffer-killed)
       ;; Set our own process filter, so we get a chance to remove Emacs
       ;; commands from the output sent to the buffer
@@ -1490,7 +1490,7 @@ the output to the XSLT process buffer."
 ;;; Functions called as result of the XSLT processing
 ;;;
 
-(defun xslt-process-processor-finished ()
+(defun xslt-process-processor-finished (&optional killed)
   "Called by the XSLT debugger process when the XSLT processing finishes."
   (xslt-process-unhighlight-last-selected-line)
   ;; Reset the source and style frame stacks
@@ -1504,11 +1504,13 @@ the output to the XSLT process buffer."
   (run-hooks 'xslt-process-local-variables-changed-hooks)
   (setq xslt-process-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running)
-  (message "Done invoking %s." xslt-process-current-processor)
-  ;; If the output was sent to a file, invoke a browser to view the
-  ;; contents of the file
-  (if xslt-process-output-to-filename
-      (browse-url (concat "file:" xslt-process-output-to-filename))))
+  (if (not killed)
+      (progn
+	(message "Done invoking %s." xslt-process-current-processor)
+	;; If the output was sent to a file, invoke a browser to view
+	;; the contents of the file
+	(if xslt-process-output-to-filename
+	    (browse-url (concat "file:" xslt-process-output-to-filename))))))
 
 (defun xslt-process-report-error (message stack-trace)
   "Called by the XSLT debugger process whenever an error happens."
@@ -1572,7 +1574,7 @@ commands."
 (defun xslt-process-debugger-buffer-killed ()
   "Called when the comint buffer running the XSLT debugger is killed
 by the user."
-  (xslt-process-processor-finished)
+  (xslt-process-processor-finished t)
   (setq xslt-process-comint-process nil)
   (setq xslt-process-comint-buffer nil)
   (setq xslt-process-message-process nil)
