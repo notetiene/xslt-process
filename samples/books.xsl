@@ -105,6 +105,7 @@
 
 <xsl:template match="BOOKS" mode="by-author">
   <div xsl:extension-element-prefixes="saxon">
+<!--
     <saxon:group select="ITEM" group-by="AUTHOR">
       <xsl:sort select="AUTHOR" order="ascending"/>
       <xsl:sort select="TITLE" order="ascending"/>
@@ -121,12 +122,13 @@
       </saxon:item>
     </TABLE><HR/>
   </saxon:group>
+-->
 </div>
 </xsl:template>
 
 <xsl:template match="BOOKS" mode="by-category">
   <div xsl:extension-element-prefixes="saxon">
-    <saxon:group select="ITEM" group-by="@CAT">
+<!--    <saxon:group select="ITEM" group-by="@CAT">
       <xsl:sort select="id(@CAT)/@DESC" order="ascending"/>
       <xsl:sort select="TITLE" order="ascending"/>
       <h3>CATEGORY: <xsl:value-of select="id(@CAT)/@DESC" /></h3>
@@ -137,6 +139,7 @@
         </saxon:item>
       </OL><HR/>
     </saxon:group>
+-->
   </div>
 </xsl:template>
 
