@@ -8,7 +8,13 @@
 
 package xslt.debugger.cmdline;
 
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.net.InetAddress;
+import java.io.OutputStream;
+
 import xslt.debugger.Observer;
+import xslt.debugger.AbstractXSLTDebugger;
 
 public class EmacsObserver implements Observer
 {
@@ -17,6 +23,25 @@ public class EmacsObserver implements Observer
   public EmacsObserver(Controller controller)
   {
     this.controller = controller;
+
+    // Create a server socket, send the port number back to Emacs, and
+    // wait for Emacs to connect to it. Upon connection, setup an
+    // output stream on the client socket and use it to serialize the
+    // XSLT processing results to Emacs.
+    try {
+      InetAddress localhost = InetAddress.getByName("localhost");
+      ServerSocket serverSocket = new ServerSocket(0, 5, localhost);
+      int port = serverSocket.getLocalPort();
+      System.out.println("<<(xslt-process-set-output-port " + port + ")>>");
+      Socket clientSocket = serverSocket.accept();
+      OutputStream outputStream = clientSocket.getOutputStream();
+      AbstractXSLTDebugger debugger = controller.getDebugger();
+      debugger.setOutStream(outputStream);
+      serverSocket.close();
+    }
+    catch (Exception e) {
+      caughtException(e);
+    }
   }
 
   public void debuggerProcessStarted()
