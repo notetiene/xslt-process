@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April  4, 2001 01:54:41 ovidiu>
+;; Time-stamp: <April  5, 2001 01:18:28 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -255,8 +255,10 @@ indicator."
 (defvar xslt-process-comint-buffer nil
   "The buffer within which the XSLT debugger process runs.")
 
-(defvar xslt-process-last-selected-position nil
-  "The filename, line and column where the debugger stopped last time.")
+(defvar xslt-process-last-selected-position [nil nil nil nil nil nil]
+  "An array containing the filename, line, column, extent, annotation
+and enter or exit action, describing the line where the debugger
+stopped last time.")
 
 (defvar xslt-process-process-state 'not-running
   "The state of the process. It can be either not-running, running or
@@ -267,7 +269,7 @@ stopped.")
 keep track of the extents created to highlight lines.")
 
 (defvar xslt-process-execution-context-error-function nil
-  "Function to be called by the xslt-process-report-error. This
+  "Function to be called by the `xslt-process-report-error'. This
 function should reset the proper state depending on the debugger
 operation that was invoked.")
 
@@ -571,29 +573,42 @@ choice on the current buffer."
 	(split-window out-window))
     (display-buffer msg-buffer)))  
 
-(defun xslt-process-last-selected-position-filename ()
+(defun xslt-process-last-selected-position-filename (&optional filename)
   "Return the filename of the last selected position."
-  (car xslt-process-last-selected-position))
+  (if filename
+      (aset xslt-process-last-selected-position 0 filename))
+  (aref xslt-process-last-selected-position 0))
 
-(defun xslt-process-last-selected-position-line ()
+(defun xslt-process-last-selected-position-line (&optional position)
   "Return the line of the last selected position."
-  (cadr xslt-process-last-selected-position))
+  (if position
+      (aset xslt-process-last-selected-position 1 position))
+  (aref xslt-process-last-selected-position 1))
 
-(defun xslt-process-last-selected-position-column ()
+(defun xslt-process-last-selected-position-column (&optional column)
   "Return the column of the last selected position."
-  (caddr xslt-process-last-selected-position))
+  (if column
+      (aset xslt-process-last-selected-position 2 column))
+  (aref xslt-process-last-selected-position 2))
 
-(defun xslt-process-last-selected-position-extent ()
+(defun xslt-process-last-selected-position-extent (&optional extent)
   "Return the extent used to highlight the last selected position."
-  (cadddr xslt-process-last-selected-position))
+  (if extent
+      (aset xslt-process-last-selected-position 3 extent))
+  (aref xslt-process-last-selected-position 3))
 
-(defun xslt-process-last-selected-position-annotation ()
+(defun xslt-process-last-selected-position-annotation (&optional annotation)
   "Return the extent used to highlight the last selected position."
-  (nth 4 xslt-process-last-selected-position))
+  (if annotation
+      (aset xslt-process-last-selected-position 4 annotation))
+  (aref xslt-process-last-selected-position 4))
 
-(defun xslt-process-last-selected-position-enter/exit? ()
-  "Return the extent used to highlight the last selected position."
-  (nth 5 xslt-process-last-selected-position))
+(defun xslt-process-last-selected-position-enter/exit? (&optional action)
+  "Return the extent used to highlight the last selected position. If
+ACTION is non-nil, it is set as the new value."
+  (if action
+      (aset xslt-process-last-selected-position 5 action))
+  (aref xslt-process-last-selected-position 5))
 
 (defun xslt-process-new-breakpoint-here ()
   "Returns a breakpoint object at filename and line number of the
@@ -603,7 +618,7 @@ current buffer or nil otherwise. By default the breakpoint is enabled."
     (cons filename line)))
 
 (defun xslt-process-intern-breakpoint (breakpoint state)
-  "Interns BREAKPOINT into the internal hash-table that keeps track of
+  "Interns BREAKPOINT into the internal hash table that keeps track of
 breakpoints. STATE should be either t for an enabled breakpoint, or
 nil for a disabled breakpoint."
   (puthash breakpoint (if state 'enabled 'disabled) xslt-process-breakpoints))
@@ -614,7 +629,7 @@ nil for a disabled breakpoint."
 
 (defun xslt-process-breakpoint-is-enabled (breakpoint)
   "Returns t if BREAKPOINT is enabled, nil otherwise. Use
-xslt-process-is-breakpoint before calling this method to find out
+`xslt-process-is-breakpoint' before calling this method to find out
 whether BREAKPOINT is a breakpoint or not. This method returns nil
 either when the breakpoint doesn't exist or when the breakpoint is
 disabled."
@@ -795,6 +810,8 @@ indicator."
 	       (glyph (if (eq action 'is-entering) xslt-process-enter-glyph
 			(if (eq action 'is-exiting) xslt-process-exit-glyph
 			  nil))))
+	  (message "xslt-process-change-current-line-highlighting: buffer %s"
+		   buffer)
 	  (set-buffer buffer)
 	  (goto-line line)
 	  (if flag
@@ -810,24 +827,17 @@ indicator."
 		      (set-extent-priority annotation 3)))
 		;; Setup the new extent and annotation in the
 		;; last-selected-position
-		(setq xslt-process-last-selected-position
-		      (list filename line column extent annotation action)))
+		(xslt-process-last-selected-position-extent extent)
+		(xslt-process-last-selected-position-annotation annotation))
 	    ;; Unhighlight the last selected line
-	    (let ((extent (xslt-process-last-selected-position-extent))
-		  (annotation
-		   (xslt-process-last-selected-position-annotation)))
-	      (if extent (delete-extent extent))
-	      (if annotation (delete-annotation annotation))
-	      ;; Remove extent and annotation from the
-	      ;; last-selected-position
-	      (setq xslt-process-last-selected-position
-		    (list filename line column nil nil action))))))))
+	    (xslt-process-unhighlight-last-selected-line))))))
 
 (defun xslt-process-highlight-breakpoint (breakpoint &optional state)
   "Highlight BREAKPOINT depending on it state."
   (let* ((filename (xslt-process-breakpoint-filename breakpoint))
 	 (line (xslt-process-breakpoint-line breakpoint))
 	 (buffer (xslt-process-get-file-buffer filename)))
+    (message "xslt-process-highlight-breakpoint: buffer %s" nil)
     ;; Signal an error if there's no buffer
     (if (not buffer)
 	(error "Cannot find the buffer associated with %s" filename)
@@ -934,6 +944,21 @@ the output to the XSLT process buffer."
 	  (eval (read (match-string 1 string)))
       (comint-output-filter process string))))
 
+(defun xslt-process-unhighlight-last-selected-line ()
+  "Unselect the last selected line."
+  ;; Unselect the last line showing the debugger's position
+  (if xslt-process-last-selected-position
+      (let ((extent (xslt-process-last-selected-position-extent))
+	    (annotation (xslt-process-last-selected-position-annotation)))
+	(if extent (delete-extent extent))
+	(if annotation (delete-annotation annotation))
+	;; Remove extent and annotation from the
+	;; last-selected-position. Need to use aset as there is no way
+	;; for the setter functions to detect between programmer
+	;; passed nil and no argument.
+	(aset xslt-process-last-selected-position 3 nil)
+	(aset xslt-process-last-selected-position 4 nil))))
+
 ;;;
 ;;; Functions called as a result of the XSLT process
 ;;;
@@ -941,13 +966,8 @@ the output to the XSLT process buffer."
 (defun xslt-process-processor-finished ()
   "Called by the XSLT debugger process when the XSLT processing finishes."
   (setq xslt-process-process-state 'not-running)
-  ;; Unselect the last line showing the debugger's position
-  (if xslt-process-last-selected-position
-      (let ((extent (xslt-process-last-selected-position-extent))
-	    (annotation (xslt-process-last-selected-position-annotation)))
-	(if extent (delete-extent extent))
-	(if annotation (delete-annotation annotation))))
-  (setq xslt-process-last-selected-position nil)
+  (xslt-process-unhighlight-last-selected-line)
+  (setq xslt-process-last-selected-position [nil nil nil nil nil nil])
   (message "XSLT processing finished."))
 
 (defun xslt-process-report-error (message)
@@ -962,38 +982,49 @@ hits a breakpoint that causes it to stop."
   (message "Stopped at %s %s" filename line)
   (setq xslt-process-process-state 'stopped)
   ;; Unselect the previous selected line
-  (if xslt-process-last-selected-position
-      (let ((extent (xslt-process-last-selected-position-extent))
-	    (annotation (xslt-process-last-selected-position-annotation)))
-	(if extent (delete-extent extent))
-	(if annotation (delete-annotation annotation))))
+  (xslt-process-unhighlight-last-selected-line)
   ;; Now select the new line. Create a buffer for the file, if one
   ;; does not exist already, and put it in the debug mode.
-  (let ((buffer (xslt-process-get-file-buffer filename)))
-    (progn
-      (pop-to-buffer buffer)
-      (goto-line line)
-      (let* ((is-entering (string-match "^entering:" info))
-	     (is-exiting (string-match "^leaving:" info))
-	     (glyph (if is-entering xslt-process-enter-glyph
-		      (if is-exiting xslt-process-exit-glyph
-			nil)))
-	     (extent
-	      (xslt-process-highlight-line 'xslt-process-current-line-face 2))
-	     (annotation
-	      (if glyph
-		  (make-annotation glyph
-				   (progn (beginning-of-line) (point))
-				   'text)
-		nil)))
-	(if annotation
-	    (progn
-	      (set-annotation-face annotation 'xslt-process-indicator-face)
-	      (set-extent-priority annotation 4)))
-	(setq xslt-process-last-selected-position
-	      (list filename line column extent annotation
-		    (if is-entering 'is-entering
-		      (if is-exiting 'is-exiting nil))))))))
+  (let ((buffer (xslt-process-get-file-buffer filename))
+	(is-entering (string-match "^entering:" info))
+	(is-exiting (string-match "^leaving:" info)))
+    (message "xslt-process-debugger-stopped-at: buffer %s" buffer)
+    (if (not buffer)
+	(error "Cannot find the buffer associated with %s" filename)
+      (progn
+	(pop-to-buffer buffer)
+	(goto-line line)
+	;; Setup the xslt-process-last-selected-position variable so we
+	;; can call the xslt-process-change-current-line-highlighting
+	;; function
+	(xslt-process-last-selected-position-filename filename)
+	(xslt-process-last-selected-position-line line)
+	(xslt-process-last-selected-position-column column)
+	(xslt-process-last-selected-position-enter/exit?
+	 (if is-entering 'is-entering
+	   (if is-exiting 'is-exiting nil)))
+	(xslt-process-change-current-line-highlighting t filename)))))
+
+;      (let* ((is-entering (string-match "^entering:" info))
+;	     (is-exiting (string-match "^leaving:" info))
+;	     (glyph (if is-entering xslt-process-enter-glyph
+;		      (if is-exiting xslt-process-exit-glyph
+;			nil)))
+;	     (extent
+;	      (xslt-process-highlight-line 'xslt-process-current-line-face 2))
+;	     (annotation
+;	      (if glyph
+;		  (make-annotation glyph
+;				   (progn (beginning-of-line) (point))
+;				   'text)
+;		nil)))
+;	(if annotation
+;	    (progn
+;	      (set-annotation-face annotation 'xslt-process-indicator-face)
+;	      (set-extent-priority annotation 4)))
+;	(xslt-process-last-selected-position-enter/exit? 
+;	 (if is-entering 'is-entering
+;	   (if is-exiting 'is-exiting nil)))))))
 
 (defun xslt-process-debugger-process-started ()
   "Called when the debugger process started and is ready to accept
@@ -1005,13 +1036,8 @@ commands."
 by the user."
   (setq xslt-process-comint-process nil)
   (setq xslt-process-comint-buffer nil)
-  ;; Unselect the last line showing the debugger's position
-  (if xslt-process-last-selected-position
-      (let ((extent (xslt-process-last-selected-position-extent))
-	    (annotation (xslt-process-last-selected-position-annotation)))
-	(if extent (delete-extent extent))
-	(if annotation (delete-annotation annotation))))
-  (setq xslt-process-last-selected-position nil)
+  (xslt-process-unhighlight-last-selected-line)
+  (setq xslt-process-last-selected-position [nil nil nil nil nil nil])
   (setq xslt-process-process-state 'not-running))
 
 (defun xslt-process-set-output-port (port)
@@ -1052,7 +1078,7 @@ the modeline."
   "Searches through all the current buffers for a buffer whose true
 file name is the same as FILENAME. The true file name is the one in
 which all the symlinks in the original file name were expanded. We
-don't want to use get-file-buffer because it doesn't follow links.
+don't want to use `get-file-buffer' because it doesn't follow links.
 
 If the buffer does not exists, open the file in a new buffer and
 return the buffer."
@@ -1069,10 +1095,11 @@ return the buffer."
     (if found
 	found
       (let ((buffer (find-file true-filename)))
-	(save-excursion
-	  (set-buffer buffer)
-	  (xslt-process-mode 1))
-	  (xslt-process-toggle-debug-mode 1))
+	(if buffer
+	    (save-excursion
+	      (set-buffer buffer)
+	      (xslt-process-mode 1)
+	      (xslt-process-toggle-debug-mode 1)))
 	buffer))))
 
 (provide 'xslt-process)
