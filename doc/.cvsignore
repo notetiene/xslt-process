@@ -1,5 +1,6 @@
 *.aux
 *.cp
+*.cps
 *.fn
 *.ky
 *.log
@@ -10,6 +11,9 @@
 *.dvi
 *.html
 *.pdf
+*.eps
+*.jpg
+*.txt
 *.ps
 *.info
 version.texi
