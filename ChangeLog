@@ -1,5 +1,14 @@
 2001-05-23  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* Added automatic rule to correctly convert a PNG image to PDF
+	based on its size (uses ImageMagick to do the work).
+
+	* doc/Makefile: Added automatic rule to correctly convert a PNG
+	image to PDF based on its size (uses ImageMagick to do the work).
+
+	* doc/xslt-process.texi: Added links to the other packages. Added
+	table of contents.
+
 	* doc/Makefile: Added rule to generate the pdf version of images.
 
 2001-05-12  Ovidiu Predescu  <ovidiu@cup.hp.com>
