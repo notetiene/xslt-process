@@ -1,13 +1,9 @@
 VERSION = $(shell egrep 'defconst[ ]*xslt-process-version' lisp/xslt-process.el | awk '{print $$NF}')
 
-all clean distclean: doc/version.texi
+all clean distclean:
 	for d in java etc doc; do \
-	  (cd $$d; make $@); \
+	  (cd $$d; make VERSION=$(VERSION) $@); \
 	done
-
-doc/version.texi:
-	@echo "@set version $(VERSION)" >doc/version.texi
-	@echo "@set update-month `date +'%B %Y'`" >> doc/version.texi
 
 dist:
 	@(repository=`cat CVS/Root`; \
