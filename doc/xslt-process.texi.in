@@ -15,6 +15,7 @@
 This file documents the features of the XSLT-process minor mode.
 
 Copyright (C) 2000--2001 Ovidiu Predescu
+Copyright (C) 2002 Tony Addyman
 All rights reserved.
 
 Distributed under the terms of the GNU General Public License as
@@ -32,10 +33,11 @@ copyright notice remains intact and unchanged on all copies.
 @title XSLT-process minor mode
 @subtitle for version @value{version}
 @subtitle @value{update-month}
-@author by Ovidiu Predescu
+@author by Ovidiu Predescu and Tony Addyman
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 2000, 2001 Ovidiu Predescu.
+Copyright @copyright{} 2002 Tony Addyman.
 @par All rights reserved.
 
 @sp 1
@@ -78,13 +80,14 @@ Installation and setup
 
 * Package installation under XEmacs::  
 * Generic installation::        
-* Setting up XSLT-process::     
+* Setting up XSLT-process::   
 
 Generic installation
 
 * Installing Elib::             
 * Installing Speedbar::         
 * Installing XSLT-process::     
+* Convenience Settings::
 
 Running the XSLT processor
 
@@ -142,10 +145,11 @@ the error.
 You can also run the XSLT processor in debugging mode, and view step by
 step what the XSLT processor is doing. You can view the current stack
 frame in the XSLT program, the current XML context node being processed,
+the output from the execution of the stylesheet as it is being produced,
 what are the local and global variables, set breakpoints in both the XML
 source file and the XSLT program.
 
-The author of the @emph{XSLT-process} package is
+The principle author of the @emph{XSLT-process} package is
 @email{ovidiu@@cup.hp.com, Ovidiu Predescu}, and the package is
 distributed under the terms of
 @uref{http://www.gnu.org/copyleft/gpl.html, GNU General Public
@@ -163,8 +167,8 @@ The @emph{XSLT-process} mode is part of XEmacs, but it works with both
 XEmacs and GNU Emacs. The installation differs slighly between the two
 editors as we will see shortly.
 
-The mode was tested on Linux and Windows 2000, with XEmacs and GNU
-Emacs. The development platform however is XEmacs under Linux, so expect
+The mode has been tested on Linux and Windows 2000, with XEmacs and GNU
+Emacs. The development platform however is Linux, so expect
 this to be the most stable one.
 
 @menu
@@ -216,7 +220,8 @@ The @emph{XSLT-process} package depends on two other packages:
 @menu
 * Installing Elib::             
 * Installing Speedbar::         
-* Installing XSLT-process::     
+* Installing XSLT-process::
+* Convenience Settings::     
 @end menu
 
 @c =========================================================================
@@ -305,12 +310,12 @@ create one now):
             "~/emacs/speedbar-0.13a"))
 @end example
 
-You can remove the reference to @kbd{elib-1.0} or @kbd{speedbar-0.13} in
+You can remove the reference to @kbd{elib-1.0} or @kbd{speedbar-0.13a} in
 the lines above, if you didn't have to install either @emph{elib} or
 @emph{speedbar} as described in the previous sections.
 
 @c =========================================================================
-@node  Setting up XSLT-process,  , Generic installation, Installation and setup
+@node  Setting up XSLT-process, Convenience Settings , Generic installation, Installation and setup
 @comment  node-name,  next,  previous,  up
 @section Setting up the @emph{XSLT-process} mode
 
@@ -363,6 +368,22 @@ modeline.
 @end ifnotinfo
 
 @c =========================================================================
+@node  Convenience Settings,  , Setting up XSLT-process, Generic installation
+@comment  node-name,  next,  previous,  up
+@subsection Convenience Settings
+
+Many of the benefits of of Emacs, in general, and the @emph{XSLT-process}
+mode in particular, require the use of a three-button mouse. Under Linux
+the emulation of the middle button can be provided by the operating system.
+If you are using Windows you can configure Emacs to provide the same
+emulation by adding the following lines in your @kbd{~/.emacs} file:
+
+@example
+; emulate three button mouse
+(setq w32-num-mouse-buttons 2)
+@end example
+
+@c =========================================================================
 @node  Running the XSLT processor, The XSLT debugger, Installation and setup, top
 @comment  node-name,  next,  previous,  up
 @chapter Running the XSLT processor
@@ -382,9 +403,9 @@ modeline.
 
 The @emph{XSLT-process} mode comes by default with two different Java
 XSLT processors, Saxon and Xalan. These particular versions of the XSLT
-processors were tested and work with the @emph{XSLT-process}
-mode. Different versions of the processors may not work with the
-@emph{XSLT-process} mode.
+processors (Saxon-6.5.2 and Xalan-2.4.D1) have been tested and work with
+the @emph{XSLT-process} mode. Different versions of the processors may not
+work with the @emph{XSLT-process} mode.
 
 You can choose either of the above processors to do the XSLT processing
 by selecting one from the ``XSLT'' @result{} ``XSLT Processor''
@@ -403,8 +424,8 @@ menu. The default XSLT processor is Saxon.
 @section Viewing the results of the XSLT processing
 
 The main functionality of the @emph{XSLT-process} mode is to allow you
-to edit an XML document, apply an XSLT stylesheet on the document, and
-view the results either in a buffer or in Web browser.
+to edit an XML document, apply an XSLT stylesheet to the document, and
+view the results either in a buffer, in Web browser, or a PDF viewer.
 
 @ifnotinfo
 @ifnothtml
@@ -423,18 +444,32 @@ stylesheet generates XML FO as output, @emph{XSLT-process} can translate
 it to PDF automatically using the @uref{http://xml.apache.org/fop,
 Apache FOP processor}. In this case just type @kbd{C-c C-x p} and
 @emph{XSLT-process} will take care of applying the XSLT stylesheet on
-your input XML document, and applying the FOP processor on the resulting
-XML FO document.
+your input XML document, and applying the FOP processor (currently version
+0.20.4) on the resulting XSLFO document.
+
+If you choose to view the results in a buffer, they will be shown in the
+@code{*xslt results*} buffer. If any message are generated during the
+XSLT processing, they are shown separately in the @code{*xslt
+messages*} buffer.
 
 You can customize the Web browser and PDF viewer to be used as described
 in @ref{Customizing the XSLT-process mode}. If you don't like the
 default key bindings described above, you can also customize them as
 described in the same chapter.
 
-If you choose to view the results in a buffer, they will be shown in the
-@code{*xslt results*} buffer. If any message are generated during the
-XSLT processing, they are shown separately in the @code{*xslt
-messages*} buffer.
+If the FOP processor is used, any error messages, logging information, etc.
+is sent to the @code{*Messages*} buffer. The level of logging provided
+by the FOP processor can be customized
+(see @ref{Customizing the XSLT-process mode}).
+
+@strong{Note:} The use of the FOP processor causes two temporary files to
+be created in your temporary directory. These are @code{xslt-process-output.fo} and
+@code{xslt-process-output.pdf}. If @code{xslt-process-output.pdf} is already
+being displayed when a new version of the file is generated the outcome depends
+on the PDF viewer being used: either a second window may be opened, so both
+versions of the file are displayed, or only the original file
+is displayed. The @code{xslt-process-output.pdf} file must be closed and
+re-opened manually to view the new version.
 
 @c =========================================================================
 @node  Dealing with errors, Associating an XSLT stylesheet with an XML document, Viewing the results of the XSLT processing, Running the XSLT processor
@@ -446,8 +481,10 @@ the XML parser or XSLT processor and displays them in compilation
 buffer, which quickly allows you to go to the cause of the error.
 
 When you encounter an error, just click using the middle-button
-(assuming an X-Windows system) on the error message. Emacs will move the
-cursor point at the place that caused the error.
+(assuming an X-Windows system or suitable three-button emulation)
+on the error message. Emacs will move the cursor point at the place that
+caused the error. If you only have a two-button mouse you should can emulate
+the third button using the operating system (Linux) or Emacs (Windows).
 
 @ifnotinfo
 @ifnothtml
@@ -628,14 +665,12 @@ variables and key indices.
 
 @emph{XSLT-process} gives you the ability to run the processor in
 debugging mode, which allows you to set breakpoints, run step by step,
-view local and global XSLT variables.
+view local and global XSLT variables, and view the output as it is being
+generated. This release supports debugging using both Saxon and Xalan.
 
-@strong{Note:} This release supports debugging only with the Saxon XSLT
-processor. Xalan requires line number support for the XML source
-document; I have a patch for the 2.1.0 release, but I'm told the Stree
-tree model this release uses is going away in the next release. So I
-started to work on a patch for the new release which uses the so-called
-DTM tree model.
+@strong{Note:} Saxon and Xalan operate quite differently internally. This
+is reflected in the information displayed by the debugger during the execution
+of the stylesheet, sequencing, details of the handling of breakpoints, etc.
 
 @menu
 * Entering the debug mode::     
@@ -749,6 +784,12 @@ the XSLT stylesheet, which is essentially a program, and where the stop
 at a breakpoint means that the execution of the program reached the
 instruction at that line.
 
+The two different XSLT processors don't inform the debugger that an element has
+been selected in exactly the same circumstances. Saxon only monitors
+@code{xsl:for-each} and @code{xsl:apply-templates}; Xalan also monitors
+@code{xsl:if}, @code{xsl:choose}, @code{xsl:copy-of}, @code{xsl:value-of},
+@code{xsl:variable} and @code{xsl:with-param}.
+
 @c =========================================================================
 @node  Controlling the debugger, The speedbar, Breakpoints, The XSLT debugger
 @comment  node-name,  next,  previous,  up
@@ -765,11 +806,19 @@ XSLT document is active instead, the @emph{XSLT-process} mode assumes
 this as the source document, and will not be able to find the associated
 stylesheet.
 
-The XSLT processor will start and it will continue running in the
-background until the execution reaches an enabled breakpoint.
+The XSLT processor starts. As soon as the XSLT processor generates some
+output the @samp{*xslt-output*} window will be opened to display that output.
+The processor continues running in the background until the execution
+reaches an enabled breakpoint. 
 
-In this moment, Emacs will highlight the line where the XSLT processor
-has stopped, and it will wait for an action to be taken. The possible
+At this point, Emacs will highlight the line where the XSLT processor
+has stopped and indicate whether the stylesheet is entering ``=>'' or leaving
+``<='' the element. If necessary the stylesheet will be opened in a window. The
+location at which the execution has stopped is also displayed in the
+mini-buffer. This shows the filename, line number and visit count. The
+@dfn{visit count} indicates the number of times this breakpoint
+has been visited in succession, i.e. without a visit to another breakpoint.
+The debugger will wait for an action to be taken. The possible
 actions are:
 
 @itemize @bullet
@@ -842,7 +891,7 @@ identify them.
 
 Clicking on a breakpoint entry in the speedbar will move the point to
 the file and line where the breakpoint is set. If the file is not
-currently opened within Emacs, it will open and shown in a buffer.
+currently opened within Emacs, it will be opened and shown in a buffer.
 
 @item
 View the stack of source elements that have been selected during the
@@ -856,6 +905,10 @@ View the stack of XSLT elements that are currently being executed. Each
 element that has been entered, but not yet exited is being shown in the
 speedbar.
 
+@strong{Note:} This is true if the XSLT elements are instructions. However,
+if the elements are literal result elements, nested elements will often
+appear in this stack in sequence when debugging using Xalan.
+
 Clicking with the middle button on such a node will position the point
 in the file at line where the element starts.
 
@@ -867,6 +920,13 @@ Each entry for a variable has a little icon showing the type of the
 variable, its name and value. If images are not supported by your Emacs
 (GNU Emacs 20.x and lower), a text indication of the type is shown
 instead.
+
+@strong{Note:} Xalan uses lazy evaluation so a variable might not have its
+value computed until it is actually required, i.e. later in the processing.
+So it is possible to step through an @code{xsl:variable} element without the
+value of the corresponding variable changing within the speedbar display.
+The value will subsequently appear when the variable is set prior to being
+used. In the limit variables that are never used might never be set.
 
 Below are all the possible XSLT types and how they are displayed by
 speedbar:
@@ -913,6 +973,11 @@ speedbar:
 
 @end itemize
 
+@strong{Note:} If the text representation exceeds 100 characters it is truncated,
+and ``...'' added to the end to indicate that fact. If the text representation
+contains line breaks these are replaced by paragraph markers ``¶'' to ensure the
+value can be displayed on a single line as required by the speedbar.
+
 @ifnotinfo
 Here is a picture of the speedbar in the @emph{XSLT-process} mode:
 
@@ -949,6 +1014,9 @@ debugger.
 Customize the Web browser and PDF viewer to be used to directly view the
 results of the processing.
 
+@item
+Customize the level of logging reported by the FOP processor.
+
 @end itemize
 
 You can find all the above customization options under the main menu, in
@@ -963,7 +1031,7 @@ for @emph{XSLT-process}.
 @chapter Known problems and limitations
 
 The following is a list of differences between GNU Emacs and XEmacs. As
-the @emph{XSLT-process} mode is developed under XEmacs, I would
+the @emph{XSLT-process} mode was originally developed under XEmacs, we would
 appreciate your support in making the GNU Emacs version behave closer to
 the XEmacs one.
 
@@ -987,7 +1055,15 @@ source document through a @samp{xml-stylesheet} processing instruction
 Under certain circumstances it is possible that the @emph{XSLT-process}
 mode will do an XSLT processing and print the message @samp{Done
 invoking Saxon; no output generated.}, yet there is a result
-buffer. This is a known problem, that will be fixed in a future release.
+buffer. This will be fixed in a future release.
+
+@item
+The code which facilitates the immediate serialization and incremental
+display of the output during debugging has to set the encoding of that
+output stream. The coding is set to UTF-8 regardless of any setting
+in the stylesheet. This only occurs when debugging. If it is a problem
+for users, it may be possible to add a customization option in a future
+release. 
 
 @end itemize
 
@@ -1003,7 +1079,8 @@ may not be implemented.
 @itemize @bullet
 
 @item
-Ability to pass parameters to the XSLT processor. This could be done at
+Ability to pass parameters to the XSLT processor. This @emph{may} be
+implemented in some form by January 2003. It could be done at
 multiple levels:
 
 @itemize @bullet
@@ -1032,7 +1109,9 @@ either the top node of the XML document or it can be specified by
 putting the point on it.
 
 This would be a very useful tool for novice XSLT users to learn XPath
-(and Emacs ;-).
+(and Emacs ;-). This is a non-trivial enhancement, but one of the
+developers would like to have in for teaching purposes in January 2003.
+Don't hold your breath!
 
 @item
 Add the ability to process and debug JSPs and Cocoon's XSP. This would
@@ -1057,6 +1136,34 @@ processor, and do some magic to get to the right context.
 @node  Changes,  , Future enhancements, top
 @comment  node-name,  next,  previous,  up
 @chapter Changes
+
+These are the changes since the 2.1 release:
+
+@itemize @bullet
+
+@item
+Updated the versions of Saxon, Xalan and FOP supported to be 6.5.2,
+2.4.D1, and 0.20.4 respectively.
+
+@item
+Debugging using Xalan is now supported.
+
+@item
+During debugging sessions the output produced by executing the stylesheet
+is serialized immediately, then displayed and incrementally updated in
+an Emacs window.
+
+@item
+Logging output, error messages, etc. generated by the FOP processor
+are displayed in the @samp{*Messages*} buffer. The level of logging
+can be customized.
+
+@item
+Minor improvements to the display of information during debugging.
+
+@end itemize
+
+@sp 1
 
 These are the changes since the 2.0 release:
 
