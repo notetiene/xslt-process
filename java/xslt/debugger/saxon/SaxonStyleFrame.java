@@ -23,7 +23,6 @@ public class SaxonStyleFrame extends StyleFrame
   Context context;
   StyleElement element;
   int frameId = -1;
-  ArrayList localVariables = null;
   ArrayList globalVariables = null;
   
   public SaxonStyleFrame(Context context,
@@ -46,10 +45,9 @@ public class SaxonStyleFrame extends StyleFrame
    */
   public ArrayList getLocalVariables()
   {
-    if (localVariables == null) {
+    if (localVariables == null)
       getVariableNames();
-      return localVariables;
-    }
+
     return localVariables;
   }
 
