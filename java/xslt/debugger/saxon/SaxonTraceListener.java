@@ -207,6 +207,9 @@ public class SaxonTraceListener implements TraceListener
    */
   public void leave(NodeInfo element, Context context)
   {
+    StyleFrame frame = manager.peekStyleFrame();
+    frame.setIsExiting();
+    
     debugger.checkRequestToStop();
 
     if (!(element instanceof ElementInfo))
