@@ -14,6 +14,10 @@ public interface Observer
                               int lineno,
                               int column,
                               String message);
+  public void breakpointSetAt(String filename, int line);
+  public void breakpointDeletedAt(String filename, int line);
+  public void breakpointEnabledAt(String filename, int line);
+  public void breakpointDisabledAt(String filename, int line);
   public void stackChanged();
   public void frameChanged();
 }

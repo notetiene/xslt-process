@@ -42,12 +42,14 @@ import xslt.debugger.Type;
  * @see xslt.debugger.Manager
  * @see xslt.debugger.AbstractXSLTDebugger
  */
-public class Controller implements Observer
+public class Controller
 {
   static final String breakpointUsage = "Usage: b filename line";
   static final String deleteBreakpointUsage = "Usage: d <breakpoint number>";
-  static final String disableBreakpointUsage = "Usage: dis <breakpoint number>";
-  static final String enableBreakpointUsage = "Usage: ena <breakpoint number>";
+  static final String disableBreakpointUsage
+    = "Usage: dis (<breakpoint number> | filename lineno)";
+  static final String enableBreakpointUsage
+    = "Usage: ena (<breakpoint number> | filename lineno)";
   static final String runUsage = "Usage: r filename";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
@@ -59,8 +61,9 @@ public class Controller implements Observer
   HashMap commands = new HashMap();
   int currentSourceFrame = -1;
   int currentStyleFrame = -1;
+  Observer observer = null;
 
-  public Controller(String processorName)
+  public Controller(String processorName, Observer observer)
   {
     commands.put("h", getMethod("help"));
     commands.put("help", getMethod("help"));
@@ -83,7 +86,8 @@ public class Controller implements Observer
     commands.put("xbt", getMethod("showStyleFrames"));
     commands.put("stop", getMethod("stopXSLTProcessing"));
     commands.put("q", getMethod("quit"));
-    manager.setObserver(this);
+    this.observer = observer;
+    manager.setObserver(this.observer);
     manager.setXSLTProcessorType(processorName);
     debugger = manager.getDebugger();
   }
@@ -114,7 +118,7 @@ public class Controller implements Observer
 
   public static void main(String[] args)
   {
-    Controller controller = new Controller("Saxon");
+    Controller controller = new Controller("Saxon", new CmdLineObserver());
     controller.mainLoop();
   }
 
@@ -153,10 +157,11 @@ public class Controller implements Observer
     }
 
     filename = getAbsoluteFilename((String)args.get(1));
-    line = getPositiveInteger((String)args.get(2), breakpointUsage);
-    
-    System.out.println("set breakpoint at " + filename + " " + line);
+    line = getPositiveInteger((String)args.get(2), breakpointUsage, true);
+
     manager.setBreakpoint(filename, line);
+    if (observer != null)
+      observer.breakpointSetAt(filename, line);
   }
 
   /**
@@ -170,18 +175,34 @@ public class Controller implements Observer
   public void deleteBreakpoint(Vector args)
     throws NumberFormatException, IOException
   {
-    if (args.size() != 2) {
+    if (args.size() < 2 && args.size() > 3) {
       System.out.println(deleteBreakpointUsage);
       return;
     }
 
-    int index = getPositiveOrZeroInteger((String)args.get(1),
-                                         deleteBreakpointUsage);
-    Breakpoint bkp = getBreakpointNo(index);
-    if (bkp == null)
-      return;
+    String filename;
+    int line;
+    int index;
 
-    manager.removeBreakpoint(bkp.getFilename(), bkp.getLine());
+    // Check for the first variant: "d <breakpoint number>"
+    index = getPositiveOrZeroInteger((String)args.get(1),
+                                     deleteBreakpointUsage, false);
+    if (index >= 0) {
+      Breakpoint bkp = getBreakpointNo(index);
+      if (bkp == null)
+        return;
+      filename = bkp.getFilename();
+      line = bkp.getLine();
+    }
+    else {
+      filename = getAbsoluteFilename((String)args.get(1));
+      line = getPositiveInteger((String)args.get(2),
+                                deleteBreakpointUsage, true);
+    }
+
+    manager.removeBreakpoint(filename, line);
+    if (observer != null)
+      observer.breakpointDeletedAt(filename, line);
   }
 
   /**
@@ -192,19 +213,37 @@ public class Controller implements Observer
    * @param args a <code>Vector</code> value
    */
   public void disableBreakpoint(Vector args)
+    throws IOException
   {
-    if (args.size() != 2) {
+    if (args.size() < 2 && args.size() > 3) {
       System.out.println(disableBreakpointUsage);
       return;
     }
 
-    int index = getPositiveOrZeroInteger((String)args.get(1),
-                                         disableBreakpointUsage);
-    Breakpoint bkp = getBreakpointNo(index);
+    String filename;
+    int line;
+    int index;
+
+    // Check for the first variant: "dis <breakpoint number>"
+    index = getPositiveOrZeroInteger((String)args.get(1),
+                                     disableBreakpointUsage, false);
+    Breakpoint bkp = null;
+    
+    if (index >= 0)
+      bkp = getBreakpointNo(index);
+    else {
+      filename = getAbsoluteFilename((String)args.get(1));
+      line = getPositiveInteger((String)args.get(2),
+                                disableBreakpointUsage, true);
+      bkp = manager.getBreakpointAt(filename, line);
+    }
+
     if (bkp == null)
       return;
 
     bkp.setEnabled(false);
+    if (observer != null)
+      observer.breakpointDisabledAt(bkp.getFilename(), bkp.getLine());
   }
 
   /**
@@ -215,20 +254,37 @@ public class Controller implements Observer
    * @param args a <code>Vector</code> value
    */
   public void enableBreakpoint(Vector args)
+    throws IOException
   {
-    if (args.size() != 2) {
+    if (args.size() < 2 && args.size() > 3) {
       System.out.println(enableBreakpointUsage);
       return;
     }
 
-    int index = getPositiveOrZeroInteger((String)args.get(1),
-                                         enableBreakpointUsage);
-    Breakpoint bkp = getBreakpointNo(index);
+    String filename;
+    int line;
+    int index;
+
+    // Check for the first variant: "ena <breakpoint number>"
+    index = getPositiveOrZeroInteger((String)args.get(1),
+                                     enableBreakpointUsage, false);
+    Breakpoint bkp = null;
+    
+    if (index >= 0)
+      bkp = getBreakpointNo(index);
+    else {
+      filename = getAbsoluteFilename((String)args.get(1));
+      line = getPositiveInteger((String)args.get(2),
+                                enableBreakpointUsage, true);
+      bkp = manager.getBreakpointAt(filename, line);
+    }
 
     if (bkp == null)
       return;
 
     bkp.setEnabled(true);
+    if (observer != null)
+      observer.breakpointEnabledAt(bkp.getFilename(), bkp.getLine());
   }
 
   /**
@@ -364,7 +420,7 @@ public class Controller implements Observer
 
     Stack sourceFrames = manager.getSourceFrames();
     int frameNo = getPositiveOrZeroInteger((String)args.get(1),
-                                           setSourceFrameUsage);
+                                           setSourceFrameUsage, true);
     if (frameNo >= sourceFrames.size()) {
       System.out.println("Requested frame number bigger than number of "
                          + "frames: " + sourceFrames.size());
@@ -388,7 +444,7 @@ public class Controller implements Observer
 
     Stack styleFrames = manager.getStyleFrames();
     int frameNo = getPositiveOrZeroInteger((String)args.get(1),
-                                           setStyleFrameUsage);
+                                           setStyleFrameUsage, true);
     if (frameNo >= styleFrames.size()) {
       System.out.println("Requested frame number bigger than number of "
                          + "frames: " + styleFrames.size());
@@ -593,11 +649,11 @@ public class Controller implements Observer
     return "file:" + canonicalName;
   }
 
-  protected int getPositiveInteger(String arg, String usage)
+  protected int getPositiveInteger(String arg, String usage, boolean showError)
     throws NumberFormatException
   {
-    int value = getPositiveOrZeroInteger(arg, usage);
-    if (value == 0) {
+    int value = getPositiveOrZeroInteger(arg, usage, showError);
+    if (value == 0 && showError) {
       System.out.println("Line number must be integer greater than 0, got "
                          + arg + ".");
       System.out.println(usage);
@@ -606,10 +662,11 @@ public class Controller implements Observer
     return value;
   }
 
-  protected int getPositiveOrZeroInteger(String arg, String usage)
+  protected int getPositiveOrZeroInteger(String arg, String usage,
+                                         boolean showError)
     throws NumberFormatException
   {
-    int value;
+    int value = -1;
     
     try {
       value = Integer.parseInt(arg);
@@ -617,10 +674,12 @@ public class Controller implements Observer
         throw new NumberFormatException();
     }
     catch (NumberFormatException e) {
-      System.out.println("Line number must be integer greater or equal to 0, "
-                         + "got " + arg + ".");
-      System.out.println(usage);
-      throw e;
+      if (showError) {
+        System.out.println("Line number must be integer greater or equal to 0,"
+                           + " got " + arg + ".");
+        System.out.println(usage);
+        throw e;
+      }
     }
 
     return value;
@@ -672,42 +731,4 @@ public class Controller implements Observer
       }
     }
   }
-
-  /**
-   * Invoked by the debugger to print a descriptive message showing
-   * where the debugger stopped.
-   *
-   * @param filename a <code>String</code> value
-   * @param line an <code>int</code> value
-   * @param column an <code>int</code> value
-   * @param message a <code>String</code> value, additional
-   * informative message
-   */
-  public void debuggerStopped(String filename,
-                              int line,
-                              int column,
-                              String message)
-  {
-    System.out.println("Debugger stopped at: " + filename
-                       + " " + line
-                       + ":" + column
-                       + " " + message);
-  }
-
-  /**
-   *
-   */
-  public void stackChanged()
-  {
-    // TODO: implement this xslt.debugger.Observer method
-  }
-
-  /**
-   *
-   */
-  public void frameChanged()
-  {
-    // TODO: implement this xslt.debugger.Observer method
-  }
-
 }
