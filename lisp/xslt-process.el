@@ -41,8 +41,6 @@
 (require 'jde)
 (require 'cl)
 
-(require 'xslt-debug)
-
 ;;; User defaults
 
 (defgroup xslt-process nil
@@ -89,18 +87,33 @@ use the [f1], [f2] etc. notation."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-debug-start-debugger "\C-c\C-x\C-r"
-  "*Keybinding for starting the XSLT debugger."
+(defcustom xslt-process-toggle-debug-mode "\C-c\C-x\C-d"
+  "*Keybinding for toggling the debug mode."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-debug-set-breakpoint "\C-c\C-x\C-b"
-  "*Keybinding for setting up a breakpoint at line in the current buffer."
+(defcustom xslt-process-set-breakpoint "b"
+  "*Keybinding for setting up a breakpoint at line in the current buffer.
+The buffer has to be in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-debug-delete-breakpoint "\C-c\C-x\C-d"
-  "*Keybinding for deleting the breakpoint at line in the current buffer."
+(defcustom xslt-process-delete-breakpoint "d"
+  "*Keybinding for deleting the breakpoint at line in the current buffer.
+The buffer has to be in the debug mode for this key to work"
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-enable/disable-breakpoint "e"
+  "*Keybinding for enabling or disabling the breakpoint at line in the
+current buffer. The buffer has to be in the debug mode for this key
+to work"
+  :group 'xslt-process
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-quit-debug "q"
+  "*Keybinding for exiting from the debug mode. The buffer has to be
+in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
@@ -112,17 +125,34 @@ indicator."
   :group 'xslt-process
   :type 'string)
 
+(defcustom xslt-process-debug-mode-line-string " XSLTd"
+  "*String to appear in the modeline when the XSLT debug mode is active."
+  :group 'xslt-process
+  :type 'string)
+
 ;;; End of user customizations
 
 ;;; Minor mode definitions
 
 ;;;###autoload
-(defvar xslt-process-mode nil)
-;;;###autoload
+(defvar xslt-process-mode nil
+  "Indicates whether the current buffer is in the XSLT-process minor mode.")
 (make-variable-buffer-local 'xslt-process-mode)
 
 ;;;###autoload
-(defvar xslt-process-mode-map (make-sparse-keymap))
+(defvar xslt-process-debug-mode nil
+  "Indicates whether the current buffer is in debug mode.")
+(make-variable-buffer-local 'xslt-process-debug-mode)
+
+;;;###autoload
+(defvar xslt-process-mode-map (make-sparse-keymap)
+  "Keyboard bindings in normal XSLT-process mode enabled buffers.")
+
+(defvar xslt-process-debug-mode-map (make-sparse-keymap)
+  "Keyboard bindings for the XSLT debug mode.")
+
+(defvar xslt-process-breakpoints (make-hashtable 10 'equal)
+  "Hash table containing the currently defined breakpoints.")
 
 ;;;###autoload
 (defun xslt-process-mode (&optional arg)
@@ -153,27 +183,54 @@ Java Bean Shell: http://www.beanshell.org/
   (add-submenu
    nil
    '("XSLT"
-     ["%_Run" xslt-process-invoke :active t]
+     ["Run" xslt-process-invoke :active t]
      ["--:singleLine" nil]
-     ["Set %_breakpoint" xslt-debug-set-breakpoint
-      :active (xslt-debug-is-breakpoint)]
-     ["%_Delete breakpoint" xslt-debug-delete-breakpoint
-      :active (not (xslt-debug-is-breakpoint))]
-     ["---" nil]
-     ["%_Start Debugger" xslt-debug-mode :active t]))
+     ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
+     ["Set breakpoint" xslt-process-set-breakpoint
+      :active (and xslt-process-debug-mode (xslt-process-is-breakpoint))]
+     ["Delete breakpoint" xslt-process-delete-breakpoint
+      :active (and xslt-process-debug-mode (not (xslt-process-is-breakpoint)))]
+     ["Disable breakpoint" xslt-process-enable/disable-breakpoint
+      :active (and xslt-process-debug-mode (xslt-process-is-breakpoint))]
+     ["--:singleLine" nil]
+     ["Start Debugger" xslt-process-mode :active t]
+     ["Step" xslt-process-do-next :active nil]
+     ["Next" xslt-process-do-next :active nil]
+     ["Finish" xslt-process-do-next :active nil]
+     ["Continue" xslt-process-do-next :active nil]))
   (setq xslt-process-mode
 	(if (null arg) (not xslt-process-mode)
 	  (> (prefix-numeric-value arg) 0)))
   (define-key xslt-process-mode-map
     xslt-process-key-binding 'xslt-process-invoke)
-  (define-key xslt-process-mode-map
-    xslt-debug-start-debugger 'xslt-debug-mode)
-  (define-key xslt-process-mode-map
-    xslt-debug-set-breakpoint 'xslt-debug-set-breakpoint)
-  (define-key xslt-process-mode-map
-    xslt-debug-delete-breakpoint 'xslt-debug-delete-breakpoint)
 					; Force modeline to redisplay
   (set-buffer-modified-p (buffer-modified-p)))
+
+(defun xslt-process-toggle-debug-mode (&optional arg)
+  "*Setup a buffer in the XSLT debugging mode.
+This essentially makes the buffer read-only and binds various keys to
+different actions for faster operations."
+  (interactive "P")
+  ;; Enter the xslt-process mode only if we've not done so before
+  (if xslt-process-mode
+      nil
+    (setq xslt-process-mode t)
+    (toggle-read-only 1)
+    ;; Set the same keybindings as in the editing mode
+    (define-key xslt-process-debug-mode-map
+      xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
+    (define-key xslt-process-debug-mode-map
+      xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
+
+    (define-key xslt-process-debug-mode-map
+      xslt-process-quit-debug 'xslt-process-quit-debug)
+    (define-key xslt-process-debug-mode-map
+      xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
+    (define-key xslt-process-debug-mode-map
+      xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
+    (define-key xslt-process-debug-mode-map
+      xslt-process-enable/disable-breakpoint
+      'xslt-process-enable/disable-breakpoint)))
 
 (put 'Saxon 'additional-params 'xslt-saxon-additional-params)
 (put 'Xalan1 'additional-params 'xslt-xalan1-additional-params)
@@ -303,6 +360,49 @@ choice on the current buffer."
     (if (not msg-window)
 	(split-window out-window))
     (display-buffer msg-buffer)))  
+
+(defun xslt-process-set-breakpoint ()
+  "*Set a breakpoint at line in the current buffer."
+  (interactive)
+  (let* ((filename (buffer-file-name))
+	 (line (save-excursion (progn (end-of-line) (count-lines 1 (point)))))
+	 (breakpoint (gethash '(filename . line) xslt-process-breakpoints)))
+    (if (eq breakpoint nil)
+	(progn
+	  (puthash '(filename . line) '(filename . line)
+		   xslt-process-breakpoints)
+	  (message (format "Set breakpoint in %s at %s." filename line)))
+      (message (format "Breakpoint already set in %s at %s" filename line)))))
+
+(defun xslt-process-delete-breakpoint ()
+  "*Remove the breakpoint at current line in the selected buffer."
+  (interactive)
+  (let* ((filename (buffer-file-name))
+	 (line (save-excursion (progn (end-of-line) (count-lines 1 (point)))))
+	 (breakpoint (gethash '(filename . line) xslt-process-breakpoints)))
+    (if (not (eq breakpoint nil))
+	(progn
+	  (remhash '(filename . line) xslt-process-breakpoints)
+	  (message
+	   (format "Removed breakpoint in %s at %s." filename line)))
+      (message (format "No breakpoint in %s at %s" filename line)))))
+
+(defun xslt-process-enable/disable-breakpoint ()
+  "*Enable or disable the breakpoint at the current line in buffer, depending
+on its state."
+  (interactive))
+
+(defun xslt-process-is-breakpoint ()
+  "*Checks whether there's a breakpoint setup in buffer at line."
+  (let* ((filename (buffer-file-name))
+	 (line (save-excursion (progn (end-of-line) (count-lines 1 (point)))))
+	 (breakpoint (gethash '(filename . line) xslt-process-breakpoints)))
+    (not (eq breakpoint nil))))
+
+(defun xslt-process-quit-debug ()
+  "*Quit the debugger and exit from the xslt-process mode."
+  (interactive)
+  (xslt-process-toggle-debug-mode 0))
 
 ;;;###autoload
 (if (fboundp 'add-minor-mode)
