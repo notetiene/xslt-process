@@ -1,3 +1,31 @@
+2001-04-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: No longer uses BSH to invoke the XSLT
+	processor. Use instead the same command line XSLT process used for
+	debugging.
+	
+	Added the ability to specify which XSLT engine to be used.
+	
+	Temporarily drop support for Cocoon until I figure out a way to do
+	debugging in the Cocoon environment (if implemented, this would be
+	I killer app!).
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Create a new
+	instance using the 'new' operator instead of newInstance().
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Likewise.
+	
+	* java/xslt/debugger/Manager.java: Added the ability to deal with
+	multiple JAXP transformers without having to restart the XSLT
+	debugger process.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Start moving the
+	functionality from XSLTDebugger classes in this class.
+
+	* java/Makefile: Added.
+
+	* Makefile: Move the responsibility of compiling the Java classes
+	and building the jar file in the makefile in the java/ directory.
+
 2001-04-12  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java/xslt/debugger/xalan/XSLTDebugger.java: Created.
