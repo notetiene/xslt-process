@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June  3, 2001 12:51:50 ovidiu>
+;; Time-stamp: <June  5, 2001 08:49:22 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -47,7 +47,6 @@
 (require 'browse-url)
 (require 'easymenu)
 (require 'string)
-(require 'xslt-speedbar)
 
 (eval-and-compile
   (if (featurep 'xemacs)
@@ -145,6 +144,13 @@ directory structure looks a little different."
       (if (equal xemacs-dir package-dir)
 	  xemacs-dir
 	package-dir))))
+
+;; Add the directory containing the images to the load-path, so
+;; speedbar can find the image files.
+(pushnew (concat (xslt-process-find-xslt-data-directory) "etc") load-path)
+
+;; Import speedbar here, so that it finds the resource images
+(require 'xslt-speedbar)
 
 ;; From "custom" web page at http://www.dina.dk/~abraham/custom/
 (eval-and-compile
@@ -1128,7 +1134,8 @@ debugger from a long processing with no breakpoints setup."
 		  (xslt-process-change-breakpoints-highlighting nil)
 		  (cl-clrhash xslt-process-breakpoints)
 		  (run-hooks 'xslt-process-breakpoint-removed-hooks)))
-	    (xslt-process-debugger-buffer-killed)))
+	    ;;(xslt-process-debugger-buffer-killed)
+	    ))
     (message "XSLT processor not running.")))
 
 ;;;
@@ -1366,8 +1373,11 @@ already started."
     (set-process-sentinel
      xslt-process-comint-process
      (lambda (process event)
-       (if (equal (process-status process) 'exit)
-	   (xslt-process-debugger-buffer-killed))))
+       (let ((status (process-status process)))
+	 (if (or (equal status 'exit)
+		 (equal status 'closed)
+		 (equal event "hangup\n"))
+	   (xslt-process-debugger-buffer-killed)))))
     (save-excursion
       (set-buffer xslt-process-comint-buffer)
 ;      (make-variable-buffer-local 'kill-buffer-hook)
