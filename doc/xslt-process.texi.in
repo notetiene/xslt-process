@@ -15,7 +15,7 @@
 This file documents the features of the XSLT-process minor mode.
 
 Copyright (C) 2000--2001 Ovidiu Predescu
-Copyright (C) 2002 Tony Addyman
+Copyright (C) 2002--2003 Tony Addyman
 All rights reserved.
 
 Distributed under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@ copyright notice remains intact and unchanged on all copies.
 @page
 @vskip 0pt plus 1filll
 Copyright @copyright{} 2000, 2001 Ovidiu Predescu.
-@par Copyright @copyright{} 2002 Tony Addyman.
+@par Copyright @copyright{} 2002, 2003 Tony Addyman.
 @par All rights reserved.
 
 @sp 1
@@ -560,7 +560,7 @@ always convenient, so @emph{XSLT-process} provides a way to associate
 XSLT stylesheets with XML documents.
 
 The stylesheet registry functionality can be found in the menu under
-``XSLT'' @result{} ``Stylesheet Registry''.
+``XSLT'' @result{} ``Stylesheets Registry''.
 
 @ifnotinfo
 @ifnothtml
@@ -618,7 +618,7 @@ buffer that shows you all the currently registered associations.
 
 If you want to persist the registry across multiple invocations of
 Emacs, you need to save it. You can do this from ``XSLT'' @result{}
-``Stylesheet Registry'' @result{} ``Save registry''.
+``Stylesheets Registry'' @result{} ``Save registry''.
 
 @c =========================================================================
 @node  Changing the XSLT processor,  , Associating an XSLT stylesheet with an XML document, Running the XSLT processor
@@ -628,9 +628,9 @@ Emacs, you need to save it. You can do this from ``XSLT'' @result{}
 If you want to experiment what are the results of applying your
 stylesheets using different XSLT processors, you can change the
 processor using the menu ``XSLT'' @result{} ``XSLT Processor'', or by using
-the customization interface (see @ref{Customizing the XSLT-process mode}). If you
-are in the middle of a debugging session, the change will not take
-effect until the session is finished.
+the customization interface (see @ref{Customizing the XSLT-process mode}).
+If you are in the middle of a debugging session, the change will not take
+effect until the current session is ended using ``Quit XSLT processor''.
 
 In certain cases, there are XSLT stylesheets that works only when
 processed through a particular XSLT processor. This may happen because
@@ -652,6 +652,12 @@ processor: Saxon
 End:
 -->
 @end example
+
+A @emph{Local Variables} section can be used in the same way at the end of
+your XSL file provided that this file is the current buffer when the XSLT
+process is executed. This only works if the XSL file is associated with your
+XML file using the ``Stylesheets Registry'', otherwise the current buffer will be
+treated as the XML file.
 
 In this release, the acceptable values for @samp{processor} are
 @samp{Saxon} and @samp{Xalan}, as they are the only supported
@@ -1008,6 +1014,9 @@ ways. There are several groups of customizations you can do:
 Select the XSLT processor to be used by the @emph{XSLT-process} mode.
 
 @item
+Set global parameters for the transformation.
+
+@item
 Customize the environment for the Java process that's running the XSLT
 processor.
 
@@ -1038,6 +1047,12 @@ for @emph{XSLT-process}.
 @node  Known problems and limitations, Future enhancements, Customizing the XSLT-process mode, top
 @comment  node-name,  next,  previous,  up
 @chapter Known problems and limitations
+The code which facilitates the immediate serialization and incremental
+display of the output during debugging has to set the encoding of that
+output stream. The coding is set to UTF-8 regardless of any setting
+in the stylesheet. This only occurs when debugging. If it is a problem
+for users, it may be possible to add a customization option in a future
+release.
 
 The following is a list of differences between GNU Emacs and XEmacs. As
 the @emph{XSLT-process} mode was originally developed under XEmacs, we would
@@ -1048,31 +1063,7 @@ the XEmacs one.
 
 @item
 Under GNU Emacs, the keybinding of a command does not appear in the menu
-item as they appear under XEmacs.
-
-@item
-The @emph{Local Variables} section that specifies which XSLT processor
-to be used has to be placed in the XML source document, instead of the
-XSLT stylesheet which processes the XML document.
-
-This will change when @emph{XSLT-process} has support for registering
-XSLT stylesheets with it, instead of having them associated with the XML
-source document through a @samp{xml-stylesheet} processing instruction
-(see @ref{Future enhancements}).
-
-@item
-Under certain circumstances it is possible that the @emph{XSLT-process}
-mode will do an XSLT processing and print the message @samp{Done
-invoking Saxon; no output generated.}, yet there is a result
-buffer. This will be fixed in a future release.
-
-@item
-The code which facilitates the immediate serialization and incremental
-display of the output during debugging has to set the encoding of that
-output stream. The coding is set to UTF-8 regardless of any setting
-in the stylesheet. This only occurs when debugging. If it is a problem
-for users, it may be possible to add a customization option in a future
-release. 
+item in debug mode as they appear under XEmacs.
 
 @end itemize
 
@@ -1088,56 +1079,21 @@ may not be implemented.
 @itemize @bullet
 
 @item
-Ability to pass parameters to the XSLT processor. This @emph{may} be
-implemented in some form by January 2003. It could be done at
-multiple levels:
-
-@itemize @bullet
-
-@item @emph{globally}:
-these are parameters that are specified to all the stylesheets, in
-addition to any other parameters. They could be specified through the
-customization menu.
-
-@item @emph{per XSLT stylesheet}:
-these are parameters specified to a given XSLT stylesheet, and they are
-passed only to this stylesheet.
-
-@item @emph{per XML document}:
-these are parameters specified for a given XML document.
-
-@end itemize
-
-The per XML document or XSLT stylesheet parameters can be specified
-using the @emph{Local Variables} section in file, the same way as the
-XSLT processor could be temporarily changed per file.
-
-@item
-Add ability to evaluate XPath expressions. The context node could be
+Add the ability to evaluate XPath expressions. The context node could be
 either the top node of the XML document or it can be specified by
 putting the point on it.
 
 This would be a very useful tool for novice XSLT users to learn XPath
 (and Emacs ;-). This is a non-trivial enhancement, but one of the
-developers would like to have it for teaching purposes in January 2003.
-However, don't hold your breath! :-)
-
-@item
-Add the ability to process and debug JSPs and Cocoon's XSP. This would
-be very useful and would substantially improve the overall
-edit-run-debug cycle for this type of applications.
+developers would like to have it for teaching purposes. Until this
+enhancement is available consider using XPath Explorer (see
+@url{http://sourceforge.net/projects/xpe})
 
 @item
 Add the ability to go both forward and backwards in time during
 debugging. This would be a nice feature to have for the cases where
 reaching the point of interest in the stylesheet takes a lot of time,
 and the pressing the wrong key makes you miss it.
-
-@item
-Integrate the XSLT debugger with the JDE debugger, to give the ability
-to debug extension functions. This should be possible, but is a lot more
-complex as it requires the Java debugger to attach to the XSLT
-processor, and do some magic to get to the right context.
 
 @end itemize
 
@@ -1161,6 +1117,11 @@ Debugging using Xalan is now supported.
 During debugging sessions the output produced by executing the stylesheet
 is serialized immediately, then displayed and incrementally updated in
 an Emacs window.
+
+@item
+Added parameter passing to the XSLT processor. These are parameters
+that are specified to all the stylesheets, in addition to any other parameters.
+They are specified through the customization menu.
 
 @item
 Logging output, error messages, etc. generated by the FOP processor
