@@ -17,6 +17,7 @@ public class SourceFrame implements Cloneable
   String filename;
   int line;
   int column;
+  boolean isExiting = false;
   Manager manager;
   StyleFrame styleFrame = null;
 
@@ -138,6 +139,25 @@ public class SourceFrame implements Cloneable
   public int getLine()
   {
     return line;
+  }
+
+  /**
+   * Sets the <code>isExiting</code> indicator to show the debugger is
+   * currently exiting from this element.
+   */
+  public void setIsExiting()
+  {
+    isExiting = true;
+  }
+
+  /**
+   * Returns the <code>isExiting</code> indicator.
+   *
+   * @return a <code>boolean</code> value
+   */
+  public boolean isExiting()
+  {
+    return isExiting;
   }
 }
 
