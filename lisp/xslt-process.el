@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 14, 2001 01:27:04 ovidiu>
+;; Time-stamp: <April 16, 2001 01:02:38 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -332,7 +332,7 @@ on which the XSLT results come from the XSLT processor.")
   (mapcar (lambda (f)
 	    (concat (xslt-process-find-xslt-directory) "java/" f))
 	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
-	    "xalanj1compat.jar" "xerces.jar" "xslt.jar"))
+	    "xalanj1compat.jar" "xerces.jar" ""))
   "Defines the classpath to the XSLT processors that do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
@@ -762,7 +762,8 @@ on its state."
 either a normal, no debug, XSLT processing, or a debugging session."
   (interactive)
   (block nil
-    (let ((proc-type (if no-debug "processor" "debugger")))
+    (let ((proc-type (if no-debug "processor" "debugger"))
+	  (command (if no-debug "run" "debug")))
       (if (not (eq xslt-process-process-state 'not-running))
 	  (if (yes-or-no-p-maybe-dialog-box
 	       (format "The XSLT %s is already running, restart it? "
@@ -776,7 +777,7 @@ either a normal, no debug, XSLT processing, or a debugging session."
 	(xslt-process-set-processor)
 	(setq xslt-process-process-state 'running)
 	(setq xslt-process-debugger-running (not no-debug))
-	(xslt-process-send-command (concat "debug " filename))
+	(xslt-process-send-command (concat command " " filename))
 	(setq xslt-process-execution-context-error-function
 	      (lambda ()
 		(setq xslt-process-process-state 'not-running)))
@@ -1032,15 +1033,16 @@ already started."
 			  xslt-process-additional-classpath
 			  classpath-separator)
 	       classpath-separator classpath)))
-    (message (concat
-		       xslt-process-java-program nil " "
-		       "-classpath" " " classpath " "
-		       "xslt.debugger.cmdline.Controller" " " "-emacs"))
+    (message (concat xslt-process-java-program nil " "
+		     "-classpath" " " classpath " "
+		     "xslt.debugger.cmdline.Controller" " " "-emacs"
+		     (concat "-" xslt-process-current-processor)))
     (setq xslt-process-comint-buffer
 	  (make-comint xslt-process-comint-process-name
 		       xslt-process-java-program nil
 		       "-classpath" classpath
-		       "xslt.debugger.cmdline.Controller" "-emacs"))
+		       "xslt.debugger.cmdline.Controller" "-emacs "
+		       (concat "-" xslt-process-current-processor)))
     (message "Starting XSLT process...")
     (setq xslt-process-comint-process
 	  (get-buffer-process xslt-process-comint-buffer))
@@ -1226,6 +1228,8 @@ hits a breakpoint that causes it to stop."
   "Called when the debugger process started and is ready to accept
 commands."
   (setq xslt-process-debugger-process-started t)
+  (xslt-process-send-command
+   (concat "set processor " xslt-process-current-processor))
   (message "Starting XSLT process...done"))
 
 (defun xslt-process-debugger-buffer-killed ()
