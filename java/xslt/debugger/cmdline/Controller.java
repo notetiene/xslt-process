@@ -49,11 +49,16 @@ public class Controller
     = "Usage: dis (<breakpoint number> | filename lineno)";
   static final String enableBreakpointUsage
     = "Usage: ena (<breakpoint number> | filename lineno)";
-  static final String runUsage = "Usage: r filename";
+  static final String debugUsage = "Usage: debug filename";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
   static final String printLocalVariableUsage = "Usage: pl <name>";
   static final String printGlobalVariableUsage = "Usage: pg <name>";
+  static final String setParameterUsage = "Usage: set <parameter> <value>\n"
+    + "\tPossible parameters are:\n"
+    + "\t\tprocessor = (saxon|xalan)";
+  static final String showParametersUsage = "Usage: show\n"
+    + "    or show <parameter>";
 
   Manager manager = new Manager();
   AbstractXSLTDebugger debugger;
@@ -61,8 +66,9 @@ public class Controller
   int currentSourceFrame = -1;
   int currentStyleFrame = -1;
   Observer observer = null;
+  HashMap parameters = new HashMap();
 
-  public Controller(String processorName)
+  public Controller()
   {
     commands.put("h", getMethod("help"));
     commands.put("help", getMethod("help"));
@@ -71,7 +77,7 @@ public class Controller
     commands.put("dis", getMethod("disableBreakpoint"));
     commands.put("ena", getMethod("enableBreakpoint"));
     commands.put("lb", getMethod("listBreakpoints"));
-    commands.put("r", getMethod("runXSLTProcessor"));
+    commands.put("debug", getMethod("debugXSLTProcessor"));
     commands.put("s", getMethod("doStep"));
     commands.put("n", getMethod("doNext"));
     commands.put("c", getMethod("continueProcessing"));
@@ -85,6 +91,15 @@ public class Controller
     commands.put("xbt", getMethod("showStyleFrames"));
     commands.put("stop", getMethod("stopXSLTProcessing"));
     commands.put("q", getMethod("quit"));
+    commands.put("set", getMethod("setParameter"));
+    commands.put("show", getMethod("showParameters"));
+  }
+
+  public void createXSLTDebugger()
+  {
+    String processorName = (String)parameters.get("processor");
+    System.out.println("Create a new processor for " + processorName);
+    
     manager.setXSLTProcessorType(processorName);
     debugger = manager.getDebugger();
   }
@@ -98,7 +113,7 @@ public class Controller
                        + "dis\t disable breakpoint\n"
                        + "ena\t enable breakpoint\n"
                        + "lb\t list breakpoints\n"
-                       + "r\t run XSLT processor\n"
+                       + "debug\t run the XSLT debugger\n"
                        + "s\t step\n"
                        + "n\t next\n"
                        + "c\t continue\n"
@@ -127,7 +142,10 @@ public class Controller
         processor = "Saxon";
     }
 
-    Controller controller = new Controller(processor);
+    Controller controller = new Controller();
+
+    controller.parameters.put("processor", processor);
+    controller.createXSLTDebugger();
 
     Observer observer = null;
     if (useEmacs)
@@ -358,7 +376,7 @@ public class Controller
   }
 
   /**
-   * <code>runXSLTProcessor</code> starts the execution of the XSLT
+   * <code>debugXSLTProcessor</code> starts the execution of the XSLT
    * processor on the XML filename specified as argument. The
    * processor will stop when it hits a breakpoint, so make sure you
    * setup breakpoints before invoking it. If the processing takes a
@@ -368,11 +386,11 @@ public class Controller
    * @param args a <code>Vector</code> value containing the argument
    * of the command.
    */
-  public void runXSLTProcessor(Vector args)
+  public void debugXSLTProcessor(Vector args)
     throws IOException, InterruptedException
   {
     if (args.size() != 2) {
-      System.out.println(runUsage);
+      System.out.println(debugUsage);
       return;
     }
 
@@ -384,6 +402,9 @@ public class Controller
       System.out.print("XSLT processor already running, aborting.");
       debugger.stopProcessing();
     }
+    String currentProcessorName = (String)parameters.get("processor");
+    if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
+      createXSLTDebugger();
 
     manager.startDebugger(getAbsoluteFilename((String)args.get(1)));
   }
@@ -631,6 +652,39 @@ public class Controller
     System.exit(0);
   }
 
+  public void setParameter(Vector args)
+  {
+    if (args.size() != 3) {
+      System.out.println(setParameterUsage);
+      return;
+    }
+
+    parameters.put(args.get(1), args.get(2));
+  }
+
+  public void showParameters(Vector args)
+  {
+    if (args.size() > 2) {
+      System.out.println(showParametersUsage);
+      return;
+    }
+
+    if (args.size() == 1) {
+      // This is a request to show all the parameters
+      Iterator iter = parameters.keySet().iterator();
+      while (iter.hasNext()) {
+        Object param = iter.next();
+        Object value = parameters.get(param);
+        System.out.println(param + ":\t" + value);
+      }
+    }
+    else {
+      // Request to show a specific parameter
+      Object value = parameters.get(args.get(1));
+      System.out.println(args.get(1) + ":\t" + value);
+    }
+  }
+
   public void stopXSLTProcessing(Vector args)
     throws InterruptedException
   {
@@ -657,6 +711,11 @@ public class Controller
     }
 
     return "file:" + canonicalName;
+  }
+
+  public String getParameter(String param)
+  {
+    return (String)parameters.get(param);
   }
 
   protected int getPositiveInteger(String arg, String usage, boolean showError)
