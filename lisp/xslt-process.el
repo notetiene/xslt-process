@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 26, 2001 13:10:50 ovidiu>
+;; Time-stamp: <April 26, 2001 23:13:57 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -463,10 +463,82 @@ filename line) that indicate the new style frame stack.")
 (define-key xslt-process-debug-mode-map
   xslt-process-do-quit 'xslt-process-do-quit)
 
+(defvar xslt-process-menu-definition
+  (list "XSLT"
+	["Run XSLT processor" xslt-process-invoke :active t]
+	"--"
+	["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
+	["Set breakpoint" xslt-process-set-breakpoint
+	 :active (and xslt-process-debug-mode
+		      (not (xslt-process-is-breakpoint
+			    (xslt-process-new-breakpoint-here))))]
+	["Delete breakpoint" xslt-process-delete-breakpoint
+	 :active (and xslt-process-debug-mode
+		      (xslt-process-is-breakpoint
+		       (xslt-process-new-breakpoint-here)))]
+	["Breakpoint enabled" xslt-process-enable-disable-breakpoint
+	 :active (and xslt-process-debug-mode
+		      (xslt-process-is-breakpoint
+		       (xslt-process-new-breakpoint-here)))
+	 :style toggle
+	 :selected (and xslt-process-debug-mode
+			(xslt-process-breakpoint-is-enabled
+			 (xslt-process-new-breakpoint-here)))]
+	"--"
+	["Run debugger" xslt-process-do-run
+	 :active xslt-process-debug-mode]
+	["Step" xslt-process-do-step
+	 :active (eq xslt-process-process-state 'stopped)]
+	["Next" xslt-process-do-next
+	 :active (eq xslt-process-process-state 'stopped)]
+	["Finish" xslt-process-do-finish
+	 :active (eq xslt-process-process-state 'stopped)]
+	["Continue" xslt-process-do-continue
+	 :active (eq xslt-process-process-state 'stopped)]
+	["Stop" xslt-process-do-stop
+	 :active (eq xslt-process-process-state 'running)]
+	["Quit debugger" xslt-process-do-quit
+	 :active xslt-process-debugger-process-started]
+	"--"
+	["Speedbar" xslt-process-speedbar-frame-mode
+	 :style toggle
+	 :selected (and (boundp 'speedbar-frame)
+			(frame-live-p speedbar-frame)
+			(frame-visible-p speedbar-frame))]
+
+	(cons "XSLT Processor"
+	      (xslt-process-create-xslt-processor-submenu))
+
+	(list "Customize"
+	      ["XSLT Process"
+	       (lambda () (interactive) (customize-group 'xslt-process))
+	       :active t]
+	      ["Faces"
+	       (lambda ()
+		 (interactive) (customize-apropos-faces "xslt-process-*"))
+	       :active t])
+	(list "Help"
+	      (concat "XSLT-process " xslt-process-version)
+	      "--"
+	      ["Info file" (xslt-process-visit-info-file) :active t]
+	      ["Home Web site"
+	       (lambda ()
+		 (interactive)
+		 (browse-url xslt-process-home-web-site))
+	       :active t]
+	      ["Mailing lists"
+	       (lambda ()
+		 (interactive)
+		 (browse-url xslt-process-web-mailing-list))
+	       :active t]
+	      ["Submit bug report" (xslt-process-submit-bug-report)
+	       :active t]))
+  "XSLT-process menu definition.")
+
 (defun xslt-process-visit-info-file ()
   "Visit the info file for XSLT-process."
   (require 'info)
-  (Info-find-file-node (concat (xslt-process-find-xslt-directory)
+  (Info-find-node (concat (xslt-process-find-xslt-directory)
 			       "doc/xslt-process.info")
 		       "Top"))
 
@@ -546,7 +618,6 @@ to setup breakpoints.
 \\[xslt-process-do-quit]: Exit the XSLT processor.
 
 Hooks:
-`xslt-process-hook' is run after the xslt-process minor mode is entered.
 `xslt-process-breakpoint-set-hooks' is run each time a breakpoint is set.
 `xslt-process-breakpoint-removed-hooks' is run each time a breakpoint
 is removed.
@@ -571,84 +642,11 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
 				       xslt-process-mode-line-string)
 	(easy-menu-define
 	 xslt-process-menu xslt-process-mode-map "XSLT-process menu"
-	 '("XSLT"
-	   ["Run XSLT processor" xslt-process-invoke :active t]
-	   "--"
-	   ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
-	   ["Set breakpoint" xslt-process-set-breakpoint
-	    :active (and xslt-process-debug-mode
-			 (not (xslt-process-is-breakpoint
-			       (xslt-process-new-breakpoint-here))))]
-	   ["Delete breakpoint" xslt-process-delete-breakpoint
-	    :active (and xslt-process-debug-mode
-			 (xslt-process-is-breakpoint
-			  (xslt-process-new-breakpoint-here)))]
-	   ["Breakpoint enabled" xslt-process-enable-disable-breakpoint
-	    :active (and xslt-process-debug-mode
-			 (xslt-process-is-breakpoint
-			  (xslt-process-new-breakpoint-here)))
-	    :style toggle
-	    :selected (and xslt-process-debug-mode
-			 (xslt-process-breakpoint-is-enabled
-			  (xslt-process-new-breakpoint-here)))]
-	   "--"
-	   ["Run debugger" xslt-process-do-run
-	    :active xslt-process-debug-mode]
-	   ["Step" xslt-process-do-step
-	    :active (eq xslt-process-process-state 'stopped)]
-	   ["Next" xslt-process-do-next
-	    :active (eq xslt-process-process-state 'stopped)]
-	   ["Finish" xslt-process-do-finish
-	    :active (eq xslt-process-process-state 'stopped)]
-	   ["Continue" xslt-process-do-continue
-	    :active (eq xslt-process-process-state 'stopped)]
-	   ["Stop" xslt-process-do-stop
-	    :active (eq xslt-process-process-state 'running)]
-	   ["Quit debugger" xslt-process-do-quit
-	    :active xslt-process-debugger-process-started]
-	   "--"
-	   ["Speedbar" xslt-process-speedbar-frame-mode
-	    :style toggle
-	    :selected (and (boundp 'speedbar-frame)
-			   (frame-live-p speedbar-frame)
-			   (frame-visible-p speedbar-frame))]
-	   ("XSLT Processor" "---")
-
-	   ("Customize"
-	    ["XSLT Process"
-	     (lambda () (interactive) (customize-group 'xslt-process))
-	     :active t]
-	    ["Faces"
-	     (lambda ()
-	       (interactive) (customize-apropos-faces "xslt-process-*"))
-	     :active t])
-	   ("Help" "---")
-	   ))
-	(easy-menu-add xslt-process-menu)
-
-	(easy-menu-change '("XSLT") "XSLT Processor"
-			  (xslt-process-create-xslt-processor-submenu))
-	(easy-menu-change
-	 '("XSLT") "Help"
-	 (list
-	  (concat "XSLT-process " xslt-process-version)
-	  "--"
-	  ["Info file" (xslt-process-visit-info-file) :active t]
-	  ["Home Web site"
-	   (lambda ()
-	     (interactive)
-	     (browse-url xslt-process-home-web-site))
-	   :active t]
-	  ["Mailing lists"
-	   (lambda ()
-	     (interactive)
-	     (browse-url xslt-process-web-mailing-list))
-	   :active t]
-	  ["Submit bug report" (xslt-process-submit-bug-report)
-	   :active t])))
+	 xslt-process-menu-definition)
+	(easy-menu-add xslt-process-menu))
     (remassoc 'xslt-process-mode minor-mode-alist)
     (remassoc 'xslt-process-mode minor-mode-map-alist)
-    (delete-menu-item '("XSLT"))
+    (easy-menu-remove '("XSLT"))
     (xslt-process-toggle-debug-mode 0))
   ;; Force modeline to redisplay
   (force-mode-line-update))
@@ -932,8 +930,14 @@ either a normal, no debug, XSLT processing, or a debugging session."
 	(speedbar-with-writable
 	  (let ((results-buffer (get-buffer xslt-process-results-buffer-name))
 		(msgs-buffer (get-buffer xslt-process-message-buffer-name)))
-	    (if results-buffer (erase-buffer results-buffer))
-	    (if msgs-buffer (erase-buffer msgs-buffer))))
+	    (save-excursion
+	      (if results-buffer
+		  (progn (set-buffer results-buffer)
+			 (erase-buffer)))
+	      (if msgs-buffer
+		  (progn
+		    (set-buffer msgs-buffer)
+		    (erase-buffer))))))
 	(message "Running the %s %s..."
 		 xslt-process-current-processor
 		 proc-type)))))
@@ -1416,7 +1420,6 @@ stack as a list of (name filename line)."
   "Function called whenever the XSLT processor sends results to its
 output stream. The results come via the `xslt-process-results-process'
 process."
-  (message "xslt-process-process-filter: process %s" process)
   (let ((old-buffer (current-buffer)))
     (unwind-protect
 	(let* ((bufname (cond ((eq process xslt-process-results-process)
@@ -1425,7 +1428,6 @@ process."
 			       xslt-process-message-buffer-name)
 			      (t nil)))
 	       (buffer (get-buffer-create bufname)))
-	  (message "xslt-process-process-filter %s" bufname)
 	  (set-buffer buffer)
 	  (save-excursion
 	    ;; Insert the text, moving the marker.
