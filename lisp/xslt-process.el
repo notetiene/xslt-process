@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <August 15, 2001 15:01:41 ovidiu>
+;; Time-stamp: <August 16, 2001 21:27:07 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -207,6 +207,15 @@ directory structure looks a little different."
 	   (const :tag "Saxon 6.3" Saxon)
 	   (const :tag "Xalan 2.1.0" Xalan))))
 
+(defcustom xslt-process-pdf-viewer (list 'xpdf)
+  "*The PDF viewer to be used when viewing PDF documents."
+  :group 'xslt-process
+  :type '(list
+	   (radio-button-choice
+	    (const :tag "xpdf" xpdf)
+	    (const :tag "Acrobat Reader" acroread)
+	    (string :tag "Other"))))
+
 (defun xslt-process-create-xslt-processor-submenu ()
   "Return the submenu with the available XSLT processors."
   (let* ((custom-type (plist-get (symbol-plist 'xslt-process-default-processor)
@@ -299,6 +308,12 @@ use the [f1], [f2] etc. notation."
 (defcustom xslt-process-invoke-browser-view "\C-c\C-xn"
   "*Keybinding for invoking the XSLT processor and viewing the results
 in a browser."
+  :group 'xslt-process-key-bindings
+  :type '(string :tag "Key"))
+
+(defcustom xslt-process-invoke-pdf-viewer "\C-c\C-xp"
+  "*Keybinding for invoking the XSLT processor, followed by the FOP
+processor and viewing the results in a PDF viewer."
   :group 'xslt-process-key-bindings
   :type '(string :tag "Key"))
 
@@ -452,6 +467,11 @@ indicator."
 
 
 ;;; Other definitions
+(defun xslt-process-temp-directory ()
+  "Return the temporary directory on this machine."
+  (or (if (fboundp 'temp-directory) (temp-directory))
+      (if (boundp 'temporary-file-directory)
+	  temporary-file-directory)))
 
 ;;;###autoload
 (defvar xslt-process-mode nil
@@ -551,7 +571,8 @@ job.")
 	    (concat (xslt-process-find-xslt-data-directory)
 		      "java" xslt-process-dir-separator f))
 	  '("bsf.jar" "xerces.jar" "xalan-2.1.0.jar" "saxon-6.3.jar"
-	    "xalanj1compat.jar" "xslt.jar"))
+	    "xalanj1compat.jar" "batik.jar" "fop-0.20.1.jar"
+	    "jimi-1.0.jar" "xslt.jar"))
   "Defines the classpath to the XSLT processors thyat do the real work
 of processing an XML document. Be sure you know what you're doing when
 you modify this.")
@@ -618,11 +639,16 @@ hook functions should take no argument.")
   "List of functions to be called when the local variables change. The
 hook functions should take no argument.")
 
+(defvar xslt-process-xslt-processing-finished-hooks nil
+  "List of functions to be called when the XSLT processing finishes.")
+
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
   xslt-process-invoke-buffer-view 'xslt-process-invoke-buffer-view)
 (define-key xslt-process-mode-map
   xslt-process-invoke-browser-view 'xslt-process-invoke-browser-view)
+(define-key xslt-process-mode-map
+  xslt-process-invoke-pdf-viewer 'xslt-process-invoke-pdf-viewer)
 (define-key xslt-process-mode-map
   xslt-process-toggle-debug-mode 'xslt-process-toggle-debug-mode)
 (define-key xslt-process-mode-map
@@ -667,8 +693,11 @@ hook functions should take no argument.")
 
 (defvar xslt-process-menu-definition
   (list "XSLT"
-	["Apply XSLT, View in buffer" xslt-process-invoke-buffer-view :active t]
+	["Apply XSLT, View in buffer" xslt-process-invoke-buffer-view
+	 :active t]
 	["Apply XSLT, View in browser" xslt-process-invoke-browser-view
+	 :active t]
+	["Apply XSLT, View PDF" xslt-process-invoke-pdf-viewer
 	 :active t]
 	(list "Stylesheets Registry"
 	      ["Register XSLT buffer" xslt-process-register-buffer :active t]
@@ -835,7 +864,11 @@ Bindings:
 current buffer, and view the results in a buffer.
 \\[xslt-process-invoke-browser-view]: Invoke the XSLT processor on the
 current buffer, and view the results in a browser.
-\\[xslt-process-do-run]: Start the XSLT debugger on the current buffer.
+\\[xslt-process-invoke-pdf-viewer]: Assume the resulting XML document is
+an XML FO document. This command runs the Apache FOP processor on it
+and displays the result in a PDF reader of choice.
+\\[xslt-process-do-run]: Start the XSLT debugger on the current
+buffer.
 
 \\[xslt-process-set-breakpoint]: Set a breakpoint at the current line.
 \\[xslt-process-delete-breakpoint]: Delete breakpoint at the current line.
@@ -958,7 +991,8 @@ different actions for faster operations."
   "*Invokes the XSLT processor of your choice on the current buffer,
 and view the results in a buffer."
   (interactive)
-  (xslt-process-do-run t))
+  (if (equal (xslt-process-do-run t) 'started)
+      (setq xslt-process-xslt-processing-finished-hooks nil)))
 
 (defun xslt-process-invoke-browser-view ()
   "*Invokes the XSLT processor of your choice on the current buffer,
@@ -966,10 +1000,67 @@ and view the results in a buffer."
   (interactive)
   (let ((filename (expand-file-name
 		   "xslt-process-output.html"
-		   (or (if (fboundp 'temp-directory) (temp-directory))
-		       (if (boundp 'temporary-file-directory)
-			   temporary-file-directory)))))
-    (xslt-process-do-run t filename)))
+		   (xslt-process-temp-directory))))
+    (if (equal (xslt-process-do-run t filename) 'started)
+	(progn
+	  (setq xslt-process-xslt-processing-finished-hooks nil)
+	  (add-hook 'xslt-process-xslt-processing-finished-hooks
+		    'xslt-process-do-invoke-browser)))))
+
+(defun xslt-process-do-invoke-browser ()
+  "Private function invoked to view the file in a browser, after the
+XSLT processing finishes."
+  (browse-url (concat "file:" xslt-process-output-to-filename)))
+
+(defun xslt-process-invoke-pdf-viewer ()
+  "*Assumes the XSLT transformation will generate an XSL FO document.
+This command applies the XSLT transformation on the original XML file,
+and on the resulting XSL FO document applies the Apache FOP, to obtain
+a PDF document. The PDF document is viewed with the PDF viewer
+specified by `xslt-process-pdf-viewer'."
+  (interactive)
+  (let ((fo-filename (expand-file-name
+		      "xslt-process-output.fo"
+		      (xslt-process-temp-directory))))
+    (if (equal (xslt-process-do-run t fo-filename) 'started)
+	(progn
+	  (setq xslt-process-xslt-processing-finished-hooks nil)
+	  (add-hook 'xslt-process-xslt-processing-finished-hooks
+		    'xslt-process-do-invoke-fop-processor)))))
+
+(defun xslt-process-do-invoke-fop-processor ()
+  "Private function used by `xslt-process-invoke-pdf-viewer' at the
+end of the XSLT processing to continue with the FOP processing."
+  (let ((fo-filename (expand-file-name
+		      "xslt-process-output.fo"
+		      (xslt-process-temp-directory)))
+	(pdf-filename (expand-file-name
+		       "xslt-process-output.pdf"
+		       (xslt-process-temp-directory))))
+    (message "XSLT processing finished, running FOP processor...")
+    ;; Set the internal state to 'running' to avoid starting a new
+    ;; processing in the meantime.
+    (setq xslt-process-process-state 'running)
+    (setq xslt-process-xslt-processing-finished-hooks nil)
+    (add-hook 'xslt-process-xslt-processing-finished-hooks
+	      'xslt-process-do-invoke-pdf-viewer)
+    (xslt-process-send-command
+     (format "toPDF -xml %s -o %s" fo-filename pdf-filename))))
+
+(defun xslt-process-do-invoke-pdf-viewer ()
+  "Private function invoked at the end of the FOP processing to start
+the PDF viewer."
+  (let ((pdf-viewer
+	 (if (symbolp (car xslt-process-pdf-viewer))
+	     (symbol-name (car xslt-process-pdf-viewer))
+	   (car xslt-process-pdf-viewer)))
+	(pdf-filename (expand-file-name
+		       "xslt-process-output.pdf"
+		       (xslt-process-temp-directory))))
+    (setq xslt-process-xslt-processing-finished-hooks nil)
+    (message "Starting '%s'  PDF viewer..." pdf-viewer)
+    (start-process "pdf viewer" "pdf viewer" pdf-viewer pdf-filename)
+    (message "Starting PDF viewer '%s'...done." pdf-viewer)))
 
 (defun xslt-process-display-messages (messages msg-buffer out-buffer)
   (set-buffer msg-buffer)
@@ -1157,8 +1248,11 @@ on its state."
 output goes to Emacs directly.")
 
 (defun xslt-process-do-run (&optional no-debug out-filename)
-  "*Send the run/debug command to the command line interpreter to start
-either a normal, no debug, XSLT processing, or a debugging session."
+  "*Send the run/debug command to the command line interpreter to
+start either a normal, no debug, XSLT processing, or a debugging
+session. Returns 'quit if the XSLT processor is already started and
+the user doesn't stop it. Otherwise if the XSLT processing starts
+normally returns 'started."
   (interactive)
   (block nil
     (let ((proc-type (if no-debug "processor" "debugger"))
@@ -1168,7 +1262,7 @@ either a normal, no debug, XSLT processing, or a debugging session."
 	       (format "The XSLT %s is already running, restart it? "
 		       proc-type))
 	      (xslt-process-do-quit t)
-	    (return)))
+	    (return 'quit)))
       (setq xslt-process-output-to-filename out-filename)
       (let* ((filename (urlize (buffer-file-name)))
 	     (xsl-filename
@@ -1221,7 +1315,8 @@ either a normal, no debug, XSLT processing, or a debugging session."
 		  (kill-buffer errors-buffer)))))
 	(message "Running the %s %s..."
 		 xslt-process-current-processor
-		 proc-type)))))
+		 proc-type))))
+  'started)
 
 (defun xslt-process-do-step ()
   "*Send a STEP command to the XSLT debugger."
@@ -1686,11 +1781,8 @@ action. When the processing completes, the
 	   "Done invoking %s.")
 	 xslt-process-current-processor)
 	(if (get-buffer xslt-process-errors-buffer-name)
-	    (display-buffer xslt-process-errors-buffer-name))
-	;; If the output was sent to a file, invoke a browser to view
-	;; the contents of the file
-	(if xslt-process-output-to-filename
-	    (browse-url (concat "file:" xslt-process-output-to-filename))))))
+	    (display-buffer xslt-process-errors-buffer-name))))
+  (run-hooks 'xslt-process-xslt-processing-finished-hooks))
 
 (defun xslt-process-report-error (message stack-trace)
   "Called by the XSLT debugger process whenever an error happens."
@@ -1707,7 +1799,7 @@ action. When the processing completes, the
       (save-excursion
 	(set-buffer buffer)
 	;; If nothing was inserted in the buffer to this point, insert a
-	;; dummy cd command just to keep happy the compilation-mode.
+	;; dummy cd command just to keep the compilation-mode happy.
 	(if (equal (point-min) (point-max))
 	    (insert "cd\n\n"))
 	(compilation-mode "XSLT")
@@ -1811,6 +1903,11 @@ in the current XSLT template have changed."
 	   (vector (aref x 0) (aref x 1) (xslt-process-unescape (aref x 2))))
 	 variables))
   (run-hooks 'xslt-process-local-variables-changed-hooks))
+
+(defun xslt-process-show-in-minibuffer (string)
+  "Called from the Java process to display status information in the
+minibuffer area"
+  (message string))
 
 (defun xslt-process-process-filter (process string)
   "Function called whenever the XSLT processor sends results to its
