@@ -5,7 +5,7 @@
 ;; Author: Tony Addyman <A.M.Addyman@salford.ac.uk>
 
 ;; Created: December 2, 2000
-;; Time-stamp: <2003-04-21 20:13:32 ovidiu>
+;; Time-stamp: <2003-09-16 19:27:27 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 21.2
@@ -58,9 +58,8 @@
 (require 'string)
 (require 'widget)
 
-(defconst xslt-process-version "2.2"
+(defconst xslt-process-version "2.2.1"
   "The version of the XSLT-process mode.")
-
 
 (eval-and-compile
   (require 'wid-edit)
@@ -506,6 +505,17 @@ indicator."
   :group 'xslt-process
   :type 'string)
 
+(defun xslt-process-temp-directory ()
+  "Return the temporary directory on this machine."
+  (or (if (fboundp 'temp-directory) (temp-directory))
+      (if (boundp 'temporary-file-directory)
+	  temporary-file-directory)))
+
+(defcustom xslt-process-output-directory (xslt-process-temp-directory)
+  "*The directory where the output files should go to."
+  :group 'xslt-process
+  :type 'directory)
+
 (defcustom xslt-process-debug-mode-line-string " XSLTd"
   "*String to appear in the modeline when the XSLT debug mode is active."
   :group 'xslt-process
@@ -515,11 +525,6 @@ indicator."
 
 
 ;;; Other definitions
-(defun xslt-process-temp-directory ()
-  "Return the temporary directory on this machine."
-  (or (if (fboundp 'temp-directory) (temp-directory))
-      (if (boundp 'temporary-file-directory)
-	  temporary-file-directory)))
 
 ;;;###autoload
 (defvar xslt-process-mode nil
@@ -1056,7 +1061,7 @@ and view the results in a buffer."
   (interactive)
   (let ((filename (expand-file-name
 		   "xslt-process-output.html"
-		   (xslt-process-temp-directory))))
+		   xslt-process-output-directory)))
     (if (equal (xslt-process-do-run t filename) 'started)
 	(progn
 	  (setq xslt-process-xslt-processing-finished-hooks nil)
@@ -1077,7 +1082,7 @@ specified by `xslt-process-pdf-viewer'."
   (interactive)
   (let ((fo-filename (expand-file-name
 		      "xslt-process-output.fo"
-		      (xslt-process-temp-directory))))
+		      xslt-process-output-directory)))
     (if (equal (xslt-process-do-run t fo-filename) 'started)
 	(progn
 	  (setq xslt-process-xslt-processing-finished-hooks nil)
@@ -1089,10 +1094,10 @@ specified by `xslt-process-pdf-viewer'."
 end of the XSLT processing to continue with the FOP processing."
   (let ((fo-filename (expand-file-name
 		      "xslt-process-output.fo"
-		      (xslt-process-temp-directory)))
+		      xslt-process-output-directory))
 	(pdf-filename (expand-file-name
 		       "xslt-process-output.pdf"
-		       (xslt-process-temp-directory)))
+		       xslt-process-output-directory))
 	(log-level (symbol-name (car xslt-process-fop-log-level))))
     (message "XSLT processing finished, running FOP processor...")
     ;; Set the internal state to 'running' to avoid starting a new
@@ -1117,7 +1122,7 @@ the PDF viewer."
 		(car xslt-process-pdf-viewer))))
 	(pdf-filename (expand-file-name
 		       "xslt-process-output.pdf"
-		       (xslt-process-temp-directory))))
+		       xslt-process-output-directory)))
     (setq xslt-process-xslt-processing-finished-hooks nil)
     (message "Starting '%s'  PDF viewer..." pdf-viewer)
     (if (functionp pdf-viewer)
