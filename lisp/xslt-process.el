@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May 29, 2001 14:03:18 ovidiu>
+;; Time-stamp: <May 29, 2001 17:48:36 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -83,34 +83,23 @@ names conform to the URI definition."
       "On Unix systems the file names already conform to the URI definition."
       filename)))
 
-(defvar xslt-process-escape-char-table (make-char-table 'char)
-  "Mapping table for escape characters.")
-
-(loop for i from 0 to 255 by 1 do
-  (let ((ch (int-to-char i)))
-    (put-char-table ch ch xslt-process-escape-char-table)))
-
-(mapc
- (lambda (cmap)
-   (put-char-table (car cmap) (cadr cmap) xslt-process-escape-char-table))
- '((?\d ?\")
-   (?\b  ?^)
-   (?\e  ?$)))
-
-(defun xslt-process-unescape (str)
-  "Translate the escape sequences in the corresponding characters."
-  (mapconcat
-   (lambda (c)
-     (char-to-string (get-char-table c xslt-process-escape-char-table)))
-   str ""))
-
 (defun xslt-process-unescape (string)
   "Translate the escape sequences in the corresponding characters."
-  string)
-;  (let ((index 0))
-;    (while (or (setq index (string-match "\\\\\\\\\\|\\\\b\\|\\\\d" string index))
-;	       index)
-;      (message "match '%s'" (match-string 1)))))
+  (save-excursion
+    (let ((tmpbuf (get-buffer-create " xslt-process-temp"))
+	  (rex "\\(\\\\b\\)"))
+      (set-buffer tmpbuf)
+      (erase-buffer)
+      (goto-char (point-min))
+      (insert-string string)
+      (goto-char (point-min))
+      (while (re-search-forward rex (point-max) t)
+	(message "point is now %s, string '%s'" (point) (match-string 1))
+	(goto-char (- (point) 2))
+	(cond ((looking-at "\\\\b")
+	       (replace-match "^")
+	       (message "replaced \\b, point at %d" (point)))))
+      (buffer-string))))
 
 (defvar xslt-process-dir-separator
   (if (eq system-type 'windows-nt) "\\" "/")
