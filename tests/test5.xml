@@ -2,5 +2,5 @@
 <?xml-stylesheet type="text/xsl" href="test5.xsl"?>
 
 <page>
- <h1>Title</h1>
+ <h1><i>Title</i></h1>
 </page>
