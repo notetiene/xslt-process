@@ -1,3 +1,29 @@
+2001-04-26  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added the initial GNU Emacs compatibility
+	support:
+	
+	- renamed all the variables and functions to remove special
+	characters like / or ? from their name (uf, why doesn't GNU Emacs
+	support them?)
+	
+	- use the cl hashtable to get support for hashtables in GNU Emacs
+	
+	- define remassoc to be rassoc for GNU Emacs
+	
+	- use the setnu package to get the extents API for XEmacs under
+	GNU Emacs
+	
+	- use an extent instead of an annotation to get the entering and
+	exiting arrow
+	
+	- use the easymenu to get XEmacs-like menus under GNU Emacs
+
+	* lisp/xslt-speedbar.el: Use the string package to get common
+	functionality for string replace in both GNU Emacs and XEmacs. Use
+	cl's hashtables instead of XEmacs' only hashtables. Renamed the
+	variables to remove special characters out of their name.
+
 2001-04-22  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Added code to handle displaying of the
