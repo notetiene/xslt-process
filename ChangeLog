@@ -1,3 +1,45 @@
+2001-04-08  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-speedbar.el: Graciously handle setting, deleting,
+	enabling, and disabling of breakpoints: they are now updated in
+	the speedbar. Added configurable faces for these colors.
+
+	* lisp/xslt-process.el: Added hooks to be invoked when breakpoint
+	operations happen, and source and style frames change. Added
+	speedbar entry in the XSLT menu. Reimplement
+	xslt-process-output-from-process to handle partial output from the
+	XSLT debugger process; this still needs more work.
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Send the
+	sourceStackChanged and styleStackChanged messages if the
+	appropriate stack frames change.
+
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Removed the
+	localVariables instance variables; use instead the inherited one.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Implemented
+	sourceStackChanged and styleStackChanged.
+
+	* java/xslt/debugger/cmdline/Controller.java: Added
+	getManager. Added help line for the sbt command.
+
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Added
+	implementations for sourceStackChanged and styleStackChanged
+	methods.
+
+	* java/xslt/debugger/StyleFrame.java: Added clone, equals,
+	hashCode, getFilename and getLine methods.
+
+	* java/xslt/debugger/SourceFrame.java: Added clone, equals and
+	hashCode, getFilename and getLine methods.
+
+	* java/xslt/debugger/Observer.java: Added sourceStackChanged and
+	styleStackChanged methods. Documented methods.
+
+	* java/xslt/Xalan1.java: Prefix filename with the file: URI.
+
+	* java/xslt/Saxon.java: Prefix filename with the file: URI.
+
 2001-04-05  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Removed debug messages.
