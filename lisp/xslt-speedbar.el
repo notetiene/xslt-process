@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April 25, 2001 23:50:54 ovidiu>
+;; Time-stamp: <April 26, 2001 11:44:43 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -174,7 +174,7 @@ positions the point right at the beginning of the line."
   (save-excursion
     (let* ((beg (progn (beginning-of-line) (point)))
 	   (end (progn (end-of-line) (point)))
-	   (line (buffer-string beg end)))
+	   (line (buffer-substring beg end)))
       (message "xslt-process-top-level-entry-click '%s' '%s' '%s' '%s'" text token indent line)
       (xslt-process-show-top-level-entry line token indent))))
 
