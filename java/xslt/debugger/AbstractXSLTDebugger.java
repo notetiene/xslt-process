@@ -27,11 +27,12 @@ public abstract class AbstractXSLTDebugger implements Runnable
   // These are the possible actions that could be taken on a worker
   // thread
   public static final int DO_NOTHING = 0;
-  public static final int DO_STOP = 2;
-  public static final int DO_STEP = 3;
-  public static final int DO_NEXT = 4;
-  public static final int DO_FINISH = 5;
-  public static final int DO_CONTINUE = 6;
+  public static final int DO_STOP = 1;
+  public static final int DO_STEP = 2;
+  public static final int DO_NEXT = 3;
+  public static final int DO_FINISH = 4;
+  public static final int DO_CONTINUE = 5;
+  public static final int DO_DEFERRED_STOP = 6;
   
   protected Manager manager = null;
   protected String xmlFilename;

@@ -17,6 +17,7 @@ import com.icl.saxon.om.NodeInfo;
 import com.icl.saxon.style.StyleElement;
 import com.icl.saxon.style.XSLApplyTemplates;
 import com.icl.saxon.style.XSLCallTemplate;
+import com.icl.saxon.style.XSLAttribute;
 import com.icl.saxon.trace.TraceListener;
 import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
@@ -30,7 +31,7 @@ public class SaxonTraceListener implements TraceListener
   String currentFilename = null;
   int currentLine = -1;
   int currentColumn = -1;
-  int depth = 0;
+  StyleFrame styleFrameToStop = null;
   
   public SaxonTraceListener (XSLTDebugger debugger)
   {
@@ -60,15 +61,35 @@ public class SaxonTraceListener implements TraceListener
     System.err.println("</trace>");
   }
 
-  public synchronized void debuggerStopped(String filename,
-                                           int line,
-                                           int column,
-                                           String message)
+  public synchronized void debuggerStopped(NodeInfo element, String message)
   {
+    String name = element.getDisplayName();
+    String filename = element.getSystemId();
+    int line = element.getLineNumber();
+    int column = element.getColumnNumber();
+
     debugger.debuggerStopped(filename, line, column, message);
     currentFilename = filename;
     currentLine = line;
     currentColumn = column;
+
+    // Transform any 'next' command in 'step' if the XSL element
+    // is not the apply-templates or call-template instruction
+    if (debugger.getAction() == AbstractXSLTDebugger.DO_NEXT) {
+      System.out.println("Got a NEXT action for element "
+                         + element.getClass());
+        
+//       if (element instanceof XSLApplyTemplates
+//           || element instanceof XSLCallTemplate
+//           || element instanceof XSLAttribute) {
+      {
+        styleFrameToStop = manager.peekStyleFrame();
+        System.out.println("Setting up style frame to stop to " + name);
+      }
+//       else {
+//         debugger.setAction(AbstractXSLTDebugger.DO_STEP);
+//       }
+    }
   }
 
   /**
@@ -134,12 +155,12 @@ public class SaxonTraceListener implements TraceListener
     int line = element.getLineNumber();
     int column = element.getColumnNumber();
 
-    System.err.println(indent
-                       + "<Instruction " + element.getClass()
-                       + " element=\"" + name
-                       + "\" line=\"" + line
-                       + "\" column=\"" + column
-                       + "\" file=\"" + filename + "\">");
+    //     System.err.println(indent
+    //                        + "<Instruction " + element.getClass()
+    //                        + " element=\"" + name
+    //                        + "\" line=\"" + line
+    //                        + "\" column=\"" + column
+    //                        + "\" file=\"" + filename + "\">");
     indent += " ";
 
     StyleFrame styleFrame
@@ -149,16 +170,7 @@ public class SaxonTraceListener implements TraceListener
 
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
-      debuggerStopped(filename, line, column,
-                      "entering " + element.getDisplayName());
-
-      // Transform any 'next' command in 'step' if the XSL element
-      // is not the apply-templates or call-template instruction
-      if (debugger.getAction() == AbstractXSLTDebugger.DO_NEXT
-          && !(element instanceof XSLApplyTemplates
-               || element instanceof XSLCallTemplate)) {
-        debugger.setAction(AbstractXSLTDebugger.DO_STEP);
-      }
+      debuggerStopped(element, "entering " + element.getDisplayName());
     }
     else {
       switch (debugger.getAction()) {
@@ -167,13 +179,16 @@ public class SaxonTraceListener implements TraceListener
           // We reached a line different from the last one we were
           // on when the step command was issued. We need to give
           // back the control to the command line
-          debuggerStopped(filename, line  , column,
-                          "entering " + element.getDisplayName());
+          debuggerStopped(element, "entering " + element.getDisplayName());
         }
         break;
 
-      case AbstractXSLTDebugger.DO_NEXT:
-        depth++;
+      case AbstractXSLTDebugger.DO_DEFERRED_STOP:
+        System.out.println("stopped in deferred stop with element " + name);
+        debuggerStopped(element, "entering " + element.getDisplayName());
+        break;
+        
+      default:
         break;
       }
     }
@@ -188,22 +203,22 @@ public class SaxonTraceListener implements TraceListener
 
     if (!(element instanceof ElementInfo))
       return;
-    
+
+    String name = element.getDisplayName();
     String filename = element.getSystemId();
     int line = element.getLineNumber();
     int column = element.getColumnNumber();
 
     indent = indent.substring(0, indent.length() - 1);
-    System.err.println(indent + "</Instruction> <!-- "
-                       + " element=\"" + element.getDisplayName()
-                       + "\" line=\"" + line
-                       + "\" column=\"" + column
-                       + "\" file=\"" + element.getSystemId() + "\">");
+    //     System.err.println(indent + "</Instruction> <!-- "
+    //                        + " element=\"" + element.getDisplayName()
+    //                        + "\" line=\"" + line
+    //                        + "\" column=\"" + column
+    //                        + "\" file=\"" + element.getSystemId() + "\">");
 
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
-      debuggerStopped(filename, line, column,
-                      "leaving " + element.getDisplayName());
+      debuggerStopped(element, "leaving " + element.getDisplayName());
     }
     else {
       switch (debugger.getAction()) {
@@ -212,19 +227,21 @@ public class SaxonTraceListener implements TraceListener
           // We reached a line different from the last one we were
           // on when the step command was issued. We need to give
           // back the control to the command line
-          debuggerStopped(filename, line, column,
-                          "leaving " + element.getDisplayName());
+          debuggerStopped(element, "leaving " + element.getDisplayName());
         }
         break;
 
       case AbstractXSLTDebugger.DO_NEXT:
-        if (depth == 0) {
-          debuggerStopped(filename, line, column,
-                          "leaving " + element.getDisplayName());
-          depth = 0;
+        if (styleFrameToStop != null
+            && styleFrameToStop == manager.peekStyleFrame()) {
+          // We reached the end of the element after which we have to
+          // stop. Set the action to STEP so that we stop right after this
+          // node and continue
+          debugger.setAction(AbstractXSLTDebugger.DO_DEFERRED_STOP);
+          System.out.println("Leaving " + name
+                             + ", setting up deferred breakpoint");
+          styleFrameToStop = null;
         }
-        else
-          depth--;
         break;
       }
     }
