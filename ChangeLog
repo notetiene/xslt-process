@@ -1,3 +1,24 @@
+2001-06-07  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* etc/Makefile: Created.
+
+	* tests/test5.xsl: Moved the variables under the h1 template.
+
+	* lisp/xslt-process.el: Moved the key bindings variables into a
+	different group under the "xslt-process" group.
+
+	* java/Makefile: Define the all and distclean targets.
+
+	* doc/xslt-process.texi.in: Documented the speedbar and the
+	customization.
+
+	* Makefile: Moved the functionality in the directories underneath
+	to simplify the rules.
+
+	* doc/Makefile: Run tidy on the resulting index.html.
+
+	* doc/.cvsignore: Added the png files generated from etc/.
+
 2001-06-06  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Display the type of global variables as
