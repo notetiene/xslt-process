@@ -30,6 +30,7 @@
 
 (require 'speedbar)
 (require 'string)
+(load "subr")
 
 ;;;; Speedbar support
 (speedbar-add-supported-extension ".xml")
@@ -466,14 +467,15 @@ inserting in the speedbar."
 	    (value (aref variable 2))
 	    (item (xslt-process-speedbar-item type)))
        (message "name %s, type %s, value %s" name type value)
-       (speedbar-make-tag-line (car item) (cadr item)
-			       nil
-			       nil
-			       (concat name "  " value)
-			       nil
-			       nil
-			       'speedbar-file-face
-			       (1+ indent))))
+       (speedbar-make-tag-line
+	   (car item) (cadr item)
+	   nil
+	   nil
+	   (concat name "  " (subst-char-in-string ?\n ?\266 value))
+	   nil
+	   nil
+	   'speedbar-file-face
+	   (1+ indent))))
    xslt-process-local-variables))
 
 (defun xslt-process-speedbar-local-variables-changed ()
