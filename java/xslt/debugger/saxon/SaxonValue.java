@@ -45,6 +45,7 @@ public class SaxonValue extends xslt.debugger.Value
   Context context;
   StyleElement element;
   int frameId;
+  final int MAXIMUM_VALUE_SIZE = 100;
 
   public SaxonValue(SaxonVariable variable,
                     Context context,
@@ -82,6 +83,10 @@ public class SaxonValue extends xslt.debugger.Value
           
           if (v != null) {
             value = v.asString();
+	    // nodesets can generate very large string values
+	    if (value.length() > MAXIMUM_VALUE_SIZE) {
+	      value = value.substring(0, MAXIMUM_VALUE_SIZE) + "...";
+	    }
             type = new SaxonType(v.getDataType());
           }
         }
