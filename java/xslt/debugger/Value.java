@@ -26,8 +26,8 @@ package xslt.debugger;
 
 public class Value 
 {
-  protected Type type;
-  protected String value;
+  protected Type type = null;
+  protected String value = null;
 
   public Value() {}
 
