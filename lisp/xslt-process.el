@@ -41,6 +41,26 @@
 (require 'jde)
 (require 'cl)
 
+;; From custom web page at http://www.dina.dk/~abraham/custom/
+(eval-and-compile
+  (condition-case ()
+      (require 'custom)
+    (error nil))
+  (if (and (featurep 'custom) (fboundp 'custom-declare-variable))
+      nil ;; We've got what we needed
+    ;; We have the old custom-library, hack around it!
+    (defmacro defgroup (&rest args)
+      nil)
+    (defmacro defface (var values doc &rest args)
+      (` (progn
+	   (defvar (, var) (quote (, var)))
+	   ;; To make colors for your faces you need to set your .Xdefaults
+	   ;; or set them up ahead of time in your .emacs file.
+	   (make-face (, var))
+	   )))
+    (defmacro defcustom (var value doc &rest args)
+      (` (defvar (, var) (, value) (, doc))))))
+
 ;;; User defaults
 
 (defgroup xslt-process nil
@@ -114,6 +134,18 @@ to work"
 in the debug mode for this key to work."
   :group 'xslt-process
   :type '(string :tag "Key"))
+
+(defface xslt-process-enabled-breakpoint-face
+  '((((class color) (background light))
+     (:foreground "purple" :background "salmon")))
+  "*Face used to highlight breakpoints."
+  :group 'font-lock-highlighting-faces)
+
+(defface xslt-process-disabled-breakpoint-face
+  '((((class color) (background light))
+     (:foreground "purple" :background "wheat")))
+  "*Face used to highlight breakpoints."
+  :group 'font-lock-highlighting-faces)
 
 ;;;###autoload
 (defcustom xslt-process-mode-line-string " XSLT"
@@ -244,13 +276,20 @@ different actions for faster operations."
       (progn
 	(setq xslt-process-debug-mode nil)
 	(toggle-read-only 0)
+	(xslt-process-change-breakpoints-highlighting nil)
 	(xslt-process-setup-minor-mode xslt-process-mode-map
 				       xslt-process-mode-line-string))
     ;; Enable the debug mode
     (setq xslt-process-debug-mode t)
     (toggle-read-only 1)
+    (xslt-process-change-breakpoints-highlighting t)
     (xslt-process-setup-minor-mode xslt-process-debug-mode-map
 				   xslt-process-debug-mode-line-string)))
+
+(defun xslt-process-quit-debug ()
+  "*Quit the debugger and exit from the xslt-process mode."
+  (interactive)
+  (xslt-process-toggle-debug-mode 0))
 
 (put 'Saxon 'additional-params 'xslt-saxon-additional-params)
 (put 'Xalan1 'additional-params 'xslt-xalan1-additional-params)
@@ -383,19 +422,28 @@ choice on the current buffer."
 
 (defun xslt-process-new-breakpoint-here ()
   "Returns a breakpoint object at filename and line number of the
-current buffer or nil otherwise."
+current buffer or nil otherwise. By default the breakpoint is enabled."
   (let ((filename (buffer-file-name))
 	(line (save-excursion (progn (end-of-line) (count-lines 1 (point))))))
     (cons filename line)))
 
-(defun xslt-process-intern-breakpoint (breakpoint)
+(defun xslt-process-intern-breakpoint (breakpoint state)
   "Interns BREAKPOINT into the internal hash-table that keeps track of
-breakpoints."
-  (puthash breakpoint breakpoint xslt-process-breakpoints))
+breakpoints. STATE should be either t for an enabled breakpoint, or
+nil for a disabled breakpoint."
+  (puthash breakpoint (if state 'enabled 'disabled) xslt-process-breakpoints))
 
 (defun xslt-process-is-breakpoint (breakpoint)
-  "*Checks whether BREAKPOINT is setup in buffer at line."
+  "Checks whether BREAKPOINT is setup in buffer at line."
   (not (eq (gethash breakpoint xslt-process-breakpoints) nil)))
+
+(defun xslt-process-breakpoint-is-enabled (breakpoint)
+  "Returns t if BREAKPOINT is enabled, nil otherwise. Use
+xslt-process-is-breakpoint before calling this method to find out
+whether BREAKPOINT is a breakpoint or not. This method returns nil
+either when the breakpoint doesn't exist or when the breakpoint is
+disabled."
+  (eq (gethash breakpoint xslt-process-breakpoints) 'enabled))
 
 (defun xslt-process-remove-breakpoint (breakpoint)
   "Remove BREAKPOINT from the internal data structures."
@@ -420,7 +468,8 @@ message if a breakpoint is already setup."
 	 (line (xslt-process-breakpoint-line breakpoint)))
     (if (xslt-process-is-breakpoint breakpoint)
 	(message (format "Breakpoint already set in %s at %s" filename line))
-      (xslt-process-intern-breakpoint breakpoint)
+      (xslt-process-intern-breakpoint breakpoint t)
+      (xslt-process-highlight-line 'xslt-process-enabled-breakpoint-face)
       (message (format "Set breakpoint in %s at %s." filename line)))))
 
 (defun xslt-process-delete-breakpoint ()
@@ -432,18 +481,73 @@ message if a breakpoint is already setup."
     (if (xslt-process-is-breakpoint breakpoint)
 	(progn
 	  (xslt-process-remove-breakpoint breakpoint)
+	  (xslt-process-highlight-line 'default)
+	  ;; Remove the extent that exists at this line
+	  (save-excursion
+	    (let* ((from (or (beginning-of-line) (point)))
+		   (extent (extent-at from)))
+	      (delete-extent extent)))
 	  (message (format "Removed breakpoint in %s at %s." filename line)))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 (defun xslt-process-enable/disable-breakpoint ()
   "*Enable or disable the breakpoint at the current line in buffer, depending
 on its state."
-  (interactive))
-
-(defun xslt-process-quit-debug ()
-  "*Quit the debugger and exit from the xslt-process mode."
   (interactive)
-  (xslt-process-toggle-debug-mode 0))
+  (let* ((breakpoint (xslt-process-new-breakpoint-here))
+	 (filename (xslt-process-breakpoint-filename breakpoint))
+	 (line (xslt-process-breakpoint-line breakpoint)))
+    (if (xslt-process-is-breakpoint breakpoint)
+	(progn
+	  ;; Toggle the state of the breakpoint
+	  (xslt-process-intern-breakpoint
+	   breakpoint
+	   (not (xslt-process-breakpoint-is-enabled breakpoint)))
+	  ;; Change the face to visually show the status of the
+	  ;; breakpoint and print informative message
+	  (xslt-process-highlight-line
+	   (if (xslt-process-breakpoint-is-enabled breakpoint)
+	       (and
+		 (message (format "Enabled breakpoint in %s at %s"
+				  filename line))
+		 'xslt-process-enabled-breakpoint-face)
+	     (and
+	      (message (format "Disabled breakpoint in %s at %s"
+			       filename line))
+	      'xslt-process-disabled-breakpoint-face))))
+      (message (format "No breakpoint in %s at %s" filename line)))))
+
+(defun xslt-process-change-breakpoints-highlighting (flag)
+  "Highlights or unhighlights, depending on FLAG, all the breakpoints
+in the current buffer. It doesn't affect the current state of the
+breakpoints."
+  (maphash
+   (lambda (breakpoint state)
+     (save-excursion
+       (let* ((filename (xslt-process-breakpoint-filename breakpoint))
+	      (line (xslt-process-breakpoint-line breakpoint))
+	      (from (prog2 (goto-line line) (point)))
+	      (extent (or (extent-at from)
+			  (make-extent from (prog2 (end-of-line) (point))))))
+	 (if flag
+	     ;; Highlight the line depending on state
+	     (set-extent-face extent
+			      (if (eq state 'enabled)
+				  'xslt-process-enabled-breakpoint-face
+				'xslt-process-disabled-breakpoint-face))
+	   (delete-extent extent)))))
+   xslt-process-breakpoints))
+		 
+	     
+
+(defun xslt-process-highlight-line (face)
+  "Sets the face of the current line to FACE."
+  (save-excursion
+    (let* ((from (or (beginning-of-line) (point)))
+	   (to (or (end-of-line) (point)))
+	   (extent (or (extent-at from)
+		       (make-extent from to))))
+      (set-extent-face extent face))))
 
 (defun xslt-process-setup-minor-mode (keymap mode-line-string)
   "Setup the XSLT-process minor mode. KEYMAP specifies the keybindings
