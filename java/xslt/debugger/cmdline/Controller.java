@@ -723,6 +723,8 @@ public class Controller
     
     try {
       canonicalName = file.getCanonicalPath();
+      if (manager.runningWindows)
+	canonicalName = canonicalName.replace('\\', '/');
     }
     catch (IOException e) {
       System.out.println("Error obtaining the absolute filename: " + e);
