@@ -1,5 +1,7 @@
 2001-04-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* samples/books.xsl: Commented out the saxon:group elements.
+
 	* lisp/xslt-process.el: No longer uses BSH to invoke the XSLT
 	processor. Use instead the same command line XSLT process used for
 	debugging.
