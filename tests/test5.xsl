@@ -7,16 +7,17 @@
 <xsl:variable name="g2">this is a string</xsl:variable>
 
 <xsl:template match="page">
- <xsl:variable name="title" select="h1"/>
- <xsl:variable name="str" select="'Title 123'"/>
- <xsl:variable name="bool" select="true()"/>
- <xsl:variable name="number" select="number(123)"/>
- <xsl:variable name="date" select="Date:new()" xmlns:Date="java:java.util.Date"/>
  <xsl:apply-templates select="child::*"/>
 </xsl:template>
 
 <xsl:template match="h1">
+ <xsl:variable name="title" select="."/>
+ <xsl:variable name="str" select="'Title 123'"/>
+ <xsl:variable name="bool" select="true()"/>
+ <xsl:variable name="number" select="number(123)"/>
+ <xsl:variable name="date" select="Date:new()" xmlns:Date="java:java.util.Date"/>
  <xsl:variable name="a1" select="."/>
+ <xsl:apply-templates select="child::*"/>
 </xsl:template>
 
 </xsl:transform>
