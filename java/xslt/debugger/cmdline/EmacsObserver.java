@@ -44,7 +44,8 @@ public class EmacsObserver implements Observer
       Socket clientSocket = serverSocket.accept();
       OutputStream outputStream = clientSocket.getOutputStream();
       AbstractXSLTDebugger debugger = controller.getDebugger();
-      debugger.setOutStream(outputStream);
+      Manager manager = controller.getManager();
+      manager.setOutStream(outputStream);
       serverSocket.close();
     }
     catch (Exception e) {
