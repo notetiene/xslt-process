@@ -2,9 +2,11 @@
     XSLTDebugger.java
 
     Author: Ovidiu Predescu <ovidiu@cup.hp.com>
+    @author: <a href="mailto:A.M.Addyman@salford.ac.uk">Tony Addyman</a>
     Date: April 10, 2001
 
     Copyright (C) 2001 Ovidiu Predescu
+    Copyright (C) 2002 Tony Addyman
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License as

@@ -2,9 +2,11 @@
     EmacsObserver.java
 
     @author: <a href="mailto:ovidiu@cup.hp.com">Ovidiu Predescu</a>
+    @author: <a href="mailto:A.M.Addyman@salford.ac.uk">Tony Addyman</a>
     Date: March 29, 2001
 
     Copyright (C) 2001 Ovidiu Predescu
+    Copyright (C) 2002 Tony Addyman
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License as

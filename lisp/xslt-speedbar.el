@@ -2,15 +2,17 @@
 
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
+;; Author: Tony Addyman <A.M.Addyman@salford.ac.uk>
 ;; Created: April 3, 2000
 ;; Time-stamp: <June  6, 2001 00:22:32 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
-;; Compatibility: XEmacs 21.1, Emacs 20.4
+;; Compatibility: XEmacs 21.1, Emacs 21.2
 
 ;; This file is part of XEmacs
 
 ;; Copyright (C) 2001 Ovidiu Predescu
+;; Copyright (C) 2002 Tony Addyman
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as

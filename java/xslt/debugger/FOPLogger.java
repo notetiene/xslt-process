@@ -4,7 +4,7 @@
  *
  * Created: Sun Jul 14 21:08:58 2002
  *
- * @author <a href="mailto:A.M.Addyman@salford.ac.uk">Tony Addyman</a>
+ *  @author: <a href="mailto:A.M.Addyman@salford.ac.uk">Tony Addyman</a>
  * @version
     Copyright (C) 2002 Tony Addyman
 
@@ -42,106 +42,124 @@ public class FOPLogger implements Logger
   StringBuffer line = new StringBuffer(80);
   int logLevel = LEVEL_INFO;
 
-  public FOPLogger(Observer observer, int logLevel) {
+  public FOPLogger(Observer observer, int logLevel)
+  {
     this.observer = observer;
     if (logLevel >= LEVEL_DEBUG && logLevel <= LEVEL_DISABLED) {
       this.logLevel = logLevel;
     }
   }
 
-  public  void debug( String message ) {
+  public  void debug( String message )
+  {
     if (logLevel <= LEVEL_DEBUG) {
       processMessage("Debug: " + message);
     }
   }
 
-  public void debug( String message, Throwable throwable ) {
+  public void debug( String message, Throwable throwable )
+  {
     String exMsg = throwable.getMessage();
     String sep = "";
     if (message != null && exMsg != null) sep = " ";
     debug(message + sep + exMsg);
   }
 
-  public boolean isDebugEnabled() {
+  public boolean isDebugEnabled()
+  {
     return logLevel <= LEVEL_DEBUG;
   }
 
-  public void info( String message ) {
+  public void info( String message )
+  {
     if (logLevel <= LEVEL_INFO) {
       processMessage("Info: " + message);
     }
   }
 
-  public void info( String message, Throwable throwable ) {
+  public void info( String message, Throwable throwable )
+  {
     String exMsg = throwable.getMessage();
     String sep = "";
     if (message != null && exMsg != null) sep = " ";
     info(message + sep + exMsg);
   }
 
-  public boolean isInfoEnabled() {
+  public boolean isInfoEnabled()
+  {
     return logLevel <= LEVEL_INFO;
   }
 
-  public void warn( String message ) {
+  public void warn( String message )
+  {
     if (logLevel <= LEVEL_WARN) {
       processMessage("Warn: " + message);
     }
   }
 
-  public void warn( String message, Throwable throwable ) {
+  public void warn( String message, Throwable throwable )
+  {
     String exMsg = throwable.getMessage();
     String sep = "";
     if (message != null && exMsg != null) sep = " ";
     warn(message + sep + exMsg);
   }
 
-  public boolean isWarnEnabled() {
+  public boolean isWarnEnabled()
+  {
     return logLevel <= LEVEL_WARN;
   }
 
-  public void error( String message ) {
+  public void error( String message )
+  {
     if (logLevel <= LEVEL_ERROR) {
       processMessage("Error: " + message);
     }
   }
 
-  public void error( String message, Throwable throwable ) {
+  public void error( String message, Throwable throwable )
+  {
     String exMsg = throwable.getMessage();
     String sep = "";
     if (message != null && exMsg != null) sep = " ";
     error(message + sep + exMsg);
   }
 
-  public boolean isErrorEnabled() {
+  public boolean isErrorEnabled()
+  {
     return logLevel <= LEVEL_ERROR;
   }
 
-  public void fatalError( String message ) {
+  public void fatalError( String message )
+  {
     if (logLevel <= LEVEL_FATAL) {
       processMessage("Fatal error: " + message);
     }
   }
 
-  public void fatalError( String message, Throwable throwable ) {
+  public void fatalError( String message, Throwable throwable )
+  {
     String exMsg = throwable.getMessage();
     String sep = "";
     if (message != null && exMsg != null) sep = " ";
     fatalError(message + sep + exMsg);
   }
 
-  public boolean isFatalErrorEnabled() {
+  public boolean isFatalErrorEnabled()
+  {
     return logLevel <= LEVEL_FATAL;
   }
 
-  public Logger getChildLogger( String name ) {
+  public Logger getChildLogger( String name )
+  {
     return null;
   }
 
 
 // processMessage derived from the method in FOPMessageListener
   
-  public void processMessage(String message) {
+  public void processMessage(String message)
+  {
     int fromIndex = 0;
     int endIndex;
     
