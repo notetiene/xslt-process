@@ -1,5 +1,14 @@
 2001-04-29  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-speedbar.el: Removed the redundant calls to message.
+
+	* lisp/xslt-process.el: Call the function in mapvector. Use the
+	xslt-debug-mode-map when creating the menu.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Use the Controller
+	methods to setup the trace listener; thanks to Mike Kay for
+	pointing out the Controller's methods for doing this.
+
 	* lisp/xslt-process.el: More GNU Emacs compatibility. Define
 	remassoc instead of using rassoc, which I mistakenly believed has
 	the same functionality. Use our own functions for dealing with
