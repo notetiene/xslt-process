@@ -1,5 +1,7 @@
 2001-04-11  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* java/saxon-6.2.2-fix.jar: Added.
+	
 	* lisp/xslt-speedbar.el: Added xslt-process-selected-style-frame
 	to point to the last selected style frame.
 	
