@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <May 30, 2001 22:40:52 ovidiu>
+;; Time-stamp: <June  5, 2001 09:03:25 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -82,6 +82,38 @@ the XSLT debugging mode.")
    xslt-process-easymenu-definition
    xslt-process-speedbar-keymap
    xslt-process-speedbar-buttons))
+
+(defimage-speedbar xslt-process-boolean-type-image
+  ((:type xpm :file "boolean.xpm" :ascent center))
+  "Image used for denoting a boolean type.")
+(defimage-speedbar xslt-process-number-type-image
+  ((:type xpm :file "number.xpm" :ascent center))
+  "Image used for denoting a number type.")
+(defimage-speedbar xslt-process-string-type-image
+  ((:type xpm :file "string.xpm" :ascent center))
+  "Image used for denoting a string type.")
+(defimage-speedbar xslt-process-nodeset-type-image
+  ((:type xpm :file "tree.xpm" :ascent center))
+  "Image used for denoting a nodeset type.")
+(defimage-speedbar xslt-process-object-type-image
+  ((:type xpm :file "object.xpm" :ascent center))
+  "Image used for denoting an object type.")
+(defimage-speedbar xslt-process-generic-type-image
+  ((:type xpm :file "type.xpm" :ascent center))
+  "Image used for denoting a generic type.")
+
+(pushnew '("{b}" . xslt-process-boolean-type-image)
+	 speedbar-expand-image-button-alist)
+(pushnew '("{n}" . xslt-process-number-type-image)
+	 speedbar-expand-image-button-alist)
+(pushnew '("{s}" . xslt-process-string-type-image)
+	 speedbar-expand-image-button-alist)
+(pushnew '("{t}" . xslt-process-nodeset-type-image)
+	 speedbar-expand-image-button-alist)
+(pushnew '("{o}" . xslt-process-object-type-image)
+	 speedbar-expand-image-button-alist)
+(pushnew '("{a}" . xslt-process-generic-type-image)
+	 speedbar-expand-image-button-alist)
 
 (defvar xslt-process-speedbar-bufname " SPEEDBAR"
   "The name of the speedbar buffer.")
@@ -384,6 +416,16 @@ the breakpoints in speedbar."
 	    (forward-line 1)
 	    (xslt-process-speedbar-show-style-frames-stack "" 0))))))
 
+(defun xslt-process-speedbar-item (type)
+  "Return a pair of the button type and character to be used when
+inserting in the speedbar."
+  (cond ((equal type "boolean") '(curly ?b))
+	((equal type "number") '(curly ?n))
+	((equal type "string") '(curly ?s))
+	((equal type "nodeset") '(curly ?t))
+	((equal type "object") '(curly ?o))
+	(t '(curly ?a))))
+
 (defun xslt-process-speedbar-show-global-variables (text indent)
   "Called to display the global variables in the speedbar window."
   (mapvector
@@ -418,17 +460,18 @@ the breakpoints in speedbar."
   "Called to display the local variables in the speedbar window."
   (mapvector
    (lambda (variable)
-     (let ((name (aref variable 0))
-	   (type (aref variable 1))
-	   (value (aref variable 2)))
-	 (speedbar-make-tag-line 'braket ??
-				 nil
-				 nil
-				 (concat name " :" type "  " value)
-				 nil
-				 nil
-				 'speedbar-file-face
-				 (1+ indent))))
+     (let* ((name (aref variable 0))
+	    (type (aref variable 1))
+	    (value (aref variable 2))
+	    (item (xslt-process-speedbar-item type)))
+       (speedbar-make-tag-line (car item) (cadr item)
+			       nil
+			       nil
+			       (concat name "  " value)
+			       nil
+			       nil
+			       'speedbar-file-face
+			       (1+ indent))))
    xslt-process-local-variables))
 
 (defun xslt-process-speedbar-local-variables-changed ()
