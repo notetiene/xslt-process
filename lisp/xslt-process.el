@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April  8, 2001 18:25:09 ovidiu>
+;; Time-stamp: <April  9, 2001 03:07:49 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -260,9 +260,20 @@ indicator."
 and enter or exit action, describing the line where the debugger
 stopped last time.")
 
+(defvar xslt-process-debugger-process-started nil
+  "Whether the XSLT debugger process has been started.")
+
 (defvar xslt-process-process-state 'not-running
   "The state of the process. It can be either not-running, running or
 stopped.")
+
+(defvar xslt-process-source-frames-stack nil
+  "The stack of source frames, a list of entries consisting of a
+display name, a file name and a line number.")
+
+(defvar xslt-process-style-frames-stack nil
+  "The stack of style frames, a list of entries consisting of display
+name, a file name and a line number.")
 
 (defvar xslt-process-breakpoint-extents (make-hashtable 10 'equal)
   "Hash table of extents indexed by (filename . lineno). It is used to
@@ -284,6 +295,10 @@ processing.")
 (defvar xslt-process-results-buffer-name "*xslt results*"
   "The name of the buffer to which the output of the XSLT processing
 goes to.")
+
+(defvar xslt-process-results-process nil
+  "The Emacs process object that holds the connection with the socket
+on which the XSLT results come from the XSLT processor.")
 
 (defvar xslt-process-enter-glyph "=>"
   "Graphic indicator for entering inside an element.")
@@ -420,7 +435,7 @@ Java Bean Shell: http://www.beanshell.org/
 	   ["Stop" xslt-process-do-stop
 	    :active (eq xslt-process-process-state 'running)]
 	   ["Quit debugger" xslt-process-do-quit
-	    :active (not (eq xslt-process-process-state 'not-running))]
+	    :active xslt-process-debugger-process-started]
 	   ["--:shadowEtchedIn" nil]
 	   ["Speedbar" xslt-process-speedbar-frame-mode
 	    :style toggle
@@ -600,6 +615,10 @@ choice on the current buffer."
 	(split-window out-window))
     (display-buffer msg-buffer)))  
 
+;;;
+;;; The last selected position
+;;;
+
 (defun xslt-process-last-selected-position-filename (&optional filename)
   "Return the filename of the last selected position."
   (if filename
@@ -636,6 +655,26 @@ ACTION is non-nil, it is set as the new value."
   (if action
       (aset xslt-process-last-selected-position 5 action))
   (aref xslt-process-last-selected-position 5))
+
+;;;
+;;; Source and Style Frames
+;;;
+
+(defun xslt-process-frame-display-name (frame)
+  "Returns the display name of frame."
+  (car frame))
+
+(defun xslt-process-frame-file-name (frame)
+  "Returns the file name of a frame."
+  (cadr frame))
+
+(defun xslt-process-frame-line (frame)
+  "Returns the line number of a frame."
+  (caddr frame))
+
+;;;
+;;; Breakpoints
+;;;
 
 (defun xslt-process-new-breakpoint-here ()
   "Returns a breakpoint object at filename and line number of the
@@ -735,6 +774,10 @@ on its state."
 	  (run-hooks 'xslt-process-breakpoint-enabled/disabled-hooks))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
+;;;
+;;; Debugger commands
+;;;
+
 (defun xslt-process-do-run ()
   "*Send the run command to the XSLT debugger."
   (interactive)
@@ -750,7 +793,9 @@ on its state."
       (setq xslt-process-execution-context-error-function
 	    (lambda ()
 	      (setq xslt-process-process-state 'not-running)))
-      (erase-buffer (get-buffer xslt-process-results-buffer-name))
+      (speedbar-with-writable
+	(let ((buffer (get-buffer xslt-process-results-buffer-name)))
+	  (if buffer (erase-buffer buffer))))
       (message "Running the XSLT debugger..."))))
 
 (defun xslt-process-do-step ()
@@ -805,13 +850,26 @@ debugger from a long processing with no breakpoints setup."
 	  (progn
 	    (xslt-process-send-command "q" t)
 	    (kill-buffer xslt-process-comint-buffer)
+	    (setq xslt-process-debugger-process-started nil)
+	    ;; Delete maybe the breakpoints?
 	    (if (and (not dont-ask)
 		      (> (hashtable-fullness xslt-process-breakpoints) 0)
 		     (yes-or-no-p-maybe-dialog-box "Delete all breakpoints? "))
 		(progn
 		  (xslt-process-change-breakpoints-highlighting nil)
-		  (clrhash xslt-process-breakpoints)))))
+		  (clrhash xslt-process-breakpoints)
+		  (run-hooks 'xslt-process-breakpoint-removed-hooks)))
+	    ;; Reset the source and style frame stacks
+	    (setq xslt-process-source-frames-stack nil)
+	    (setq xslt-process-style-frames-stack nil)
+	    (run-hooks 'xslt-process-source-frames-changed-hooks)
+	    (run-hooks 'xslt-process-style-frames-changed-hooks)))
     (message "XSLT debugger not running.")))
+
+;;;
+;;; Dealing with the presentation of breakpoints and the current line
+;;; indicator
+;;;
 
 (defun xslt-process-change-breakpoints-highlighting (flag &optional filename)
   "Highlights or unhighlights, depending on FLAG, all the breakpoints
@@ -914,6 +972,10 @@ highlights the line."
 	      (set-extent-priority extent priority))
 	  extent))))
 
+;;;
+;;; The interaction with the debugger
+;;;
+
 (defun xslt-process-send-command (string &optional dont-start-process?)
   "Sends a command to the XSLT process. Start this process if not
 already started."
@@ -962,45 +1024,74 @@ already started."
     (setq comint-prompt-regexp "^xslt> ")
     (setq comint-delimiter-argument-list '(? ))))
 
-(defvar xslt-process-partial-command nil)
+(defvar xslt-process-results-process-marker nil
+  "Marker to indicate the current position of where text should be
+inserted in the output buffer, as specified by
+`xslt-process-results-buffer-name'.")
+
+(defun xslt-process-results-process-filter (process string)
+  "Function called whenever the XSLT processor sends results to its
+output stream. The results come via the `xslt-process-results-process'
+process."
+  (let ((old-buffer (current-buffer)))
+    (unwind-protect
+	(let* ((buffer (get-buffer-create xslt-process-results-buffer-name))
+	       moving)
+	  (set-buffer buffer)
+	  (add-hook 'kill-buffer-hook
+		    (lambda ()
+		      (setq xslt-process-results-process-marker nil)))
+	  (if (null xslt-process-results-process-marker)
+	      (setq xslt-process-results-process-marker
+		    (point-min-marker xslt-process-results-buffer-name)))
+	  (setq moving (= (point) xslt-process-results-process-marker))
+	  (save-excursion
+	    ;; Insert the text, moving the marker.
+	    (goto-char xslt-process-results-process-marker)
+	    (insert string)
+	    (set-marker xslt-process-results-process-marker (point)))
+	  (if moving (goto-char xslt-process-results-process-marker))
+	  (switch-to-buffer buffer)))))
+
+(defvar xslt-process-partial-command nil
+  "Holds partial commands as output by the XSLT debugger.")
 
 (defun xslt-process-output-from-process (process string)
   "This function is called each time output is generated by the XSLT
 debugger. It filters out all the Emacs commands and sends the rest of
 the output to the XSLT process buffer."
-  (setq inhibit-quit nil)
   (while (and string (not (equal string "")))
-    (message "String is now '%s'" string)
-    (let ((l-start (string-match "<<" string))
-	  (l-end (match-end 0))
-	  (g-start (string-match ">>" string))
-	  (g-end (match-end 0)))
+;    (message "String is now '%s'" string)
+    (let* ((l-start (string-match "<<" string))
+	   (l-end (if l-start (match-end 0) nil))
+	   (g-start (string-match ">>" string))
+	   (g-end (if g-start (match-end 0) nil)))
       (cond ((and l-start (null g-start))
 	     ;; We have the start of a command which doesn't end in
 	     ;; this current string, preceded by some output text
-	     (message "case 1: l-start %s, g-start %s" l-start g-start)
+;	     (message "case 1: l-start %s, g-start %s" l-start g-start)
 	     (let ((output (substring string 0 l-start)))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output)))
 	     (setq xslt-process-partial-command (substring string l-end))
-	     (message "   xslt-process-partial-command %s"
-		      xslt-process-partial-command)
+;	     (message "   xslt-process-partial-command %s"
+;		      xslt-process-partial-command)
 	     (setq string nil))
 
 	    ((and (null l-start) g-start)
 	     ;; We have the end of command followed followed by some
 	     ;; output text
-	     (message "case 2: l-start %s, g-start %s" l-start g-start)
+;	     (message "case 2: l-start %s, g-start %s" l-start g-start)
 	     (setq xslt-process-partial-command
 		   (concat xslt-process-partial-command
-			   (substring string 0 l-end)))
-	     (message "   xslt-process-partial-command %s"
-		      xslt-process-partial-command)
-	     (message "evaluating xslt-process-partial-command: %s"
-		      xslt-process-partial-command)
+			   (substring string 0 g-end)))
+;	     (message "   xslt-process-partial-command %s"
+;		      xslt-process-partial-command)
+;	     (message "evaluating xslt-process-partial-command: %s"
+;		      xslt-process-partial-command)
 	     (eval (read xslt-process-partial-command))
 	     (setq xslt-process-partial-command nil)
-	     (let ((output (substring string l-end)))
+	     (let ((output (substring string g-end)))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output)))
 	     (setq string nil))
@@ -1009,13 +1100,13 @@ the output to the XSLT process buffer."
 	     ;; We have some text. Append to
 	     ;; `xslt-process-partial-command' if it's not null,
 	     ;; otherwise just output to the process buffer.
-	     (message "case 3: l-start %s, g-start %s" l-start g-start)
+;	     (message "case 3: l-start %s, g-start %s" l-start g-start)
 	     (if xslt-process-partial-command
 		 (setq xslt-process-partial-command
 		       (concat xslt-process-partial-command string))
 	       (comint-output-filter process string))
-	     (message "   xslt-process-partial-command %s"
-		      xslt-process-partial-command)
+;	     (message "   xslt-process-partial-command %s"
+;		      xslt-process-partial-command)
 	     (setq string nil))
 
 	    ((< l-start g-start)
@@ -1023,99 +1114,32 @@ the output to the XSLT process buffer."
 	     ;; preceding text to the process buffer, execute the
 	     ;; command and set string to the substring starting at
 	     ;; the end of command.
-	     (message "case 4: l-start %s, g-start %s" l-start g-start)
+;	     (message "case 4: l-start %s, g-start %s" l-start g-start)
 	     (let ((output (substring string 0 l-start))
 		   (command (substring string l-end g-start)))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output))
-	       (message "evaluating command: %s" command)
+;	       (message "evaluating command: %s" command)
 	       (eval (read command))
-	       (set string (substring string g-end))))
+	       (setq string (substring string g-end))))
 
 	    ((> l-start g-start)
 	     ;; We have the end of previously saved command, some
 	     ;; output text and maybe another command.
-	     (message "case 5: l-start %s, g-start %s" l-start g-start)
+;	     (message "case 5: l-start %s, g-start %s" l-start g-start)
 	     (setq xslt-process-partial-command
 		   (concat xslt-process-partial-command
 			   (substring string 0 g-start)))
-	     (message "   xslt-process-partial-command %s"
-		      xslt-process-partial-command)
-	     (message "evaluating xslt-process-partial-command: %s"
-		      xslt-process-partial-command)
+;	     (message "   xslt-process-partial-command %s"
+;		      xslt-process-partial-command)
+;	     (message "evaluating xslt-process-partial-command: %s"
+;		      xslt-process-partial-command)
 	     (eval (read xslt-process-partial-command))
 	     (setq xslt-process-partial-command nil)
 	     (let ((output (substring string g-end l-start)))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output)))
 	     (setq string (substring string l-start)))))))
-
-
-;    (cond ((equal (string-match "^<<\\(\(.*\)\\)>>" string) 0)
-;	   ;; We have a full command in string, execute and
-;	   ;; remove the command from the string
-;	   (let ((match (match-string 1 string))
-;		 (end (match-end 0)))
-;	     (message "case 1: string = %s" string)
-;	     (if (and match (not (equal match "")))
-;		 (eval (read match)))
-;	     (setq string (substring string end)))
-;	   ;; Not needed, but just in case
-;	   (setq xslt-process-partial-command nil))
-
-;	  ((let ((g-start (string-match ">>" string))
-;		 (l-start (string-match "<<" string)))
-;	     (message "l-start %s, r-start %s" l-start g-start)
-;	     (and l-start
-;		  (or (null g-start) (> g-start l-start))))
-;	   ;; We only have a partial command, save it for later
-;	   ;; use. Since this is the start of the command,
-;	   ;; overwrite whatever is in
-;	   ;; `xslt-process-partial-command'
-;	   (let* ((begin (match-beginning 0))
-;		  (output (substring string 0 begin)))
-;	     (message "case 3: string = %s" string)
-;	     (if (and output (not (equal output "")))
-;		 (progn
-;		   (comint-output-filter process output)
-;		   (setq string (substring string begin)))
-;	       (setq xslt-process-partial-command
-;		     (concat xslt-process-partial-command string))
-;	       (setq string nil))))
-
-;	  ((string-match ">>" string)
-;	   ;; We have the end of a previously incomplete
-;	   ;; command. Append the current string to the previous one
-;	   ;; and execute the command
-;	   (let ((begin (match-beginning 0))
-;		 (end (match-end 0)))
-;	     (message "case 2: string = %s" string)
-;	     (setq xslt-process-partial-command
-;		   (concat xslt-process-partial-command
-;			   (substring string 0 begin)))
-;	     (message "xslt-process-partial-command = %s" xslt-process-partial-command)
-;	     (eval (read xslt-process-partial-command))
-;	     (setq xslt-process-partial-command nil)
-;	     (setq string (substring string end))))
-
-;	  (xslt-process-partial-command
-;	   ;; We have text that doesn't contain << or >>, but
-;	   ;; previously we had text appended to the
-;	   ;; `xslt-process-partial-command', which indicates this
-;	   ;; must be part of the same text
-;	   (message "case 4: string = %s" string)
-;	   (setq xslt-process-partial-command
-;		 (concat xslt-process-partial-command string)))
-
-;	  (t
-;	   ;; We have text that's not part of any command. Simply
-;	   ;; send it to the debugger output buffer.
-;;	   (message "case 5: string = '%s'" string)
-;	   (if (and string (not (equal string "")))
-;	       (comint-output-filter process string))
-;	   ;; Not needed, but just in case
-;	   (setq xslt-process-partial-command nil)
-;	   (setq string nil)))))
 
 (defun xslt-process-unhighlight-last-selected-line ()
   "Unselect the last selected line."
@@ -1133,7 +1157,7 @@ the output to the XSLT process buffer."
 	(aset xslt-process-last-selected-position 4 nil))))
 
 ;;;
-;;; Functions called as a result of the XSLT process
+;;; Functions called as result of the XSLT processing
 ;;;
 
 (defun xslt-process-processor-finished ()
@@ -1180,6 +1204,7 @@ hits a breakpoint that causes it to stop."
 (defun xslt-process-debugger-process-started ()
   "Called when the debugger process started and is ready to accept
 commands."
+  (setq xslt-process-debugger-process-started t)
   (message "Starting XSLT process...done"))
 
 (defun xslt-process-debugger-buffer-killed ()
@@ -1195,25 +1220,29 @@ by the user."
   "Called by the debugger process to inform that the source frames
 stack has changed. The STACK argument contains the new source frame
 stack as a list of (name filename line)."
-  (run-hook-with-args 'xslt-process-source-frames-changed-hooks stack)
-  (message "return from xslt-process-source-frames-changed-hooks"))
+  (setq xslt-process-source-frames-stack stack)
+  (run-hooks 'xslt-process-source-frames-changed-hooks))
 
 (defun xslt-process-style-frames-stack-changed (stack)
   "Called by the debugger process to inform that the style frames
 stack has changed. The STACK argument contains the new style frame
 stack as a list of (name filename line)."
-  (run-hook-with-args 'xslt-process-style-frames-changed-hooks stack)
-  (message "return from xslt-process-style-frames-changed-hooks"))
+  (setq xslt-process-style-frames-stack stack)
+  (run-hooks 'xslt-process-style-frames-changed-hooks))
 
 (defun xslt-process-set-output-port (port)
   "Called by the XSLT debugger to setup the TCP/IP port number on
 which it listens for incoming connections. Emacs has to connect to
 this port and use it for receiving the result of the XSLT processing."
-  (open-network-stream xslt-process-results-process-name
-		       xslt-process-results-buffer-name
-		       "localhost" port))
+  (setq xslt-process-results-process
+	(open-network-stream xslt-process-results-process-name
+			     nil "localhost" port))
+  (set-process-filter xslt-process-results-process
+		      'xslt-process-results-process-filter))
 
+;;;
 ;;; Setup the minor mode
+;;;
 
 (defun xslt-process-setup-minor-mode (keymap mode-line-string)
   "Setup the XSLT-process minor mode. KEYMAP specifies the keybindings
@@ -1237,7 +1266,9 @@ the modeline."
 		    minor-mode-map-alist))))
   (force-mode-line-update))
 
+;;;
 ;;; Additional functions
+;;;
 
 (defun xslt-process-get-file-buffer (filename)
   "Searches through all the current buffers for a buffer whose true
