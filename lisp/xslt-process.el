@@ -3,12 +3,12 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <May  8, 2001 21:31:37 ovidiu>
+;; Time-stamp: <May 19, 2001 23:41:55 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
 
-;; This file is not part of GNU Emacs
+;; This file is part of XEmacs
 
 ;; Copyright (C) 2000, 2001 Ovidiu Predescu
 
@@ -49,36 +49,68 @@
 (require 'string)
 (require 'xslt-speedbar)
 
-(if (featurep 'xemacs)
-    nil
-  (defun remassoc (key list)
-    "Delete any elements in LIST whose car is `equal' to KEY. This
+(eval-and-compile
+  (if (featurep 'xemacs)
+      nil
+    (defun remassoc (key list)
+      "Delete any elements in LIST whose car is `equal' to KEY. This
 function has no side effects as in XEmacs, so use `setq' to setup the
 modified value to the result of this function."
-    (if (null list)
-	nil
-      (let* ((elem (car list))
-	     (elem-key (car elem)))
-	(if (equal key elem-key)
-	    (remassoc key (cdr list))
-	  (cons elem (remassoc key (cdr list)))))))
-  (defun mapvector (function seq)
-    "Apply FUNCTION to each element in SEQUENCE."
-    (let ((result nil))
-      (loop for elem across seq do
-	    (setq result (append result (list (apply function (list elem))))))
-      (vconcat result))))
+      (if (null list)
+	  nil
+	(let* ((elem (car list))
+	       (elem-key (car elem)))
+	  (if (equal key elem-key)
+	      (remassoc key (cdr list))
+	    (cons elem (remassoc key (cdr list)))))))
+    (defun mapvector (function seq)
+      "Apply FUNCTION to each element in SEQUENCE. Return a vector of
+the results."
+      (let ((result nil))
+	(loop for elem across seq do
+	  (setq result (append result (list (apply function (list elem))))))
+	(vconcat result)))))
 
-(if (eq system-type 'windows-nt)
-    (defun urlize (filename)
-      "Replace a series of \\\\ with a single /, so that the file
+(eval-and-compile
+  (if (eq system-type 'windows-nt)
+      (defun urlize (filename)
+	"Replace a series of \\\\ with a single /, so that the file
 names conform to the URI definition."
-      (if (null filename) filename
-	(let ((new (string-replace-match "\\\\" filename "/" t t)))
-	  (if new new filename))))
-  (defun urlize (filename)
-    "On Unix systems the file names already conform to the URI definition."
-    filename))
+	(if (null filename) filename
+	  (let ((new (string-replace-match "\\\\" filename "/" t t)))
+	    (if new new filename))))
+    (defun urlize (filename)
+      "On Unix systems the file names already conform to the URI definition."
+      filename)))
+
+(defvar xslt-process-escape-char-table (make-char-table 'char)
+  "Mapping table for escape characters.")
+
+(loop for i from 0 to 255 by 1 do
+  (let ((ch (int-to-char i)))
+    (put-char-table ch ch xslt-process-escape-char-table)))
+
+(mapc
+ (lambda (cmap)
+   (put-char-table (car cmap) (cadr cmap) xslt-process-escape-char-table))
+ '((?\d ?\")
+   (?\b  ?^)
+   (?\e  ?$)))
+
+(defun xslt-process-unescape (str)
+  "Translate the escape sequences in the corresponding characters."
+  (mapconcat
+   (lambda (c)
+     (char-to-string (get-char-table c xslt-process-escape-char-table)))
+   str ""))
+
+(defun xslt-process-unescape (string)
+  "Translate the escape sequences in the corresponding characters."
+  string)
+;  (let ((index 0))
+;    (while (or (setq index (string-match "\\\\\\\\\\|\\\\b\\|\\\\d" string index))
+;	       index)
+;      (message "match '%s'" (match-string 1)))))
 
 (defvar xslt-process-dir-separator
   (if (eq system-type 'windows-nt) "\\" "/")
@@ -448,6 +480,10 @@ xsl:message during the XSLT processing.")
 (defvar xslt-process-results-buffer-name "*xslt results*"
   "The name of the buffer to which the output of the XSLT processing
 goes to.")
+
+(defvar xslt-process-errors-buffer-name "*xslt errors*"
+  "The name of the buffer to which error messages generated during XML
+parsing or XSLT processing go to.")
 
 (defvar xslt-process-message-buffer-name "*xslt messages*"
   "The name of the buffer to which the messages generated using
@@ -959,7 +995,7 @@ on its state."
 ;;;
 
 (defun xslt-process-do-run (&optional no-debug)
-  "*Send the run command to the command line interpreter to start
+  "*Send the run/debug command to the command line interpreter to start
 either a normal, no debug, XSLT processing, or a debugging session."
   (interactive)
   (block nil
@@ -984,15 +1020,15 @@ either a normal, no debug, XSLT processing, or a debugging session."
 		(setq xslt-process-process-state 'not-running)))
 	(speedbar-with-writable
 	  (let ((results-buffer (get-buffer xslt-process-results-buffer-name))
-		(msgs-buffer (get-buffer xslt-process-message-buffer-name)))
+		(msgs-buffer (get-buffer xslt-process-message-buffer-name))
+		(errors-buffer (get-buffer xslt-process-errors-buffer-name)))
 	    (save-excursion
 	      (if results-buffer
-		  (progn (set-buffer results-buffer)
-			 (erase-buffer)))
+		  (kill-buffer results-buffer))
 	      (if msgs-buffer
-		  (progn
-		    (set-buffer msgs-buffer)
-		    (erase-buffer))))))
+		  (kill-buffer msgs-buffer))
+	      (if errors-buffer
+		  (kill-buffer errors-buffer)))))
 	(message "Running the %s %s..."
 		 xslt-process-current-processor
 		 proc-type)))))
@@ -1124,7 +1160,6 @@ indicator."
 	(let* ((buffer (xslt-process-get-file-buffer
 			(xslt-process-selected-position-filename)))
 	       (line (xslt-process-selected-position-line))
-	       (column (xslt-process-selected-position-column))
 	       (action (xslt-process-selected-position-enter-exit))
 	       annotation)
 	  (set-buffer buffer)
@@ -1218,12 +1253,9 @@ highlights the line."
 needed. The user can change the XSLT processor either through
 customization or by explicitly setting up the `processor' local
 variable in the XML buffer."
-  (let ((filename (if (buffer-file-name)
-		      (urlize (expand-file-name (buffer-file-name)))
-		    (error "No filename associated with this buffer.")))
-	;; Set the name of the XSLT processor. This is either specified
-	;; in the local variables of the file or is the default one.
-	(xslt-processor
+  (let ((xslt-processor
+	 ;; Set the name of the XSLT processor. This is either specified
+	 ;; in the local variables of the file or is the default one.
 	 (progn
 	   ;; Force evaluation of local variables
 	   (hack-local-variables t)
@@ -1296,10 +1328,15 @@ already started."
     (message "Starting XSLT process...")
     (setq xslt-process-comint-process
 	  (get-buffer-process xslt-process-comint-buffer))
+    (set-process-sentinel
+     xslt-process-comint-process
+     (lambda (process event)
+       (if (equal (process-status process) 'exit)
+	   (xslt-process-debugger-buffer-killed))))
     (save-excursion
       (set-buffer xslt-process-comint-buffer)
       (make-variable-buffer-local 'kill-buffer-hook)
-      (add-hook 'kill-buffer-hook 'xslt-process-debugger-buffer-killed)
+;      (add-hook 'kill-buffer-hook 'xslt-process-debugger-buffer-killed)
       ;; Set our own process filter, so we get a chance to remove Emacs
       ;; commands from the output sent to the buffer
       (set-process-filter xslt-process-comint-process
@@ -1324,7 +1361,8 @@ the output to the XSLT process buffer."
 	     ;; We have the start of a command which doesn't end in
 	     ;; this current string, preceded by some output text
 ;	     (message "case 1: l-start %s, g-start %s" l-start g-start)
-	     (let ((output (substring string 0 l-start)))
+	     (let ((output (xslt-process-unescape
+			    (substring string 0 l-start))))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output)))
 	     (setq xslt-process-partial-command (substring string l-end))
@@ -1345,7 +1383,7 @@ the output to the XSLT process buffer."
 ;		      xslt-process-partial-command)
 	     (eval (read xslt-process-partial-command))
 	     (setq xslt-process-partial-command nil)
-	     (let ((output (substring string g-end)))
+	     (let ((output (xslt-process-unescape (substring string g-end))))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output)))
 	     (setq string nil))
@@ -1358,7 +1396,7 @@ the output to the XSLT process buffer."
 	     (if xslt-process-partial-command
 		 (setq xslt-process-partial-command
 		       (concat xslt-process-partial-command string))
-	       (comint-output-filter process string))
+	       (comint-output-filter process (xslt-process-unescape string)))
 ;	     (message "   xslt-process-partial-command %s"
 ;		      xslt-process-partial-command)
 	     (setq string nil))
@@ -1369,7 +1407,8 @@ the output to the XSLT process buffer."
 	     ;; command and set string to the substring starting at
 	     ;; the end of command.
 ;	     (message "case 4: l-start %s, g-start %s" l-start g-start)
-	     (let ((output (substring string 0 l-start))
+	     (let ((output (xslt-process-unescape
+			    (substring string 0 l-start)))
 		   (command (substring string l-end g-start)))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output))
@@ -1390,7 +1429,8 @@ the output to the XSLT process buffer."
 ;		      xslt-process-partial-command)
 	     (eval (read xslt-process-partial-command))
 	     (setq xslt-process-partial-command nil)
-	     (let ((output (substring string g-end l-start)))
+	     (let ((output (xslt-process-unescape
+			    (substring string g-end l-start))))
 	       (if (and output (not (equal output "")))
 		   (comint-output-filter process output)))
 	     (setq string (substring string l-start)))))))
@@ -1431,12 +1471,26 @@ the output to the XSLT process buffer."
 
 (defun xslt-process-report-error (message stack-trace)
   "Called by the XSLT debugger process whenever an error happens."
-  (setq xslt-process-error-messages
-	(concat xslt-process-error-messages message "\n" stack-trace "\n\n\n"))
-  (message stack-trace)
-  (message message)
-  (if xslt-process-execution-context-error-function
-      (funcall xslt-process-execution-context-error-function)))
+  (let ((message (xslt-process-unescape message))
+	(stack-trace (xslt-process-unescape stack-trace)))
+    (setq xslt-process-error-messages
+	  (concat xslt-process-error-messages message "\n"
+		  stack-trace "\n\n\n"))
+    (message stack-trace)
+    (message message)
+    (if xslt-process-execution-context-error-function
+	(funcall xslt-process-execution-context-error-function))
+    (let ((buffer (get-buffer-create xslt-process-errors-buffer-name)))
+      (save-excursion
+	(set-buffer buffer)
+	;; If nothing was inserted in the buffer to this point, insert a
+	;; dummy cd command just to keep happy the compilation-mode.
+	(if (equal (point-min) (point-max))
+	    (insert "cd\n\n"))
+	(compilation-mode "XSLT")
+	(goto-char (point-max))
+	(insert message)
+	(display-buffer buffer)))))
 
 (defun xslt-process-debugger-stopped-at (filename line column info)
   "Function called by the XSLT debugger process each time the debugger
@@ -1514,27 +1568,30 @@ corresponding stack frame."
 (defun xslt-process-local-variables-changed (variables)
   "Called by the debugger process to inform that the local variables
 in the current XSLT template have changed."
-  (setq xslt-process-local-variables variables)
+  (setq xslt-process-local-variables
+	(mapvector
+	 (lambda (x)
+	   (vector (aref x 0) (aref x 1) (xslt-process-unescape (aref x 2))))
+	 variables))
   (run-hooks 'xslt-process-local-variables-changed-hooks))
 
 (defun xslt-process-process-filter (process string)
   "Function called whenever the XSLT processor sends results to its
 output stream. The results come via the `xslt-process-results-process'
 process."
-  (let ((old-buffer (current-buffer)))
-    (unwind-protect
-	(let* ((bufname (cond ((eq process xslt-process-results-process)
-			       xslt-process-results-buffer-name)
-			      ((eq process xslt-process-message-process)
-			       xslt-process-message-buffer-name)
-			      (t nil)))
-	       (buffer (get-buffer-create bufname)))
-	  (set-buffer buffer)
-	  (save-excursion
-	    ;; Insert the text, moving the marker.
-	    (goto-char (point-max))
-	    (insert string))
-	  (pop-to-buffer buffer)))))
+  (unwind-protect
+      (let* ((bufname (cond ((eq process xslt-process-results-process)
+			     xslt-process-results-buffer-name)
+			    ((eq process xslt-process-message-process)
+			     xslt-process-message-buffer-name)
+			    (t nil)))
+	     (buffer (get-buffer-create bufname)))
+	(set-buffer buffer)
+	(save-excursion
+	  ;; Insert the text, moving the marker.
+	  (goto-char (point-max))
+	  (insert string))
+	(pop-to-buffer buffer))))
 
 (defun xslt-process-set-output-port (port)
   "Called by the XSLT debugger to setup the TCP/IP port number on
