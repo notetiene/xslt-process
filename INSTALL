@@ -1,0 +1,86 @@
+File: xslt-process.info,  Node: Installation,  Next: Changes,  Prev: What is it and how to use it?,  Up: Top
+
+Installation
+************
+
+   This mode depends on a few other packages:
+
+   * *an XSLT processor*: You definitely need an XSLT processor for
+     this (X)Emacs mode to work!  This package doesn't come with an
+     XSLT processor integrated, so you need to download and install one
+     (*note Supported XSLT processors::. for supported XSLT
+     processors). Installing an XSLT processor is nothing else than
+     placing the jar file in the Java CLASSPATH.
+
+     You can either put the jar file in the system's CLASSPATH
+     environment variable or use _XSLT-process_'s customization to
+     setup the additional classpath. The supporting Java code expects
+     the Java XSLT processor to be in the classpath, so make sure you
+     define it one way or the other.
+
+   * *JDE*: _XSLT-process_ was tested with JDE version 2.2.2, but it
+     should work with newer versions as well. Please make sure you
+     follow all the installation instructions on JDE's Web site
+     (<http://sunsite.dk/jde/>)
+
+   * *Elib*: This package is a package JDE depends on, but I list it
+     here to insure it's installed. If this package is missing, you'll
+     get an error about the `avltree' package not found. This is a
+     frequently asked question on the JDE's mailing list, so please
+     make sure you don't ask it one more time.
+
+
+   If the above packages are not already installed on your system, you
+can install them in an `emacs' directory in your home directory. Then
+add the following lines in your `.emacs' configuration file:
+
+     (setq load-path
+           (append (list "~/emacs/xslt-process-1.2.1/lisp"
+     		    "~/emacs/jde/lisp"
+     		    "~/emacs/semantic"
+     		    "~/emacs/speedbar"
+     		    ) load-path))
+     
+     (autoload 'xslt-process-mode "xslt-process"
+               "Run XSLT processor on buffer" t)
+
+   These lines add the needed packages in your emacs `load-path'
+variable, and make known the _XSLT-process_ minor mode to your (X)Emacs.
+
+   After the _XSLT-process_ mode has been made available to (X)Emacs,
+you can enable the minor mode on a per-buffer basis by running `M-x
+xslt-process-mode'. Or you can invoke `xslt-process-mode' from the
+mode's hook, *note Setting up PSGML with XSLT-process::. for an example
+on how you can do it.
+
+* Menu:
+
+* Supported XSLT processors::
+* Setting up PSGML with XSLT-process::
+* Key binding::
+* Customization::
+* Temporarily changing the XSLT processor::
+* Additional parameters passed to Cocoon::
+
+File: xslt-process.info,  Node: Setting up PSGML with XSLT-process,  Next: Key binding,  Prev: Supported XSLT processors,  Up: Installation
+
+Setting up PSGML with XSLT-process
+==================================
+
+   The XSLT-process minor mode works really nice in conjuction with the
+PSGML major mode for SGML and XML editing.
+
+   To setup the XSLT-process minor mode to be automatically enabled
+whenever you edit an XML file under PSGML, add the below lines in your
+`.emacs'. I assume you have already added the configuration lines
+mentioned in *note Installation::..
+
+     (setq auto-mode-alist
+           (append '(("\\.xml$" . xml-mode)) auto-mode-alist))
+     
+     (add-hook 'xml-mode-hook 'xslt-process-mode)
+
+   If you're using a different major mode for editing XML documents, you
+can setup the mode's hook in a similar way as above to automatically
+enable the _XSLT-process_ minor mode.
+

@@ -1,0 +1,78 @@
+2001-03-06  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	Started the work on XSLT debugging support.
+	
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Added.
+
+	* java/xslt/debugger/Debugger.java: Added support code for
+	creating the back-end.
+
+	* java/xslt/debugger/XSLTDebuggerIntf.java: Added.
+
+	* java/xslt/debugger/Variable.java: Added.
+
+	* java/xslt/debugger/Observer.java: Added.
+
+	* java/xslt/debugger/Frame.java: Added.
+
+	* java/xslt/debugger/Debugger.java: Added.
+
+	* java/xslt/debugger/Breakpoint.java: Added.
+
+2001-02-26  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/xslt-process.texi: Added new TODO item: Add check to observe
+	changes in the Java additional classpath and restart BSH if such
+	changes occur while it's running.
+
+Thu Feb 15 01:22:23 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/xslt-process.texi: Reorganized and enhanced the
+	documentation.
+
+Sun Feb 11 23:51:24 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/xslt-process.texi: Updated with the latest changes.
+
+	* lisp/xslt-process.el: Move the customization in the programming
+	tools submenu.
+
+	* java/xslt/TrAX.java: Added the ability to use a cache with the
+	file URL protocol.
+
+Fri Feb  9 09:55:22 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* TODO: Updated.
+
+	* java/xslt/TrAX.java: Added support for cached
+	stylesheets. Currently only http: URIs seem to be handled well,
+	but file: will follow soon. It looks like the FTP support does not
+	work.
+
+Wed Feb  7 19:47:20 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Renamed Xalan2 to TrAX as the support code
+	works with any TrAX processor.
+
+Thu Jan  4 01:23:25 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/xslt-process.texi: Updated the documentation for the 1.1
+	release.
+
+Wed Jan  3 23:37:15 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added xslt-process-additional-classpath to
+	allow passing additional classpath arguments to BSH (suggestion
+	from T.V. Raman <tvraman@almaden.ibm.com>).
+
+Fri Dec 15 00:29:44 2000  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Handle user agent specification for
+	Cocoon.
+	* java/xslt/Cocoon1.java: Handle user agent specification.
+
+Thu Dec 14 22:45:43 2000  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Always display error messages in a buffer,
+	even when applying the stylesheet fails because of JVM startup
+	problems.
