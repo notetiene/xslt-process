@@ -51,8 +51,6 @@ public class XSLTDebugger extends AbstractXSLTDebugger
       File inFile = new File(xmlFilename);
       StreamSource in = new StreamSource(xmlFilename);
 
-      System.out.println("processing " + in.getSystemId());
-      
       FileOutputStream outStream = null;
       StreamResult result;
 
@@ -75,9 +73,10 @@ public class XSLTDebugger extends AbstractXSLTDebugger
 
       if (outStream != null)
         outStream.close();
+      manager.getObserver().processorFinished();
     }
     catch(Exception e) {
-      e.printStackTrace();
+      manager.getObserver().caughtException(e);
     }
 
     state = NOT_RUNNING;
