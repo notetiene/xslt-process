@@ -24,15 +24,23 @@
 
 package xslt.debugger;
 
-import java.io.OutputStream;
-import java.lang.ClassNotFoundException;
-import java.lang.IndexOutOfBoundsException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Stack;
-import java.io.FileOutputStream;
+import java.util.HashMap;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.lang.IndexOutOfBoundsException;
+import java.lang.ClassNotFoundException;
+import java.io.OutputStream;
 import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.File;
+
+import org.xml.sax.InputSource;
+import org.apache.fop.messaging.MessageHandler;
+import org.apache.fop.apps.FOPException;
+import org.apache.fop.apps.Driver;
 
 /**
  * <code>Manager</code> manages the breakpoints, and local and global
@@ -433,6 +441,28 @@ public class Manager
     startXSLTProcessing(false);
   }
 
+  public void convertToPDF(String outputFilename)
+    throws MalformedURLException, IOException, FOPException
+  {
+    InputSource xmlSource = new InputSource(new URL(xmlFilename).toString());
+    File file = new File(outputFilename);
+    boolean created = file.createNewFile();
+    file.deleteOnExit();
+    FileOutputStream fileStream = new FileOutputStream(file);
+
+    MessageHandler.setOutputMethod(MessageHandler.EVENT);
+    MessageHandler.addListener(new FOPMessageListener(observer));
+
+    Driver driver = new Driver(xmlSource, fileStream);
+    driver.setRenderer(Driver.RENDER_PDF);
+    driver.run();
+    System.out.println("done running the FOP processor");
+
+    fileStream.flush();
+    fileStream.close();
+    observer.processorFinished();
+  }
+  
   public void processorFinished()
   {
     if (closeOnFinish) {
