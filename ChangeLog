@@ -1,3 +1,42 @@
+2001-04-09  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-speedbar.el: Added some key bindings in the speedbar's
+	keymap for the XSLT debugger. Correctly handle showing of the
+	style frames in speedbar.
+
+	* lisp/xslt-process.el: Added
+	xslt-process-debugger-process-started to indicate whether the XSLT
+	debugger process is started or not. Use this variable to change
+	the status of the "Quit debugger" menu item.
+	
+	Added source and style frames stack variables and support for
+	them.
+	
+	Use no buffer for the Emacs process communication with the XSLT
+	debugger. Use a filter function to insert into the output
+	buffer. This way killing this buffer doesn't affect in any way the
+	connection with the debugger process.
+	
+	Temporarily make the results buffer writable so it can be erased.
+	
+	Reset the state of the source and style frames, and of the
+	xslt-process-debugger-process-started variables when the debugger
+	process dies.
+	
+	Removed unnecessary comments and commented out `message' calls.
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Removed
+	printing of debug messages.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Remove the
+	superfluous newlines.
+
+	* java/xslt/debugger/StyleFrame.java: Remove the file: URI method
+	if present.
+
+	* java/xslt/debugger/SourceFrame.java: Remove the file: URI method
+	if present.
+
 2001-04-08  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Graciously handle setting, deleting,
