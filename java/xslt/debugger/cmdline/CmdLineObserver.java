@@ -102,6 +102,11 @@ public class CmdLineObserver implements Observer
     // No implementation
   }
 
+  public void globalVariablesChanged(ArrayList globalVariables)
+  {
+    // No implementation
+  }
+
   public void localVariablesChanged(ArrayList localVariables)
   {
     // No implementation
