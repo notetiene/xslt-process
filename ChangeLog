@@ -1,5 +1,9 @@
 2001-08-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* doc/Makefile: Generate version.texi here.
+
+	* Makefile: Generate version.texi in the doc/ directory.
+
 	* java/xslt/debugger/FOPMessageListener.java: Remove the println
 	statements.
 
