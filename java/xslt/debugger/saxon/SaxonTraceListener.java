@@ -8,7 +8,6 @@
 
 package xslt.debugger.saxon;
 
-
 import com.icl.saxon.Context;
 import com.icl.saxon.handlers.NodeHandler;
 import com.icl.saxon.om.ElementInfo;
@@ -27,13 +26,17 @@ import xslt.debugger.Observer;
 
 public class SaxonTraceListener implements TraceListener
 {
+  public final static int SOURCE = 0;
+  public final static int STYLE = 1;
+  public final static int TOP_LEVEL = 2;
+
   XSLTDebugger debugger;
   Manager manager;
   String currentFilename = null;
   int currentLine = -1;
   int currentColumn = -1;
+  SourceFrame sourceFrameToStop = null;
   StyleFrame styleFrameToStop = null;
-  String indent = "";
 
   Stack styleFrames = null;
   Stack sourceFrames = null;
@@ -44,18 +47,9 @@ public class SaxonTraceListener implements TraceListener
     manager = debugger.getManager();
   }
 
-  /**
-   * Called at start
-   */
-  public void open() {}
-
-  /**
-   * Called at end
-   */
-  public void close() {}
-
   public synchronized void debuggerStopped(NodeInfo element,
                                            boolean leaving,
+                                           int elementType,
                                            String message)
   {
     String name = element.getDisplayName();
@@ -95,90 +89,43 @@ public class SaxonTraceListener implements TraceListener
         debugger.setAction(AbstractXSLTDebugger.DO_DEFERRED_STOP);
       }
       else {
-        styleFrameToStop = manager.peekStyleFrame();
+        if (elementType == SOURCE)
+          sourceFrameToStop = manager.peekSourceFrame();
+        else if (elementType == STYLE)
+          styleFrameToStop = manager.peekStyleFrame();
       }
     }
   }
 
   /**
-   * Called for all top level elements
+   * Called upon entering a node.
    */
-  public void toplevel(NodeInfo element)
-  {
-//     StyleElement e = (StyleElement)element;
-//     System.err.println("<Top-level element=\""
-//                        + e.getDisplayName() + "\" line=\"" + e.getLineNumber()
-//                        + "\" file=\"" + e.getSystemId()
-//                        + "\" precedence=\"" + e.getPrecedence()
-//                        +"\"/>");
-  }
-
-  /**
-   * Called when a node of the source tree gets processed
-   */
-  public void enterSource(NodeHandler handler, Context context)
+  public void enterNode(NodeInfo element,
+                        Context context,
+                        int elementType)
   {
     debugger.checkRequestToStop();
-
-    NodeInfo curr = (NodeInfo)context.getContextNode();
-    String name = curr.getDisplayName();
-    String filename = curr.getSystemId();
-    int line = curr.getLineNumber();
-    int column = curr.getColumnNumber();
-//      System.err.println(indent + "<Source node=\""  + curr.getPath()
-//  		       + "\" line=\"" + curr.getLineNumber()
-//  		       + "\" mode=\"" + getModeName(context) + "\">");
-    indent += " ";
-
-    SourceFrame frame = new SourceFrame(name, filename, line, column, manager);
-    manager.pushSourceFrame(frame);
-  }
-
-  /**
-   * Called after a node of the source tree got processed
-   */
-  public void leaveSource(NodeHandler handler, Context context)
-  {
-    debugger.checkRequestToStop();
-
-    indent = indent.substring(0, indent.length() - 1);
-//     System.err.println(indent + "</Source><!-- "  +
-// 		       ((NodeInfo)context.getContextNode()).getPath()
-//                        + " -->");
-    manager.popSourceFrame();
-  }
-
-  /**
-   * Called when an element of the stylesheet gets processed
-   */
-  public void enter(NodeInfo element, Context context)
-  {
-    debugger.checkRequestToStop();
-
-    if (!(element instanceof StyleElement))
-      return;
 
     String name = element.getDisplayName();
     String filename = element.getSystemId();
     int line = element.getLineNumber();
     int column = element.getColumnNumber();
 
-    //     System.err.println(indent
-    //                        + "<Instruction " + element.getClass()
-    //                        + " element=\"" + name
-    //                        + "\" line=\"" + line
-    //                        + "\" column=\"" + column
-    //                        + "\" file=\"" + filename + "\">");
-    indent += " ";
-
-    StyleFrame styleFrame
-      = new SaxonStyleFrame(context, (StyleElement)element,
-                            name, filename, line, column, manager);
-    manager.pushStyleFrame(styleFrame);
+    if (elementType == SOURCE) {
+      SourceFrame frame = new SourceFrame(name, filename, line, column,
+                                          manager);
+      manager.pushSourceFrame(frame);
+    }
+    else if (elementType == STYLE) {
+      StyleFrame styleFrame
+        = new SaxonStyleFrame(context, (StyleElement)element,
+                              name, filename, line, column, manager);
+      manager.pushStyleFrame(styleFrame);
+    }
 
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
-      debuggerStopped(element, false, "entering: " + name);
+      debuggerStopped(element, false, elementType, "entering: " + name);
     }
     else {
       switch (debugger.getAction()) {
@@ -187,13 +134,13 @@ public class SaxonTraceListener implements TraceListener
           // We reached a line different from the last one we were
           // on when the step command was issued. We need to give
           // back the control to the command line
-          debuggerStopped(element, false, "entering: " + name);
+          debuggerStopped(element, false, elementType,
+                          "entering: " + name);
         }
         break;
 
       case AbstractXSLTDebugger.DO_DEFERRED_STOP:
-//        System.out.println("stopped in deferred stop with element " + name);
-        debuggerStopped(element, false, "entering: " + name);
+        debuggerStopped(element, false, elementType, "entering: " + name);
         break;
         
       default:
@@ -203,12 +150,22 @@ public class SaxonTraceListener implements TraceListener
   }
 
   /**
-   * Called after an element of the stylesheet got processed
+   * Called after a node of the source tree got processed
    */
-  public void leave(NodeInfo element, Context context)
+  public void leaveNode(NodeInfo element,
+                        Context context,
+                        int elementType)
   {
-    StyleFrame frame = manager.peekStyleFrame();
-    frame.setIsExiting();
+    Object frame = null;
+
+    if (elementType == SOURCE) {
+      frame = manager.peekSourceFrame();
+      ((SourceFrame)frame).setIsExiting();
+    }
+    else if (elementType == STYLE) {
+      frame = manager.peekStyleFrame();
+      ((StyleFrame)frame).setIsExiting();
+    }
     
     debugger.checkRequestToStop();
 
@@ -220,16 +177,9 @@ public class SaxonTraceListener implements TraceListener
     int line = element.getLineNumber();
     int column = element.getColumnNumber();
 
-    indent = indent.substring(0, indent.length() - 1);
-    //     System.err.println(indent + "</Instruction> <!-- "
-    //                        + " element=\"" + element.getDisplayName()
-    //                        + "\" line=\"" + line
-    //                        + "\" column=\"" + column
-    //                        + "\" file=\"" + element.getSystemId() + "\">");
-
     if (manager.isBreakpoint(filename, line)
         && !(filename.equals(currentFilename) && line == currentLine)) {
-      debuggerStopped(element, true, "leaving: " + name);
+      debuggerStopped(element, true, elementType, "leaving: " + name);
     }
     else {
       switch (debugger.getAction()) {
@@ -238,31 +188,102 @@ public class SaxonTraceListener implements TraceListener
           // We reached a line different from the last one we were
           // on when the step command was issued. We need to give
           // back the control to the command line
-          debuggerStopped(element, true, "leaving: " + name);
+          debuggerStopped(element, true, elementType, "leaving: " + name);
         }
         break;
 
       case AbstractXSLTDebugger.DO_NEXT:
-        if (styleFrameToStop != null
-            && styleFrameToStop == manager.peekStyleFrame()) {
+        if ((elementType == SOURCE
+             && sourceFrameToStop != null && sourceFrameToStop == frame)
+            || (elementType == STYLE
+                && styleFrameToStop != null && styleFrameToStop == frame)) {
           // We reached the end of the element after which we have to
           // stop. Set the action to STEP so that we stop right after this
           // node and continue
-          debuggerStopped(element, true, "leaving: " + name);
-          //          System.out.println("Leaving " + name
-          //                             + ", setting up deferred breakpoint");
-          styleFrameToStop = null;
+          debuggerStopped(element, true, elementType, "leaving: " + name);
+          if (elementType == SOURCE)
+            sourceFrameToStop = null;
+          else if (elementType == STYLE)
+            styleFrameToStop = null;
         }
         break;
 
       case AbstractXSLTDebugger.DO_DEFERRED_STOP:
-        //        System.out.println("stopped in deferred stop with element " + name);
-        debuggerStopped(element, true, "leaving: " + name);
+        debuggerStopped(element, true, elementType, "leaving: " + name);
         break;
         
       }
     }
-    manager.popStyleFrame();
+
+    if (elementType == SOURCE)
+      manager.popSourceFrame();
+    else if (elementType == STYLE)
+      manager.popStyleFrame();
+  }
+
+  /**
+   * Called at the start of processing
+   */
+  public void open()
+  {
+    // Reset the state variables
+    currentFilename = null;
+    currentLine = -1;
+    currentColumn = -1;
+    sourceFrameToStop = null;
+    styleFrameToStop = null;
+    styleFrames = null;
+    sourceFrames = null;
+  }
+
+  /**
+   * Called at end
+   */
+  public void close() {}
+
+  /**
+   * Called for all top level elements
+   */
+  public void toplevel(NodeInfo element)
+  {
+    enterNode(element, null, TOP_LEVEL);
+  }
+
+  /**
+   * Called when a node of the source tree gets processed
+   */
+  public void enterSource(NodeHandler handler, Context context)
+  {
+    NodeInfo element = (NodeInfo)context.getContextNode();
+    enterNode(element, context, SOURCE);
+  }
+
+  /**
+   * Called after a node of the source tree got processed
+   */
+  public void leaveSource(NodeHandler handler, Context context)
+  {
+    NodeInfo element = (NodeInfo)context.getContextNode();
+    leaveNode(element, context, SOURCE);
+  }
+
+  /**
+   * Called when an element of the stylesheet gets processed
+   */
+  public void enter(NodeInfo element, Context context)
+  {
+    if (!(element instanceof StyleElement))
+      return;
+
+    enterNode(element, context, STYLE);
+  }
+
+  /**
+   * Called after an element of the stylesheet got processed
+   */
+  public void leave(NodeInfo element, Context context)
+  {
+    leaveNode(element, context, STYLE);
   }
 
   String getModeName(Context context)
