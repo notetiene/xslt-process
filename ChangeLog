@@ -1,3 +1,45 @@
+2001-04-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java\Makefile: Define ON_WINDOWS; based on it define SEP (the
+	CLASSPATH separator) as either semicolon or colon.
+
+	* lisp\xslt-process.el: Define `urlize' to handle file names on
+	Windows that contain back slashes: they are converted to forward
+	slashes to avoid problems in different names between the Emacs and
+	Java sides. Invoke urlize on all the places dealing with
+	filenames.
+	
+	Similarly, use a dir separator, which is backslash on Windows and
+	forward slash on Unix.
+	
+	Changed the message printed when typing is faster than the
+	response time of the Emacs/Java process pair. The message is more
+	informative now.
+	
+	Use yes-or-no-p instead of the XEmacs specific
+	yes-or-no-p-maybe-dialog-box.
+	
+	Use the ^ and $ begin and end delimiters.
+
+	* java\xslt\debugger\cmdline\EmacsObserver.java: Replace the
+	beginning and end delimeters of an Emacs command sent to stdout
+	with ^ and $ respectively. These delimiters have to be one
+	character to avoid a complicated logic on the Lisp side. Here
+	these delimiters have to appear atomically (not split in multiple
+	input strings), in a string received from the Java process.
+
+	* java\xslt\debugger\cmdline\Controller.java: On Windows, in the
+	canonical name of a file, replace all the back slashes with
+	forward slashes to avoid confusions.
+
+	* java\xslt\debugger\Manager.java: Added the runningWindows static
+	variable. On Windows systems convert all the filenames to
+	lowercase, to avoid different interpretations.
+
+	* java\Makefile: Enclose the argument to -classpath in quotes to
+	prevent bash on Windows to interpret the semi-colon in a special
+	way.
+
 2001-04-29  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Removed the redundant calls to message.
