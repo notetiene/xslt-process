@@ -429,6 +429,22 @@ inserting in the speedbar."
 	((equal type "object") '(curly ?o))
 	(t '(curly ?a))))
 
+;; Copied from emacs-20
+;;
+(if (not (fboundp 'subst-char-in-string))
+    (defun subst-char-in-string (fromchar tochar string &optional inplace)
+      "Replace FROMCHAR with TOCHAR in STRING each time it occurs.
+Unless optional argument INPLACE is non-nil, return a new string."
+      (let ((i (length string))
+            (newstr (if inplace string (copy-sequence string))))
+        (while (> i 0)
+          (setq i (1- i))
+          (if (eq (aref newstr i) fromchar)
+              (aset newstr i tochar)))
+        newstr)))
+
+;;}}}
+
 (defun xslt-process-speedbar-show-global-variables (text indent)
   "Called to display the global variables in the speedbar window."
   (mapvector
