@@ -1,3 +1,12 @@
+2001-08-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/xslt-process.texi.in: Added change item for the JVM
+	properties patch.
+
+	* lisp/xslt-process.el: Added xslt-process-jvm-option-properties
+	to pass properties to the JVM. Suggestion and initial patch from
+	Phillip Lord <p.lord@russet.org.uk>.
+
 2001-08-09  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* doc/xslt-process.texi.in: Added defadvice for the xml-mode.
