@@ -69,6 +69,12 @@ public class Manager
   AbstractXSLTDebugger debugger = null;
 
   /**
+   * <code>forDebug</code> indicates whether the XSLT processor should
+   * be setup for debugging or not.
+   */
+  boolean forDebug = false;
+
+  /**
    * Creates a new <code>Manager</code> instance.
    *
    */
@@ -320,23 +326,37 @@ public class Manager
   }
 
   /**
-   * <code>startDebugger</code> starts the XSLT processor under the
-   * debugger. The <code>debugger</code> object receives the run()
-   * message in a new thread and executes the XSLT processor with the
-   * Trace interface setup by the debugger.
+   * <code>startXSLTProcessing</code> start a new XSLT processing. It
+   * starts a new thread under the command line tool that will execute
+   * the actual processing. This will run either in debug or non-debug
+   * mode, depending on the value of <code>forDebug</code>.
    *
    * @param xmlFilename a <code>String</code> value
+   * @param forDebug a <code>boolean</code> value
    * @exception InterruptedException if an error occurs
-   * @see AbstractXSLTDebugger
    */
-  public synchronized void startDebugger(String xmlFilename)
+  public synchronized void startXSLTProcessing(String xmlFilename,
+                                               boolean forDebug)
     throws InterruptedException
   {
     debugger.setXmlFilename(xmlFilename);
+    this.forDebug = forDebug;
     if (!debugger.isStarted()) {
       Thread worker = new Thread(debugger);
       worker.start();
     }
+  }
+
+  public void startDebugger(String xmlFilename)
+    throws InterruptedException
+  {
+    startXSLTProcessing(xmlFilename, true);
+  }
+
+  public void startProcessor(String xmlFilename)
+    throws InterruptedException
+  {
+    startXSLTProcessing(xmlFilename, false);
   }
   
   /**
