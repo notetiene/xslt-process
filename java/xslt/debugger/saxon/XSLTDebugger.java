@@ -42,8 +42,7 @@ public class XSLTDebugger extends AbstractXSLTDebugger
     notifyAll();
 
     try {
-      TransformerFactory tFactory
-        = com.icl.saxon.TransformerFactoryImpl.newInstance();
+      TransformerFactory tFactory = new com.icl.saxon.TransformerFactoryImpl();
 
       TraceListener traceListener = new SaxonTraceListener(this);
       tFactory.setAttribute(FeatureKeys.TRACE_LISTENER, traceListener);
