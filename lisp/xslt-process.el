@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 18, 2001 21:40:44 ovidiu>
+;; Time-stamp: <2001-04-26 11:10:54 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -45,7 +45,13 @@
 
 (require 'cl)
 (require 'browse-url)
+(require 'setnu)
+(require 'easymenu)
 (require 'xslt-speedbar)
+
+(if setnu-running-under-xemacs
+    nil
+  (fset 'remassoc 'rassoc))
 
 (defconst xslt-process-version "2.0"
   "The version of the XSLT-process mode.")
@@ -179,7 +185,7 @@ The buffer has to be in the debug mode for this key to work"
   :group 'xslt-process
   :type '(string :tag "Key"))
 
-(defcustom xslt-process-enable/disable-breakpoint "e"
+(defcustom xslt-process-enable-disable-breakpoint "e"
   "*Keybinding for enabling or disabling the breakpoint at line in the
 current buffer. The buffer has to be in the debug mode for this key
 to work"
@@ -292,12 +298,13 @@ indicator."
 ;;;###autoload
 (defvar xslt-process-debug-mode-map (make-sparse-keymap)
   "Keyboard bindings for the XSLT debug mode.")
+
 (make-variable-buffer-local 'xslt-process-mode)
 (make-variable-buffer-local 'xslt-process-debug-mode)
 (make-variable-buffer-local 'minor-mode-alist)
 
 ;; State variables of the mode
-(defvar xslt-process-breakpoints (make-hashtable 10 'equal)
+(defvar xslt-process-breakpoints (make-hash-table :size 10 :test 'equal)
   "Hash table containing the currently defined breakpoints.")
 
 (defvar xslt-process-comint-process nil
@@ -331,7 +338,7 @@ display name, a file name and a line number, among other things.")
   "The stack of style frames, an array of entries consisting of a
 display name, a file name and a line number, among other things.")
 
-(defvar xslt-process-breakpoint-extents (make-hashtable 10 'equal)
+(defvar xslt-process-breakpoint-extents (make-hash-table :size 10 :test 'equal)
   "Hash table of extents indexed by (filename . lineno). It is used to
 keep track of the extents created to highlight lines.")
 
@@ -389,11 +396,11 @@ goes to.")
   "The name of the buffer to which the messages generated using
 xsl:message go to.")
 
-(defvar xslt-process-enter-glyph "=>"
+(defvar xslt-process-enter-glyph (setnu-make-glyph "=>")
   "Graphic indicator for entering inside an element.")
 
-(defvar xslt-process-exit-glyph "<="
-  "Graphic indicator for entering inside an element.")
+(defvar xslt-process-exit-glyph (setnu-make-glyph "<=")
+  "Graphic indicator for exiting from an element.")
 
 (defvar xslt-process-breakpoint-set-hooks nil
   "List of functions to be called after a breakpoint is set.")
@@ -401,7 +408,7 @@ xsl:message go to.")
 (defvar xslt-process-breakpoint-removed-hooks nil
   "List of functions to be called after a breakpoint is removed.")
 
-(defvar xslt-process-breakpoint-enabled/disabled-hooks nil
+(defvar xslt-process-breakpoint-enabled-disabled-hooks nil
   "List of functions to be called after a breakpoint is enabled or
 disabled.")
 
@@ -433,8 +440,8 @@ filename line) that indicate the new style frame stack.")
 (define-key xslt-process-debug-mode-map
   xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
 (define-key xslt-process-debug-mode-map
-  xslt-process-enable/disable-breakpoint
-  'xslt-process-enable/disable-breakpoint)
+  xslt-process-enable-disable-breakpoint
+  'xslt-process-enable-disable-breakpoint)
 (define-key xslt-process-debug-mode-map
   xslt-process-do-run 'xslt-process-do-run)
 (define-key xslt-process-debug-mode-map
@@ -462,11 +469,11 @@ filename line) that indicate the new style frame stack.")
 `xslt-process-submit-bug-report' function."
   (let* ((symname (symbol-name sym))
 	 (value (symbol-value sym))
-	 (count (hashtable-fullness value)))
+	 (count (hash-table-count value)))
     (insert (format "%s (hash table, %s entries:" symname count))
-    (maphash (lambda (key value)
-	       (insert-string (format " (%s: %s)" key value)))
-	     value)
+    (cl-maphash (lambda (key value)
+		  (insert-string (format " (%s: %s)" key value)))
+		value)
     (insert ")\n")))
 
 (defun xslt-process-submit-bug-report ()
@@ -520,7 +527,7 @@ Bindings:
 
 \\[xslt-process-set-breakpoint]: Set a breakpoint at the current line.
 \\[xslt-process-delete-breakpoint]: Delete breakpoint at the current line.
-\\[xslt-process-enable/disable-breakpoint]: Disable or enable breakpoint.
+\\[xslt-process-enable-disable-breakpoint]: Disable or enable breakpoint.
 
 \\[xslt-process-do-step]: Step into the current element.
 \\[xslt-process-do-next]: Step over the current element.
@@ -537,7 +544,7 @@ Hooks:
 `xslt-process-breakpoint-set-hooks' is run each time a breakpoint is set.
 `xslt-process-breakpoint-removed-hooks' is run each time a breakpoint
 is removed.
-`xslt-process-breakpoint-enabled/disabled-hooks' is run each time a
+`xslt-process-breakpoint-enabled-disabled-hooks' is run each time a
 breakpoint is enabled or disabled.
 `xslt-process-source-frames-changed-hooks' is run when the XML
 document element path changes.
@@ -556,11 +563,11 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
       (progn
 	(xslt-process-setup-minor-mode xslt-process-mode-map
 				       xslt-process-mode-line-string)
-	(add-submenu
-	 nil
+	(easy-menu-define
+	 xslt-process-menu xslt-process-mode-map "XSLT-process menu"
 	 '("XSLT"
 	   ["Run XSLT processor" xslt-process-invoke :active t]
-	   ["--:shadowEtchedIn" nil]
+	   "--"
 	   ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
 	   ["Set breakpoint" xslt-process-set-breakpoint
 	    :active (and xslt-process-debug-mode
@@ -570,7 +577,7 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
 	    :active (and xslt-process-debug-mode
 			 (xslt-process-is-breakpoint
 			  (xslt-process-new-breakpoint-here)))]
-	   ["Breakpoint enabled" xslt-process-enable/disable-breakpoint
+	   ["Breakpoint enabled" xslt-process-enable-disable-breakpoint
 	    :active (and xslt-process-debug-mode
 			 (xslt-process-is-breakpoint
 			  (xslt-process-new-breakpoint-here)))
@@ -578,7 +585,7 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
 	    :selected (and xslt-process-debug-mode
 			 (xslt-process-breakpoint-is-enabled
 			  (xslt-process-new-breakpoint-here)))]
-	   ["--:shadowEtchedIn" nil]
+	   "--"
 	   ["Run debugger" xslt-process-do-run
 	    :active xslt-process-debug-mode]
 	   ["Step" xslt-process-do-step
@@ -593,41 +600,43 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
 	    :active (eq xslt-process-process-state 'running)]
 	   ["Quit debugger" xslt-process-do-quit
 	    :active xslt-process-debugger-process-started]
-	   ["--:shadowEtchedIn" nil]
+	   "--"
 	   ["Speedbar" xslt-process-speedbar-frame-mode
 	    :style toggle
 	    :selected (and (boundp 'speedbar-frame)
 			   (frame-live-p speedbar-frame)
 			   (frame-visible-p speedbar-frame))]
-	   ["XSLT Processor" nil :active t]
-	   ["Customize" nil :active t]
-	   ["Help" nil :active t]
+	   ("XSLT Processor" "---")
+
+	   ("Customize"
+	    ["XSLT Process"
+	     (lambda () (interactive) (customize-group 'xslt-process))
+	     :active t]
+	    ["Faces"
+	     (lambda ()
+	       (interactive) (customize-apropos-faces "xslt-process-*"))
+	     :active t])
+	   ("Help" "---")
 	   ))
-	(add-submenu
-	 '("XSLT")
-	 (cons "XSLT Processor" (xslt-process-create-xslt-processor-submenu)))
-	(add-submenu
-	 '("XSLT")
-	 (list "Customize"
-	       ["XSLT Process"
-		(lambda () (interactive) (customize-group 'xslt-process))
-		:active t]
-	       ["Faces"
-		(lambda ()
-		  (interactive) (customize-apropos-faces "xslt-process-*"))
-		:active t]))
-	(add-submenu
-	 '("XSLT")
+	(easy-menu-add xslt-process-menu)
+
+	(easy-menu-change '("XSLT") "XSLT Processor"
+			  (xslt-process-create-xslt-processor-submenu))
+	(easy-menu-change
+	 '("XSLT") "Help"
 	 (list
-	  "Help"
 	  (concat "XSLT-process " xslt-process-version)
-	  ["--:shadowEtchedIn" nil]
+	  "--"
 	  ["Info file" (xslt-process-visit-info-file) :active t]
 	  ["Home Web site"
-	   (lambda () (interactive) (browse-url xslt-process-home-web-site))
+	   (lambda ()
+	     (interactive)
+	     (browse-url xslt-process-home-web-site))
 	   :active t]
 	  ["Mailing lists"
-	   (lambda () (interactive) (browse-url xslt-process-web-mailing-list))
+	   (lambda ()
+	     (interactive)
+	     (browse-url xslt-process-web-mailing-list))
 	   :active t]
 	  ["Submit bug report" (xslt-process-submit-bug-report)
 	   :active t])))
@@ -636,7 +645,7 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
     (delete-menu-item '("XSLT"))
     (xslt-process-toggle-debug-mode 0))
   ;; Force modeline to redisplay
-  (redraw-mode-line))
+  (force-mode-line-update))
 
 (defun xslt-process-toggle-debug-mode (arg)
   "*Setup a buffer in the XSLT debugging mode.
@@ -751,7 +760,7 @@ different actions for faster operations."
       (aset xslt-process-selected-position 4 annotation))
   (aref xslt-process-selected-position 4))
 
-(defun xslt-process-selected-position-enter/exit? (&optional action)
+(defun xslt-process-selected-position-enter-exit (&optional action)
   "Return the extent used to highlight the last selected position. If
 ACTION is non-nil, it is set as the new value."
   (if action
@@ -774,7 +783,7 @@ ACTION is non-nil, it is set as the new value."
   "Returns the line number of a frame."
   (aref frame 2))
 
-(defun xslt-process-frame-is-exiting? (frame)
+(defun xslt-process-frame-is-exiting (frame)
   "Returns the is-exiting indicator."
   (aref frame 3))
 
@@ -797,11 +806,13 @@ current buffer or nil otherwise. By default the breakpoint is enabled."
   "Interns BREAKPOINT into the internal hash table that keeps track of
 breakpoints. STATE should be either t for an enabled breakpoint, or
 nil for a disabled breakpoint."
-  (puthash breakpoint (if state 'enabled 'disabled) xslt-process-breakpoints))
+  (cl-puthash breakpoint
+	      (if state 'enabled 'disabled)
+	      xslt-process-breakpoints))
 
 (defun xslt-process-is-breakpoint (breakpoint)
   "Checks whether BREAKPOINT is setup in buffer at line."
-  (not (eq (gethash breakpoint xslt-process-breakpoints) nil)))
+  (not (eq (cl-gethash breakpoint xslt-process-breakpoints) nil)))
 
 (defun xslt-process-breakpoint-is-enabled (breakpoint)
   "Returns t if BREAKPOINT is enabled, nil otherwise. Use
@@ -809,13 +820,13 @@ nil for a disabled breakpoint."
 whether BREAKPOINT is a breakpoint or not. This method returns nil
 either when the breakpoint doesn't exist or when the breakpoint is
 disabled."
-  (eq (gethash breakpoint xslt-process-breakpoints) 'enabled))
+  (eq (cl-gethash breakpoint xslt-process-breakpoints) 'enabled))
 
 (defun xslt-process-remove-breakpoint (breakpoint)
   "Remove BREAKPOINT from the internal data structures."
   (let ((filename (xslt-process-breakpoint-filename breakpoint))
 	(line (xslt-process-breakpoint-line breakpoint)))
-    (remhash (cons filename line) xslt-process-breakpoints)))
+    (cl-remhash (cons filename line) xslt-process-breakpoints)))
 
 (defun xslt-process-breakpoint-filename (breakpoint)
   "Returns the filename of the BREAKPOINT."
@@ -857,7 +868,7 @@ message if a breakpoint is already setup."
 	  (message "Removed breakpoint in %s at %s." filename line))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
-(defun xslt-process-enable/disable-breakpoint ()
+(defun xslt-process-enable-disable-breakpoint ()
   "*Enable or disable the breakpoint at the current line in buffer, depending
 on its state."
   (interactive)
@@ -881,7 +892,7 @@ on its state."
 	     (progn
 	       (xslt-process-send-command (format "dis %s %s" filename line))
 	       (message "Disabled breakpoint in %s at %s" filename line)))
-	  (run-hooks 'xslt-process-breakpoint-enabled/disabled-hooks))
+	  (run-hooks 'xslt-process-breakpoint-enabled-disabled-hooks))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 ;;;
@@ -975,11 +986,11 @@ debugger from a long processing with no breakpoints setup."
 	    (kill-buffer xslt-process-comint-buffer)
 	    ;; Delete maybe the breakpoints?
 	    (if (and (not dont-ask)
-		      (> (hashtable-fullness xslt-process-breakpoints) 0)
+		      (> (hash-table-count xslt-process-breakpoints) 0)
 		     (yes-or-no-p-maybe-dialog-box "Delete all breakpoints? "))
 		(progn
 		  (xslt-process-change-breakpoints-highlighting nil)
-		  (clrhash xslt-process-breakpoints)
+		  (cl-clrhash xslt-process-breakpoints)
 		  (run-hooks 'xslt-process-breakpoint-removed-hooks)))
 	    (xslt-process-debugger-buffer-killed)))
     (message "XSLT debugger not running.")))
@@ -994,7 +1005,7 @@ debugger from a long processing with no breakpoints setup."
 in the buffer visiting FILENAME. If FILENAME is not specified or is
 nil, it changes the highlighting on the breakpoints in all the
 buffers. It doesn't affect the current state of the breakpoints."
-  (maphash
+  (cl-maphash
    (lambda (breakpoint state)
      (let ((fname (xslt-process-breakpoint-filename breakpoint)))
        (if (or (not filename) (equal filename fname))
@@ -1002,6 +1013,18 @@ buffers. It doesn't affect the current state of the breakpoints."
 	       (xslt-process-highlight-breakpoint breakpoint state)
 	     (xslt-process-unhighlight-breakpoint breakpoint)))))
    xslt-process-breakpoints))
+
+(defun xslt-process-make-annotation (glyph)
+  "Make a GLYPH annotation at POINT. We use normal extents here
+instead of XEmacs annotations to be able to achieve GNU Emacs
+compatibility (by using setnu defined functions)."
+  (let ((annotation (setnu-make-extent (point) (point) (current-buffer))))
+    (setnu-set-extent-property annotation 'begin-glyph glyph)
+    (setnu-set-extent-property annotation 'begin-glyph-layout 'text)
+    (setnu-set-extent-property annotation 'face 'xslt-process-indicator-face)
+    (setnu-set-extent-property annotation 'priority 3)
+    (setnu-set-extent-property annotation 'read-only t)
+    annotation))
 
 (defun xslt-process-change-current-line-highlighting (flag)
   "Highlights or unhighlights, depending on FLAG, the current line
@@ -1013,23 +1036,28 @@ indicator."
 			(xslt-process-selected-position-filename)))
 	       (line (xslt-process-selected-position-line))
 	       (column (xslt-process-selected-position-column))
-	       (action (xslt-process-selected-position-enter/exit?))
-	       (glyph (if (eq action 'is-entering) xslt-process-enter-glyph
-			(if (eq action 'is-exiting) xslt-process-exit-glyph
-			  nil))))
+	       (action (xslt-process-selected-position-enter-exit))
+	       annotation)
 	  (set-buffer buffer)
 	  (goto-line line)
 	  (if flag
 	      ;; Highlight the last selected line
 	      (let ((extent (xslt-process-highlight-line
-			     'xslt-process-current-line-face 2))
-		    (annotation
-		     (if glyph (make-annotation glyph (point) 'text) nil)))
-		(if annotation
-		    (progn
-		      (set-annotation-face annotation
-					   'xslt-process-indicator-face)
-		      (set-extent-priority annotation 3)))
+			     'xslt-process-current-line-face 2)))
+		(setq
+		 annotation
+		 (if (eq action 'is-entering)
+		     (xslt-process-make-annotation xslt-process-enter-glyph)
+		   (if (eq action 'is-exiting)
+		       (xslt-process-make-annotation xslt-process-exit-glyph)
+		     nil)))
+;		    (annotation
+;		     (if glyph (make-annotation glyph (point) 'text) nil)))
+;		(if annotation
+;		    (progn
+;		      (set-annotation-face annotation
+;					   'xslt-process-indicator-face)
+;		      (set-extent-priority annotation 3)))
 		;; Setup the new extent and annotation in the
 		;; last-selected-position
 		(xslt-process-selected-position-extent extent)
@@ -1060,20 +1088,21 @@ indicator."
 			 'xslt-process-disabled-breakpoint-face)
 		       1)))
 	  ;; Intern the extent in the extents table
-	  (puthash breakpoint extent xslt-process-breakpoint-extents))))))
-      
+	  (cl-puthash breakpoint extent xslt-process-breakpoint-extents))))))
+
 (defun xslt-process-unhighlight-breakpoint (breakpoint)
   "Remove the highlighting associated with BREAKPOINT."
   (save-excursion
     ;; First remove any extent that exists at this line
     (let* ((filename (xslt-process-breakpoint-filename breakpoint))
 	   (line (xslt-process-breakpoint-line breakpoint))
-	   (extent (gethash (cons filename line)
-			    xslt-process-breakpoint-extents)))
+	   (extent (cl-gethash (cons filename line)
+			       xslt-process-breakpoint-extents)))
       (if extent
 	  (progn
-	    (delete-extent extent)
-	    (remhash (cons filename line) xslt-process-breakpoint-extents))))))
+	    (setnu-delete-extent extent)
+	    (cl-remhash (cons filename line)
+			xslt-process-breakpoint-extents))))))
 
 (defun xslt-process-highlight-line (face &optional priority)
   "Sets the face of the current line to FACE. Returns the extent that
@@ -1085,10 +1114,10 @@ highlights the line."
 	;; Otherwise setup a new a new extent at the current line
 	(let* ((to (or (end-of-line) (point)))
 	       (from (or (beginning-of-line) (point)))
-	       (extent (make-extent from to)))
-	  (set-extent-face extent face)
+	       (extent (setnu-make-extent from to)))
+	  (setnu-set-extent-property extent 'face face)
 	  (if priority
-	      (set-extent-priority extent priority))
+	      (set-extent-property extent 'priority priority))
 	  extent))))
 
 ;;;
@@ -1122,20 +1151,20 @@ variable in the XML buffer."
       (xslt-process-send-command
        (message "set processor %s" xslt-processor)))))
 
-(defun xslt-process-send-command (string &optional dont-start-process?)
+(defun xslt-process-send-command (string &optional dont-start-process)
   "Sends a command to the XSLT process. Start this process if not
 already started."
   ;; Reset the execution-context-error-function so that in case of
   ;; errors we don't get error functions called inadvertently
   (setq xslt-process-execution-context-error-function nil)
-  (if (and (not dont-start-process?)
+  (if (and (not dont-start-process)
 	   (or (null xslt-process-comint-process)
 	       (not (eq (process-status xslt-process-comint-process) 'run))))
       (progn
 	(xslt-process-start-debugger-process)
 	;; Set any breakpoints which happen to be setup in the
 	;; breakpoints hash table at this time in the XSLT debugger
-	(maphash
+	(cl-maphash
 	 (lambda (breakpoint status)
 	   (let ((filename (xslt-process-breakpoint-filename breakpoint))
 		 (line (xslt-process-breakpoint-line breakpoint)))
@@ -1145,7 +1174,7 @@ already started."
 		 (comint-simple-send xslt-process-comint-process
 				     (format "dis %s %s" filename line)))))
 	 xslt-process-breakpoints)))
-  (if (and dont-start-process?
+  (if (and dont-start-process
 	   (null xslt-process-comint-process))
       nil
     (if (eq (process-status xslt-process-comint-process) 'run)
@@ -1282,8 +1311,9 @@ the output to the XSLT process buffer."
   (if xslt-process-selected-position
       (let ((extent (xslt-process-selected-position-extent))
 	    (annotation (xslt-process-selected-position-annotation)))
-	(if extent (delete-extent extent))
-	(if annotation (delete-annotation annotation))
+	(if extent (setnu-delete-extent extent))
+;	(if annotation (delete-annotation annotation))
+	(if annotation (setnu-delete-extent annotation))
 	;; Remove extent and annotation from the
 	;; last-selected-position. Need to use aset as there is no way
 	;; for the setter functions to detect between programmer
@@ -1339,7 +1369,7 @@ hits a breakpoint that causes it to stop."
 	(xslt-process-selected-position-filename filename)
 	(xslt-process-selected-position-line line)
 	(xslt-process-selected-position-column column)
-	(xslt-process-selected-position-enter/exit?
+	(xslt-process-selected-position-enter-exit
 	 (if is-entering 'is-entering
 	   (if is-exiting 'is-exiting nil)))
 	(xslt-process-change-current-line-highlighting t)))))
