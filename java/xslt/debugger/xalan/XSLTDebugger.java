@@ -43,25 +43,28 @@ public class XSLTDebugger extends AbstractXSLTDebugger
     return tFactory;
   }
 
-  public void prepareTransformerForDebugging(Transformer transformer)
+  public void prepareTransformerForDebugging(Transformer transformer,
+                                             boolean forDebug)
   {
-    PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
-    PrintTraceListener traceListener
-      = new PrintTraceListener(diagnosticsWriter);
-    traceListener.m_traceTemplates = true;
-    traceListener.m_traceElements = true;
-    traceListener.m_traceGeneration = true;
-    traceListener.m_traceSelection = true;
+    if (forDebug) {
+      PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
+      PrintTraceListener traceListener
+        = new PrintTraceListener(diagnosticsWriter);
+      traceListener.m_traceTemplates = true;
+      traceListener.m_traceElements = true;
+      traceListener.m_traceGeneration = true;
+      traceListener.m_traceSelection = true;
 
-    TransformerImpl transformerImpl = (TransformerImpl)transformer;
-    // Register the TraceListener with a TraceManager associated
-    // with the TransformerImpl.
-    TraceManager trMgr = transformerImpl.getTraceManager();
-    try {
-      trMgr.addTraceListener(traceListener);
-    }
-    catch (TooManyListenersException e) {
-      manager.getObserver().caughtException(e);
+      TransformerImpl transformerImpl = (TransformerImpl)transformer;
+      // Register the TraceListener with a TraceManager associated
+      // with the TransformerImpl.
+      TraceManager trMgr = transformerImpl.getTraceManager();
+      try {
+        trMgr.addTraceListener(traceListener);
+      }
+      catch (TooManyListenersException e) {
+        manager.getObserver().caughtException(e);
+      }
     }
   }
 
