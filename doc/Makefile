@@ -1,9 +1,11 @@
 TEXI = xslt-process.texi
+IMAGES = xslt-process-mode.png
 
 INFO = $(TEXI:.texi=.info)
 DVI = $(TEXI:.texi=.dvi)
 PS = $(TEXI:.texi=.ps)
 PDF = $(TEXI:.texi=.pdf)
+PDFIMAGES = $(IMAGES:.png=.pdf)
 HTML = $(TEXI:.texi=.html)
 
 .SUFFIXES: .texi .info .dvi .ps .pdf .html
@@ -36,8 +38,11 @@ version.texi:
 info: $(INFO)
 dvi: $(DVI)
 ps: $(PS)
-pdf: $(PDF)
+pdf: $(PDFIMAGES) $(PDF)
 html: $(HTML)
+
+xslt-process-mode.pdf: xslt-process-mode.png
+	convert -page 256x120 $< $@
 
 homepage: html
 	sed -e 's/<BODY[^>]*>/<BODY>/g' \
