@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April 29, 2001 09:22:59 ovidiu>
+;; Time-stamp: <April 29, 2001 19:23:07 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -175,12 +175,10 @@ positions the point right at the beginning of the line."
     (let* ((beg (progn (beginning-of-line) (point)))
 	   (end (progn (end-of-line) (point)))
 	   (line (buffer-substring beg end)))
-      (message "xslt-process-top-level-entry-click '%s' '%s' '%s' '%s'" text token indent line)
       (xslt-process-show-top-level-entry line token indent))))
 
 (defun xslt-process-show-top-level-entry (text token indent)
   "Function called to show the breakpoints."
-  (message "xslt-process-show-top-level-entry '%s' '%s' '%s'" text token indent)
   (let* ((entry (assoc token xslt-process-top-level-entries))
 	 (name (car entry))
 	 (lisp-name (string-replace-match " " (downcase name) "-"))
@@ -303,7 +301,6 @@ the breakpoints in speedbar."
 
 (defun xslt-process-speedbar-show-source-frames-stack (text indent)
   "Show the source stack frames."
-  (message "show source frames '%s' '%s'" text indent)
   (let ((last (- (length xslt-process-source-frames-stack) 1)))
     (mapvector
      (lambda (frame)
@@ -328,7 +325,6 @@ the breakpoints in speedbar."
 
 (defun xslt-process-speedbar-show-style-frames-stack (text indent)
   "Show the source stack frames."
-  (message "show style frames '%s' '%s'" text indent)
   (let ((last (- (length xslt-process-style-frames-stack) 1)))
     (mapvector
      (lambda (frame)
