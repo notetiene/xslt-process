@@ -43,4 +43,57 @@ public class Utils
     }
     return array;
   }
+
+  public static String uriNoProtocol(String uri)
+  {
+    if (uri.startsWith("file:"))
+      return uri.substring(5);
+    return uri;
+  }
+
+  /**
+   * Escapes characters in <code>message</code> as follows:
+   *
+   * <ul>
+   *  <li><pre>\  -> \\</pre></li>
+   *  <li><pre>"  -> \d</pre></li>
+   *  <li><pre>^  -> \b</pre></li>
+   *  <li><pre>$  -> \e</pre></li>
+   * </ul>
+   *
+   * @param message a <code>String</code> value
+   */
+  public static String escape(String message)
+  {
+    if (message == null)
+      return message;
+    
+    // Assume about 1% of the characters need to be escaped; probably
+    // a safe bet in most cases. Otherwise the buffer is increased
+    // automatically by the StringBuffer.
+    StringBuffer escaped = new StringBuffer((int)(message.length() * 1.01));
+
+    for (int i = 0, length = message.length(); i < length; i++) {
+      char ch = message.charAt(i);
+      switch (ch) {
+      case '\\':
+        escaped.append("\\\\");
+        break;
+      case '"':
+        escaped.append("\\d");
+        break;
+      case '^':
+        escaped.append("\\b");
+        break;
+      case '$':
+        escaped.append("\\e");
+        break;
+      default:
+        escaped.append(ch);
+        break;
+      }
+    }
+
+    return escaped.toString();
+  }
 }
