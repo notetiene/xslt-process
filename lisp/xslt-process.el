@@ -69,7 +69,6 @@ needed for the XSLT processor to function correctly."
   :group 'xslt-process
   :type '(repeat (string :tag "Argument")))
 
-;;;###autoload
 (defcustom xslt-process-additional-classpath nil
   "*Additional Java classpath to be passed when invoking Bean Shell.
 Note that modifying this won't have any effect until you restart the
@@ -77,7 +76,6 @@ Bean Shell. You can do this by killing the *bsh* buffer."
   :group 'xslt-process
   :type '(repeat (file :must-match t :tag "Path")))
 
-;;;###autoload
 (defcustom xslt-process-key-binding "\C-c\C-x\C-v"
   "*Keybinding for invoking the XSLT processor.
 To enter a normal key, enter its corresponding character. To enter a
@@ -144,6 +142,12 @@ indicator."
   "Indicates whether the current buffer is in debug mode.")
 (make-variable-buffer-local 'xslt-process-debug-mode)
 
+(defvar xslt-process-mode-line xslt-process-mode-line-string
+  "The string to be displayed in the modeline as the minor mode
+indicator.  Initially this is the same with the mode-line-string, but
+it can change to debug-mode-line-string, if the debug mode is
+entered.")
+
 ;;;###autoload
 (defvar xslt-process-mode-map (make-sparse-keymap)
   "Keyboard bindings in normal XSLT-process mode enabled buffers.")
@@ -153,6 +157,25 @@ indicator."
 
 (defvar xslt-process-breakpoints (make-hashtable 10 'equal)
   "Hash table containing the currently defined breakpoints.")
+
+;; Setup the main keymap
+(define-key xslt-process-mode-map
+  xslt-process-key-binding 'xslt-process-invoke)
+
+;; Setup the keymap used for debugging
+(define-key xslt-process-debug-mode-map
+  xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
+(define-key xslt-process-debug-mode-map
+  xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
+(define-key xslt-process-debug-mode-map
+  xslt-process-quit-debug 'xslt-process-quit-debug)
+(define-key xslt-process-debug-mode-map
+  xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
+(define-key xslt-process-debug-mode-map
+  xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
+(define-key xslt-process-debug-mode-map
+  xslt-process-enable/disable-breakpoint
+  'xslt-process-enable/disable-breakpoint)
 
 ;;;###autoload
 (defun xslt-process-mode (&optional arg)
@@ -187,11 +210,17 @@ Java Bean Shell: http://www.beanshell.org/
      ["--:singleLine" nil]
      ["Toggle debug mode" xslt-process-toggle-debug-mode :active t]
      ["Set breakpoint" xslt-process-set-breakpoint
-      :active (and xslt-process-debug-mode (xslt-process-is-breakpoint))]
+      :active (and xslt-process-debug-mode
+		   (not (xslt-process-is-breakpoint
+			 (xslt-process-new-breakpoint-here))))]
      ["Delete breakpoint" xslt-process-delete-breakpoint
-      :active (and xslt-process-debug-mode (not (xslt-process-is-breakpoint)))]
+      :active (and xslt-process-debug-mode
+		   (xslt-process-is-breakpoint
+		    (xslt-process-new-breakpoint-here)))]
      ["Disable breakpoint" xslt-process-enable/disable-breakpoint
-      :active (and xslt-process-debug-mode (xslt-process-is-breakpoint))]
+      :active (and xslt-process-debug-mode
+		   (xslt-process-is-breakpoint
+		    (xslt-process-new-breakpoint-here)))]
      ["--:singleLine" nil]
      ["Start Debugger" xslt-process-mode :active t]
      ["Step" xslt-process-do-next :active nil]
@@ -201,36 +230,27 @@ Java Bean Shell: http://www.beanshell.org/
   (setq xslt-process-mode
 	(if (null arg) (not xslt-process-mode)
 	  (> (prefix-numeric-value arg) 0)))
-  (define-key xslt-process-mode-map
-    xslt-process-key-binding 'xslt-process-invoke)
-					; Force modeline to redisplay
-  (set-buffer-modified-p (buffer-modified-p)))
+  (setq xslt-process-mode-line xslt-process-mode-line-string)
+  ;; Force modeline to redisplay
+  (xslt-process-update-mode-line))
 
-(defun xslt-process-toggle-debug-mode (&optional arg)
+(defun xslt-process-toggle-debug-mode ()
   "*Setup a buffer in the XSLT debugging mode.
 This essentially makes the buffer read-only and binds various keys to
 different actions for faster operations."
-  (interactive "P")
-  ;; Enter the xslt-process mode only if we've not done so before
-  (if xslt-process-mode
-      nil
-    (setq xslt-process-mode t)
+  (interactive)
+  (if xslt-process-debug-mode
+      ;; Disable the debug mode if it's enabled
+      (progn
+	(setq xslt-process-debug-mode nil)
+	(toggle-read-only 0)
+	(xslt-process-setup-minor-mode xslt-process-mode-map
+				       xslt-process-mode-line-string))
+    ;; Enable the debug mode
+    (setq xslt-process-debug-mode t)
     (toggle-read-only 1)
-    ;; Set the same keybindings as in the editing mode
-    (define-key xslt-process-debug-mode-map
-      xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
-    (define-key xslt-process-debug-mode-map
-      xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
-
-    (define-key xslt-process-debug-mode-map
-      xslt-process-quit-debug 'xslt-process-quit-debug)
-    (define-key xslt-process-debug-mode-map
-      xslt-process-set-breakpoint 'xslt-process-set-breakpoint)
-    (define-key xslt-process-debug-mode-map
-      xslt-process-delete-breakpoint 'xslt-process-delete-breakpoint)
-    (define-key xslt-process-debug-mode-map
-      xslt-process-enable/disable-breakpoint
-      'xslt-process-enable/disable-breakpoint)))
+    (xslt-process-setup-minor-mode xslt-process-debug-mode-map
+				   xslt-process-debug-mode-line-string)))
 
 (put 'Saxon 'additional-params 'xslt-saxon-additional-params)
 (put 'Xalan1 'additional-params 'xslt-xalan1-additional-params)
@@ -361,30 +381,58 @@ choice on the current buffer."
 	(split-window out-window))
     (display-buffer msg-buffer)))  
 
+(defun xslt-process-new-breakpoint-here ()
+  "Returns a breakpoint object at filename and line number of the
+current buffer or nil otherwise."
+  (let ((filename (buffer-file-name))
+	(line (save-excursion (progn (end-of-line) (count-lines 1 (point))))))
+    (cons filename line)))
+
+(defun xslt-process-intern-breakpoint (breakpoint)
+  "Interns BREAKPOINT into the internal hash-table that keeps track of
+breakpoints."
+  (puthash breakpoint breakpoint xslt-process-breakpoints))
+
+(defun xslt-process-is-breakpoint (breakpoint)
+  "*Checks whether BREAKPOINT is setup in buffer at line."
+  (not (eq (gethash breakpoint xslt-process-breakpoints) nil)))
+
+(defun xslt-process-remove-breakpoint (breakpoint)
+  "Remove BREAKPOINT from the internal data structures."
+  (let ((filename (xslt-process-breakpoint-filename breakpoint))
+	(line (xslt-process-breakpoint-line breakpoint)))
+    (remhash (cons filename line) xslt-process-breakpoints)))
+
+(defun xslt-process-breakpoint-filename (breakpoint)
+  "Returns the filename of the BREAKPOINT."
+  (car breakpoint))
+
+(defun xslt-process-breakpoint-line (breakpoint)
+  "Return the line number of the BREAKPOINT."
+  (cdr breakpoint))
+
 (defun xslt-process-set-breakpoint ()
-  "*Set a breakpoint at line in the current buffer."
+  "*Set a breakpoint at line in the current buffer or print an error
+message if a breakpoint is already setup."
   (interactive)
-  (let* ((filename (buffer-file-name))
-	 (line (save-excursion (progn (end-of-line) (count-lines 1 (point)))))
-	 (breakpoint (gethash '(filename . line) xslt-process-breakpoints)))
-    (if (eq breakpoint nil)
-	(progn
-	  (puthash '(filename . line) '(filename . line)
-		   xslt-process-breakpoints)
-	  (message (format "Set breakpoint in %s at %s." filename line)))
-      (message (format "Breakpoint already set in %s at %s" filename line)))))
+  (let* ((breakpoint (xslt-process-new-breakpoint-here))
+	 (filename (xslt-process-breakpoint-filename breakpoint))
+	 (line (xslt-process-breakpoint-line breakpoint)))
+    (if (xslt-process-is-breakpoint breakpoint)
+	(message (format "Breakpoint already set in %s at %s" filename line))
+      (xslt-process-intern-breakpoint breakpoint)
+      (message (format "Set breakpoint in %s at %s." filename line)))))
 
 (defun xslt-process-delete-breakpoint ()
   "*Remove the breakpoint at current line in the selected buffer."
   (interactive)
-  (let* ((filename (buffer-file-name))
-	 (line (save-excursion (progn (end-of-line) (count-lines 1 (point)))))
-	 (breakpoint (gethash '(filename . line) xslt-process-breakpoints)))
-    (if (not (eq breakpoint nil))
+  (let* ((breakpoint (xslt-process-new-breakpoint-here))
+	 (filename (xslt-process-breakpoint-filename breakpoint))
+	 (line (xslt-process-breakpoint-line breakpoint)))
+    (if (xslt-process-is-breakpoint breakpoint)
 	(progn
-	  (remhash '(filename . line) xslt-process-breakpoints)
-	  (message
-	   (format "Removed breakpoint in %s at %s." filename line)))
+	  (xslt-process-remove-breakpoint breakpoint)
+	  (message (format "Removed breakpoint in %s at %s." filename line)))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 (defun xslt-process-enable/disable-breakpoint ()
@@ -392,33 +440,32 @@ choice on the current buffer."
 on its state."
   (interactive))
 
-(defun xslt-process-is-breakpoint ()
-  "*Checks whether there's a breakpoint setup in buffer at line."
-  (let* ((filename (buffer-file-name))
-	 (line (save-excursion (progn (end-of-line) (count-lines 1 (point)))))
-	 (breakpoint (gethash '(filename . line) xslt-process-breakpoints)))
-    (not (eq breakpoint nil))))
-
 (defun xslt-process-quit-debug ()
   "*Quit the debugger and exit from the xslt-process mode."
   (interactive)
   (xslt-process-toggle-debug-mode 0))
 
-;;;###autoload
-(if (fboundp 'add-minor-mode)
-    (add-minor-mode 'xslt-process-mode
-		    xslt-process-mode-line-string
-		    xslt-process-mode-map
-		    nil
-		    'xslt-process-mode)
-  (or (assoc 'xslt-process-mode minor-mode-alist)
-      (setq minor-mode-alist
-	    (cons '(xslt-process-mode xslt-process-mode-line-string)
-		  minor-mode-alist)))
+(defun xslt-process-setup-minor-mode (keymap mode-line-string)
+  "Setup the XSLT-process minor mode. KEYMAP specifies the keybindings
+to be used. MODE-LINE-STRING specifies the string to be displayed in
+the modeline."
+  (if (fboundp 'add-minor-mode)
+      (add-minor-mode 'xslt-process-mode
+		      mode-line-string
+		      keymap
+		      nil
+		      'xslt-process-mode)
+    (or (assoc 'xslt-process-mode minor-mode-alist)
+	(setq minor-mode-alist
+	      (cons '(xslt-process-mode mode-line-string)
+		    minor-mode-alist)))
+    (or (assoc 'xslt-process-mode minor-mode-map-alist)
+	(setq minor-mode-map-alist
+	      (cons (cons 'xslt-process-mode keymap)
+		    minor-mode-map-alist))))
+  (force-mode-line-update))
 
-  (or (assoc 'xslt-process-mode minor-mode-map-alist)
-      (setq minor-mode-map-alist
-	    (cons (cons 'xslt-process-mode xslt-process-mode-map)
-		  minor-mode-map-alist))))
+;;;###autoload
+(xslt-process-setup-minor-mode xslt-process-mode-map xslt-process-mode-line)
 
 (provide 'xslt-process)
