@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April  5, 2001 01:18:28 ovidiu>
+;; Time-stamp: <April  5, 2001 01:23:20 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -810,8 +810,6 @@ indicator."
 	       (glyph (if (eq action 'is-entering) xslt-process-enter-glyph
 			(if (eq action 'is-exiting) xslt-process-exit-glyph
 			  nil))))
-	  (message "xslt-process-change-current-line-highlighting: buffer %s"
-		   buffer)
 	  (set-buffer buffer)
 	  (goto-line line)
 	  (if flag
@@ -837,7 +835,6 @@ indicator."
   (let* ((filename (xslt-process-breakpoint-filename breakpoint))
 	 (line (xslt-process-breakpoint-line breakpoint))
 	 (buffer (xslt-process-get-file-buffer filename)))
-    (message "xslt-process-highlight-breakpoint: buffer %s" nil)
     ;; Signal an error if there's no buffer
     (if (not buffer)
 	(error "Cannot find the buffer associated with %s" filename)
@@ -988,7 +985,6 @@ hits a breakpoint that causes it to stop."
   (let ((buffer (xslt-process-get-file-buffer filename))
 	(is-entering (string-match "^entering:" info))
 	(is-exiting (string-match "^leaving:" info)))
-    (message "xslt-process-debugger-stopped-at: buffer %s" buffer)
     (if (not buffer)
 	(error "Cannot find the buffer associated with %s" filename)
       (progn
@@ -1004,27 +1000,6 @@ hits a breakpoint that causes it to stop."
 	 (if is-entering 'is-entering
 	   (if is-exiting 'is-exiting nil)))
 	(xslt-process-change-current-line-highlighting t filename)))))
-
-;      (let* ((is-entering (string-match "^entering:" info))
-;	     (is-exiting (string-match "^leaving:" info))
-;	     (glyph (if is-entering xslt-process-enter-glyph
-;		      (if is-exiting xslt-process-exit-glyph
-;			nil)))
-;	     (extent
-;	      (xslt-process-highlight-line 'xslt-process-current-line-face 2))
-;	     (annotation
-;	      (if glyph
-;		  (make-annotation glyph
-;				   (progn (beginning-of-line) (point))
-;				   'text)
-;		nil)))
-;	(if annotation
-;	    (progn
-;	      (set-annotation-face annotation 'xslt-process-indicator-face)
-;	      (set-extent-priority annotation 4)))
-;	(xslt-process-last-selected-position-enter/exit? 
-;	 (if is-entering 'is-entering
-;	   (if is-exiting 'is-exiting nil)))))))
 
 (defun xslt-process-debugger-process-started ()
   "Called when the debugger process started and is ready to accept
