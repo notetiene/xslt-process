@@ -1,3 +1,28 @@
+2001-04-16  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Pass in the classpath the java/ directory
+	instead of the xslt.jar. In xslt-process-start-debugger-process
+	invoke the appropriate command, either 'run' or 'debug', to
+	execute the XSLT processor. Upon the initial invocation pass the
+	default XSLT processor.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Added
+	getTransformerFactory and prepareTransformerForDebugging
+	methods. Commented out the run method.
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Likewise.
+	
+	* java/xslt/debugger/cmdline/Controller.java: Added the `run'
+	command to handle the XSLT processing directly.
+
+	* java/xslt/debugger/Manager.java: Handle both processing and
+	debugging of XSLT stylesheets.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Correctly handle
+	synchronization issues. Use the run() both for debugging and
+	processing the stylesheet directly.
+
+	* java/Makefile: Correctly build the jar file.
+
 2001-04-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* samples/books.xsl: Commented out the saxon:group elements.
