@@ -2,9 +2,11 @@
     StyleFrame.java
 
     Author: Ovidiu Predescu <ovidiu@cup.hp.com>
+    @author: <a href="mailto:A.M.Addyman@salford.ac.uk">Tony Addyman</a>
     Date: March  6, 2001
 
     Copyright (C) 2001 Ovidiu Predescu
+    Copyright (C) 2002 Tony Addyman
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License as
@@ -59,7 +61,6 @@ public class StyleFrame implements Cloneable
     throws CloneNotSupportedException
   {
     StyleFrame frame = null;
-
     try {
       Class thisClass = this.getClass();
       frame = (StyleFrame)thisClass.newInstance();
@@ -88,9 +89,9 @@ public class StyleFrame implements Cloneable
         && line == frame.line
         && column == frame.column
         && (sourceFrame == frame.sourceFrame
-            || sourceFrame.equals(frame.sourceFrame))
+            || (sourceFrame != null && sourceFrame.equals(frame.sourceFrame)))
         && (localVariables == frame.localVariables
-            || localVariables.equals(frame.localVariables));
+            || (localVariables != null && localVariables.equals(frame.localVariables)));
     }
     else
       return false;
@@ -229,4 +230,15 @@ public class StyleFrame implements Cloneable
   {
     return isTemplate;
   }
+
+  /**
+   * Get the string representation.
+   *
+   * @return an <code>String</code> value
+   */
+  public String toString()
+  {
+    return name + "(" + line + ")";
+  }
+
 }
