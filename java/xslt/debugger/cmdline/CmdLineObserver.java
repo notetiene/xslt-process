@@ -124,4 +124,9 @@ public class CmdLineObserver implements Observer
   {
     e.printStackTrace();
   }
+
+  public void displayInfo(String info)
+  {
+    System.out.println(info);
+  }
 }
