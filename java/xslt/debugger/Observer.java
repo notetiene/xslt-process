@@ -160,4 +160,11 @@ public interface Observer
    * @param e an <code>Exception</code> value
    */
   public void caughtException(Exception e);
+
+  /**
+   * Called to provide information to the observer.
+   *
+   * @param info a <code>String</code> value
+   */
+  public void displayInfo(String info);
 }
