@@ -2,8 +2,7 @@
 @setfilename xslt-process.info
 @settitle XSLT-process minor mode
 
-@set version 1.2.1
-@set update-month February 2001
+@include version.texi
 
 @ifinfo
 @dircategory Miscellaneous
