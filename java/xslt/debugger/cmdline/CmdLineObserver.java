@@ -72,4 +72,13 @@ public class CmdLineObserver implements Observer
   {
     // TODO: implement this xslt.debugger.Observer method
   }
+
+  public void processorFinished()
+  {
+  }
+
+  public void caughtException(Exception e)
+  {
+    e.printStackTrace();
+  }
 }

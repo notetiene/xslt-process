@@ -20,4 +20,6 @@ public interface Observer
   public void breakpointDisabledAt(String filename, int line);
   public void stackChanged();
   public void frameChanged();
+  public void processorFinished();
+  public void caughtException(Exception e);
 }

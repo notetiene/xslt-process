@@ -63,4 +63,17 @@ public class EmacsObserver implements Observer
   {
     // TODO: implement this xslt.debugger.Observer method
   }
+
+  public void processorFinished()
+  {
+    System.out.println("<<(xslt-process-processor-finished)>>");
+  }
+
+  public void caughtException(Exception e)
+  {
+    System.out.println("<<(xslt-process-report-error \""
+                       + e.getMessage()
+                       + "\")>>");
+    
+  }
 }
