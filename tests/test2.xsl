@@ -12,7 +12,7 @@
 </xsl:template>
 
 <xsl:template match="h1">
- <xsl:variable name="a1" select=".">132</xsl:variable>
+ <xsl:variable name="a1" select=".">This is a bug!</xsl:variable>
  <h1><xsl:value-of select="$a1"/></h1>
 </xsl:template>
 
