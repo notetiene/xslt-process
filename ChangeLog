@@ -1,3 +1,5 @@
+2003-01-01  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+	* doc/processors.png: Show new version number.
 2002-21-31  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 	* java/xslt.jar: reflects changes
 	* lisp/xslt-speedbar.el: updated to work with XEmacs
