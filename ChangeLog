@@ -1,3 +1,18 @@
+2001-06-14  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added the ability to register stylesheets
+	and associate XML documents with the registered XSLT files. You
+	can also specify the associated stylesheet to be used, instead of
+	an external XSLT file.
+
+	* etc/Makefile: Don't remove the generated PNG image on the
+	'clean' target.
+
+	* doc/Makefile: Handle the generated images from etc/. Remove the
+	CENTER specification for images from the generated HTML
+	pages. Clean what's garbage only on the 'clean' target, but leave
+	files around for a distribution.
+
 2001-06-13  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Added definitions for
