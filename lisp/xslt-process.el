@@ -5,7 +5,7 @@
 ;; Author: Tony Addyman <A.M.Addyman@salford.ac.uk>
 
 ;; Created: December 2, 2000
-;; Time-stamp: <August 20, 2001 01:05:25 ovidiu>
+;; Time-stamp: <March 11, 2003 16:26:59 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 21.2
@@ -1379,15 +1379,23 @@ normally returns 'started."
 		(errors-buffer (get-buffer xslt-process-errors-buffer-name)))
 	    (save-excursion
 	      (if results-buffer
-		  (kill-buffer results-buffer))
+		    (xslt-process-erase-buffer results-buffer))
 	      (if msgs-buffer
-		  (kill-buffer msgs-buffer))
+		  (xslt-process-erase-buffer msgs-buffer))
 	      (if errors-buffer
-		  (kill-buffer errors-buffer)))))
+		  (xslt-process-erase-buffer errors-buffer)))))
 	(message "Running the %s %s..."
 		 xslt-process-current-processor
 		 proc-type))))
   'started)
+
+(defun xslt-process-erase-buffer (buffer)
+  "Erase the contents of a buffer. Makes sure the buffer is writable
+before doing so."
+  (save-excursion
+    (set-buffer buffer)
+    (setq buffer-read-only nil)
+    (erase-buffer)))
 
 (defun xslt-process-do-step ()
   "*Send a STEP command to the XSLT debugger."
