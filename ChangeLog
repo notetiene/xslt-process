@@ -1,5 +1,9 @@
 2001-04-02  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Removed the make-variable-buffer-local
+	calls from inside xslt-process-mode. Grouped the functions based
+	on how they get invoked.
+
 	* Makefile: Changed the rules for compiling the Java files.
 
 	* java/xslt/debugger/saxon/SaxonTraceListener.java: Print the
