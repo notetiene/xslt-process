@@ -31,16 +31,18 @@ import java.lang.StringBuffer;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Stack;
 import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
 import xslt.debugger.Observer;
 import xslt.debugger.SourceFrame;
 import xslt.debugger.StyleFrame;
-import java.util.ArrayList;
-import xslt.debugger.Variable;
-import xslt.debugger.Value;
 import xslt.debugger.Type;
+import xslt.debugger.Value;
+import xslt.debugger.Variable;
+import javax.xml.transform.TransformerException;
+import xslt.debugger.Utils;
 
 public class EmacsObserver implements Observer
 {
@@ -209,7 +211,7 @@ public class EmacsObserver implements Observer
         buffer.append(" \"" + (typeName != null ? typeName : "") + "\"");
 
         // Now append the value
-        String stringValue = escape(value.getValue());
+        String stringValue = Utils.escape(value.getValue());
         buffer.append(" \"" + (stringValue != null ? stringValue : "") + "\"");
       }
       else {
@@ -236,53 +238,17 @@ public class EmacsObserver implements Observer
     PrintWriter pWriter = new PrintWriter(strWriter);
     e.printStackTrace(pWriter);
     pWriter.flush();
-    System.out.println("^(xslt-process-report-error \""
-                       + escape(e.getMessage())
-                       + "\" \""
-                       + escape(strWriter.getBuffer().toString())
-                       + "\")$");
-  }
-
-  /**
-   * Escapes characters in <code>message</code> as follows:
-   *
-   * <ul>
-   *  <li><pre>\  -> \\</pre></li>
-   *  <li><pre>"  -> \d</pre></li>
-   *  <li><pre>^  -> \b</pre></li>
-   *  <li><pre>$  -> \e</pre></li>
-   * </ul>
-   *
-   * @param message a <code>String</code> value
-   */
-  public String escape(String message)
-  {
-    // Assume about 1% of the characters need to be escaped; probably
-    // a safe bet in most cases. Otherwise the buffer is increased
-    // automatically by the StringBuffer.
-    StringBuffer escaped = new StringBuffer((int)(message.length() * 1.01));
-
-    for (int i = 0, length = message.length(); i < length; i++) {
-      char ch = message.charAt(i);
-      switch (ch) {
-      case '\\':
-        escaped.append("\\\\");
-        break;
-      case '"':
-        escaped.append("\\d");
-        break;
-      case '^':
-        escaped.append("\\b");
-        break;
-      case '$':
-        escaped.append("\\e");
-        break;
-      default:
-        escaped.append(ch);
-        break;
-      }
-    }
-
-    return escaped.toString();
+    if (e instanceof TransformerException)
+      System.out.println("^(xslt-process-report-error \""
+                         + Utils.escape(e.getMessage())
+                         + "\" \""
+                         + Utils.escape(strWriter.getBuffer().toString())
+                         + "\")$");
+    else
+      System.out.println("^(xslt-process-report-error \""
+                         + Utils.escape(e.getMessage())
+                         + "\" \""
+                         + Utils.escape(strWriter.getBuffer().toString())
+                         + "\")$");
   }
 }
