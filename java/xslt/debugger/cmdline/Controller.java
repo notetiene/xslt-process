@@ -757,6 +757,7 @@ public class Controller
     }
 
     return "file:" + canonicalName;
+    //return canonicalName;
   }
 
   public String getParameter(String param)
