@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June 10, 2001 23:13:56 ovidiu>
+;; Time-stamp: <June 13, 2001 11:26:10 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -81,6 +81,14 @@ names conform to the URI definition."
     (defun urlize (filename)
       "On Unix systems the file names already conform to the URI definition."
       filename)))
+
+;; Setup some definitions for older versions of XEmacs
+(unless (fboundp 'line-beginning-position)
+  (if (fboundp 'point-at-bol)
+      (defalias 'line-beginning-position 'point-at-bol)))
+(unless (fboundp 'line-end-position)
+  (if (fbound 'point-at-eol)
+      (defalias 'line-end-position 'point-at-eol)))
 
 (defun xslt-process-unescape (string)
   "Translate the escape sequences in the corresponding characters."
