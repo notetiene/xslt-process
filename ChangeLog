@@ -1,3 +1,48 @@
+2001-04-01  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Setup keybindings for the stop and quit
+	actions.
+	
+	Correctly handle, by making the minor-mode-alist buffer local,
+	different minor mode line strings in distinct buffers.
+	
+	Added execution-context-error-function as function hook to be
+	called when an error message is reported.
+	
+	Remove the XSLT-process mode from a file, when xslt-process-mode
+	is invoked with a negative argument. The menu is correctly removed
+	now.
+	
+	Restarting the XSLT debugger now asks the user. All the step,
+	next, continue and finish actions now check for the current state
+	of the XSLT debugger before doing anything.
+	
+	Quit now asks the user whether to delete the breakpoints from the
+	source files.
+	
+	Graciously reset the Emacs' state variables when the XSLT process
+	buffer is killed.
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Setup the
+	StreamResult based on the outStream instance variable. Don't close
+	the output stream after the processing is complete.
+
+	* java/xslt/debugger/cmdline/Controller.java: Pass the Controller
+	instance in the Observer's constructor.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Implement
+	debuggerProcessStarted(). Pass the Controller instance in the
+	constructor.
+
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Implement
+	debuggerProcessStarted().
+
+	* java/xslt/debugger/Observer.java: Added debuggerProcessStarted.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Use an output
+	stream instead of an output file name. This allows a socket stream
+	to be set up for outputting the result of the XSLT processing.
+
 2001-03-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Better handling of menu items enabling and
