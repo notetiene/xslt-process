@@ -53,9 +53,6 @@ public abstract class AbstractXSLTDebugger implements Runnable
   protected Manager manager = null;
   protected String xmlFilename;
 
-  // The default output stream is stdout
-  protected OutputStream outStream = System.out;
-
   protected int state = NOT_RUNNING;
   protected int action = DO_NOTHING;
 
@@ -87,7 +84,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
       TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
       File inFile = new File(xmlFilename);
       StreamSource in = new StreamSource(xmlFilename);
-      StreamResult result = new StreamResult(outStream);
+      StreamResult result = new StreamResult(manager.getOutStream());
 
       String media = null, title = null, charset = null;
       Source stylesheet
@@ -231,11 +228,6 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public void setXmlFilename(String filename)
   {
     xmlFilename = filename;
-  }
-
-  public void setOutStream(OutputStream stream)
-  {
-    outStream = stream;
   }
 
   public void setProcessorName(String name)
