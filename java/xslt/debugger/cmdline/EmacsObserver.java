@@ -33,19 +33,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Stack;
+import javax.xml.transform.TransformerException;
 import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
 import xslt.debugger.Observer;
 import xslt.debugger.SourceFrame;
 import xslt.debugger.StyleFrame;
 import xslt.debugger.Type;
+import xslt.debugger.Utils;
 import xslt.debugger.Value;
 import xslt.debugger.Variable;
-import javax.xml.transform.TransformerException;
-import xslt.debugger.Utils;
+import java.util.HashSet;
 
 public class EmacsObserver implements Observer
 {
+  HashSet reportedExceptions = new HashSet();
   Controller controller;
   StringBuffer buffer = new StringBuffer(2000);
   
@@ -227,6 +229,11 @@ public class EmacsObserver implements Observer
     System.out.flush();
   }
 
+  public void processorStarted()
+  {
+    reportedExceptions.clear();
+  }
+
   public void processorFinished()
   {
     System.out.println("^(xslt-process-processor-finished)$");
@@ -234,6 +241,12 @@ public class EmacsObserver implements Observer
 
   public void caughtException(Exception e)
   {
+    // Report an exception; if the exception was already reported,
+    // ignore it.
+    if (reportedExceptions.contains(e.getMessage()))
+      return;
+    
+    reportedExceptions.add(e.getMessage());
     StringWriter strWriter = new StringWriter();
     PrintWriter pWriter = new PrintWriter(strWriter);
     e.printStackTrace(pWriter);
