@@ -61,27 +61,7 @@ public class SaxonValue extends xslt.debugger.Value
           
           if (v != null) {
             value = v.asString();
-            int saxonType = v.getDataType();
-            switch (saxonType) {
-            case Value.BOOLEAN:
-              type = new Type(Type.BOOLEAN);
-              break;
-            case Value.NUMBER:
-              type = new Type(Type.BOOLEAN);
-              break;
-            case Value.STRING:
-              type = new Type(Type.STRING);
-              break;
-            case Value.NODESET:
-              type = new Type(Type.NODESET);
-              break;
-            case Value.OBJECT:
-              type = new Type(Type.OBJECT);
-              break;
-            default:
-              type = new Type(Type.ANY);
-              break;
-            }
+            type = new SaxonType(v.getDataType());
           }
         }
       }
