@@ -1,12 +1,14 @@
 TEXI = xslt-process.texi
 IMAGES = $(wildcard *.png)
+GENERATED = $(subst ../etc/,,$(wildcard ../etc/*.xpm))
 
 INFO = $(TEXI:.texi=.info)
 DVI = $(TEXI:.texi=.dvi)
 PS = $(TEXI:.texi=.ps)
 PDF = $(TEXI:.texi=.pdf)
-PDFIMAGES = $(IMAGES:.png=.pdf)
-EPSIMAGES = $(IMAGES:.png=.eps)
+PDFIMAGES = $(IMAGES:.png=.pdf) $(GENERATED:.xpm=.pdf)
+EPSIMAGES = $(IMAGES:.png=.eps) $(GENERATED:.xpm=.eps)
+PNGIMAGES = $(GENERATED:.xpm=.png)
 #JPGIMAGES = $(IMAGES:.png=.jpg)
 HTML = $(TEXI:.texi=.html)
 
@@ -26,6 +28,9 @@ DEPEND = sizes.sed xslt-process.texi version.texi
 
 .texi.html:
 	texi2html -nosec_nav -nomenu $<
+# Remove the CENTER specification for images
+	sed -e 's%<CENTER>\(<IMG[^>]*>\)</CENTER>%\1%g' <$@ >/tmp/new-$@
+	mv /tmp/new-$@ $@
 
 .texi.pdf:
 	texi2pdf $<
@@ -36,7 +41,10 @@ info: $(DEPEND) $(INFO)
 dvi: $(DEPEND) $(EPSIMAGES) $(DVI)
 ps: $(DEPEND) $(EPSIMAGES) $(PS)
 pdf: $(DEPEND) $(PDFIMAGES) $(PDF)
-html: $(DEPEND) $(HTML)
+html: $(DEPEND) $(PNGIMAGES) $(HTML)
+
+$(PNGIMAGES):
+	(cd ../etc/; make)
 
 version.texi:
 	(cd ..; make doc/version.texi)
@@ -83,7 +91,8 @@ homepage: html
 
 clean:
 	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr version.texi \
-	    $(PDFIMAGES) sizes.sed xslt-process.texi *.cps
+	    $(PDFIMAGES) $(EPSIMAGES) *.dvi sizes.sed xslt-process.texi \
+	    *.cps
 
 distclean: clean
 	rm -f *.dvi *.html *.pdf *.ps *.jpg *.eps *.info *.info-*
