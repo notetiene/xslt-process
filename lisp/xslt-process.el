@@ -329,7 +329,7 @@ Java Bean Shell: http://www.beanshell.org/
 		    (xslt-process-new-breakpoint-here)))]
      ["Disable breakpoint" xslt-process-enable/disable-breakpoint
       :active (and xslt-process-debug-mode
-		   (xslt-process-is-breakpoint
+		   (xslt-process-breakpoint-is-enabled
 		    (xslt-process-new-breakpoint-here)))]
      ["--:shadowEtchedIn" nil]
      ["Run debugger" xslt-process-do-run
@@ -344,7 +344,8 @@ Java Bean Shell: http://www.beanshell.org/
       :active (eq xslt-process-process-state 'stopped)]
      ["Stop" xslt-process-do-stop
       :active (eq xslt-process-process-state 'running)]
-     ["Quit debugger" xslt-process-do-stop :active t]))
+     ["Quit debugger" xslt-process-do-quit
+      :active (not (eq xslt-process-process-state 'not-running))]))
   (setq xslt-process-mode
 	(if (null arg)
 	    (not xslt-process-mode)
@@ -575,7 +576,7 @@ message if a breakpoint is already setup."
 	(message (format "Breakpoint already set in %s at %s" filename line))
       (xslt-process-send-command (format "b %s %s" filename line))
       (xslt-process-intern-breakpoint breakpoint t)
-      (xslt-process-highlight-line 'xslt-process-enabled-breakpoint-face)
+      (xslt-process-highlight-breakpoint breakpoint)
       (message (format "Set breakpoint in %s at %s." filename line)))))
 
 (defun xslt-process-delete-breakpoint ()
@@ -609,18 +610,17 @@ on its state."
 	   (not (xslt-process-breakpoint-is-enabled breakpoint)))
 	  ;; Change the face to visually show the status of the
 	  ;; breakpoint and print informative message
-	  (xslt-process-highlight-line
-	   (if (xslt-process-breakpoint-is-enabled breakpoint)
+	  (xslt-process-unhighlight-breakpoint breakpoint)
+	  (xslt-process-highlight-breakpoint breakpoint)
+	  (if (xslt-process-breakpoint-is-enabled breakpoint)
 	       (progn
 		(xslt-process-send-command (format "ena %s %s" filename line))
 		(message (format "Enabled breakpoint in %s at %s"
-				 filename line))
-		'xslt-process-enabled-breakpoint-face)
+				 filename line)))
 	     (progn
 	       (xslt-process-send-command (format "dis %s %s" filename line))
 	       (message (format "Disabled breakpoint in %s at %s"
-				filename line))
-	       'xslt-process-disabled-breakpoint-face))))
+				filename line)))))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 (defun xslt-process-debugger-stopped-at (filename line column info)
@@ -643,16 +643,36 @@ hits a breakpoint that causes it to stop."
       (goto-line line)
       (let ((extent
 	     (xslt-process-highlight-line 'xslt-process-current-line-face 2)))
-      (setq xslt-process-last-selected-position
-	    (list filename line column extent))))))
+	(setq xslt-process-last-selected-position
+	      (list filename line column extent))))))
+
+(defun xslt-process-processor-finished ()
+  "Called by the XSLT debugger process when the XSLT processing finishes."
+  (setq xslt-process-process-state 'not-running)
+  ;; Unselect the last line showing the debugger's position
+  (if xslt-process-last-selected-position
+      (let ((extent (xslt-process-last-selected-position-extent)))
+	(delete-extent extent)))
+  (setq xslt-process-last-selected-position nil)
+  (message "XSLT processing finished."))
+
+(defun xslt-process-report-error (message)
+  "Called by the XSLT debugger process whenever an error happens."
+  (message message))
 
 (defun xslt-process-do-run ()
   "*Send the run command to the XSLT debugger."
   (interactive)
-  (let ((filename (buffer-file-name)))
-    (xslt-process-send-command (concat "r " filename)))
-  (setq xslt-process-process-state 'running)
-  (message "Starting the XSLT debugger..."))
+  (block nil
+    (if (not (eq xslt-process-process-state 'not-running))
+	(if (yes-or-no-p-maybe-dialog-box
+	     "The XSLT debugger is already running, restart it ")
+	    (xslt-process-do-quit)
+	  (return)))
+    (setq xslt-process-process-state 'running)
+    (let ((filename (buffer-file-name)))
+      (xslt-process-send-command (concat "r " filename)))
+    (message "Starting the XSLT debugger...")))
 
 (defun xslt-process-do-step ()
   "*Send a STEP command to the XSLT debugger."
@@ -688,9 +708,15 @@ debugger from a long processing with no breakpoints setup."
 (defun xslt-process-do-quit ()
   "*Quit the XSLT debugger."
   (interactive)
-  (xslt-process-do-stop)
-  (xslt-process-send-command "q")
-  (setq xslt-process-process-state 'not-running))
+  ;; Unselect the last line showing the debugger's position
+  (if xslt-process-last-selected-position
+      (let ((extent (xslt-process-last-selected-position-extent)))
+	(delete-extent extent)))
+  (xslt-process-send-command "q" t)
+  (setq xslt-process-process-state 'not-running)
+  (setq xslt-process-last-selected-position nil)
+  (if xslt-process-comint-buffer
+      (kill-buffer xslt-process-comint-buffer)))
 
 (defun xslt-process-change-breakpoints-highlighting (flag &optional filename)
   "Highlights or unhighlights, depending on FLAG, all the breakpoints
@@ -732,6 +758,8 @@ buffers. It doesn't affect the current state of the breakpoints."
 			 'xslt-process-disabled-breakpoint-face)
 		       1)))
 	  ;; Intern the extent in the extents table
+	  (message (format "intern extent %s for breakpoint %s"
+			   extent breakpoint))
 	  (puthash breakpoint extent xslt-process-breakpoint-extents))))))
       
 (defun xslt-process-unhighlight-breakpoint (breakpoint)
@@ -740,10 +768,13 @@ buffers. It doesn't affect the current state of the breakpoints."
     ;; First remove any extent that exists at this line
     (let* ((filename (xslt-process-breakpoint-filename breakpoint))
 	   (line (xslt-process-breakpoint-line breakpoint))
-	   (extent (gethash (filename . line)
+	   (extent (gethash (cons filename line)
 			    xslt-process-breakpoint-extents)))
       (if extent
-	  (delete-extent extent)))))
+	  (progn
+	    (message (format "removing extent %s for breakpoint %s"
+			     extent breakpoint))
+	    (delete-extent extent))))))
 
 (defun xslt-process-highlight-line (face &optional priority)
   "Sets the face of the current line to FACE. Returns the extent that
