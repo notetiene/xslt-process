@@ -1,5 +1,11 @@
 2001-08-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Updated version to 2.1. Added options to
+	customize the PDF viewer and the DocBook installation directory.
+
+	* doc/apply-xslt.png: Regenerated to show the "View PDF" menu
+	item.
+	
 	* doc/xslt-process.texi.in: Added info on generating PDF.
 
 	* doc/xslt-process.texi.in: Added line of code for making public
