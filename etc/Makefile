@@ -9,5 +9,7 @@ PNGIMAGES = $(addprefix ../doc/, $(IMAGES:.xpm=.png))
 
 all: $(PNGIMAGES)
 
-clean distclean:
+clean:
+
+distclean:
 	rm -f $(PNGIMAGES)
