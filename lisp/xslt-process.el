@@ -267,6 +267,14 @@ operation that was invoked.")
 (defvar xslt-process-comint-process-name "xslt"
   "The name of the comint process.")
 
+(defvar xslt-process-results-process-name "xslt results"
+  "The name of the process that receives the result of the XSLT
+processing.")
+
+(defvar xslt-process-results-buffer-name "*xslt results*"
+  "The name of the buffer to which the output of the XSLT processing
+goes to.")
+
 ;; Setup the main keymap
 (define-key xslt-process-mode-map
   xslt-process-key-binding 'xslt-process-invoke)
@@ -604,11 +612,11 @@ message if a breakpoint is already setup."
 	 (filename (xslt-process-breakpoint-filename breakpoint))
 	 (line (xslt-process-breakpoint-line breakpoint)))
     (if (xslt-process-is-breakpoint breakpoint)
-	(message (format "Breakpoint already set in %s at %s" filename line))
+	(message "Breakpoint already set in %s at %s" filename line)
       (xslt-process-send-command (format "b %s %s" filename line))
       (xslt-process-intern-breakpoint breakpoint t)
       (xslt-process-highlight-breakpoint breakpoint)
-      (message (format "Set breakpoint in %s at %s." filename line)))))
+      (message "Set breakpoint in %s at %s." filename line))))
 
 (defun xslt-process-delete-breakpoint ()
   "*Remove the breakpoint at current line in the selected buffer."
@@ -623,7 +631,7 @@ message if a breakpoint is already setup."
 	  ;; if it's not started.
 	  (xslt-process-send-command (format "d %s %s" filename line) t)
 	  (xslt-process-unhighlight-breakpoint breakpoint)
-	  (message (format "Removed breakpoint in %s at %s." filename line)))
+	  (message "Removed breakpoint in %s at %s." filename line))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 (defun xslt-process-enable/disable-breakpoint ()
@@ -646,18 +654,16 @@ on its state."
 	  (if (xslt-process-breakpoint-is-enabled breakpoint)
 	       (progn
 		(xslt-process-send-command (format "ena %s %s" filename line))
-		(message (format "Enabled breakpoint in %s at %s"
-				 filename line)))
+		(message "Enabled breakpoint in %s at %s" filename line))
 	     (progn
 	       (xslt-process-send-command (format "dis %s %s" filename line))
-	       (message (format "Disabled breakpoint in %s at %s"
-				filename line)))))
+	       (message "Disabled breakpoint in %s at %s" filename line))))
       (message (format "No breakpoint in %s at %s" filename line)))))
 
 (defun xslt-process-debugger-stopped-at (filename line column info)
   "Function called by the XSLT debugger process each time the debugger
 hits a breakpoint that causes it to stop."
-  (message (format "Stopped at %s %s" filename line))
+  (message "Stopped at %s %s" filename line)
   (setq xslt-process-process-state 'stopped)
   ;; Unselect the previous selected line
   (if xslt-process-last-selected-position
@@ -708,6 +714,7 @@ hits a breakpoint that causes it to stop."
       (setq xslt-process-execution-context-error-function
 	    (lambda ()
 	      (setq xslt-process-process-state 'not-running)))
+      (erase-buffer (get-buffer xslt-process-results-buffer-name))
       (message "Running the XSLT debugger..."))))
 
 (defun xslt-process-do-step ()
@@ -910,6 +917,19 @@ the output to the XSLT process buffer."
     (if index
 	  (eval (read (match-string 1 string)))
       (comint-output-filter process string))))
+
+(defun xslt-process-set-output-port (port)
+  "Called by the XSLT debugger to setup the TCP/IP port number on
+which it listens for incoming connections. Emacs has to connect to
+this port and use it for receiving the result of the XSLT processing."
+  (open-network-stream xslt-process-results-process-name
+		       xslt-process-results-buffer-name
+		       "localhost" port)
+  (save-excursion
+    (set-buffer (get-buffer xslt-process-results-buffer-name))
+    (add-hook 'kill-buffer-hook
+	      (function (lambda ()
+			  (kill-buffer xslt-process-comint-buffer))))))
 
 
 (defun xslt-process-setup-minor-mode (keymap mode-line-string)
