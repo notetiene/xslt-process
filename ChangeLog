@@ -1,3 +1,7 @@
+2001-05-23  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/Makefile: Added rule to generate the pdf version of images.
+
 2001-05-12  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Changed the order of xerces and saxon in
