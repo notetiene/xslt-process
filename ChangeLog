@@ -1,3 +1,7 @@
+2001-08-09  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* doc/xslt-process.texi.in: Added defadvice for the xml-mode.
+
 2001-06-20  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* Makefile: Updated the dist target.
