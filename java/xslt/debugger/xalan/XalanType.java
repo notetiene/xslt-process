@@ -47,6 +47,9 @@ public class XalanType extends Type
     case XObject.CLASS_NODESET:
       type = Type.NODESET;
       break;
+    case XObject.CLASS_UNKNOWN:
+      type = Type.OBJECT;
+      break;
     default:
       type = Type.ANY;
       break;
