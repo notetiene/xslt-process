@@ -3,7 +3,7 @@
 % Load plain if necessary, i.e., if running under initex.
 \expandafter\ifx\csname fmtname\endcsname\relax\input plain\fi
 %
-\def\texinfoversion{2001-06-11.01}
+\def\texinfoversion{2001-06-17.00}
 %
 % Copyright (C) 1985, 86, 88, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99
 % Free Software Foundation, Inc.
@@ -5622,7 +5622,7 @@ width0pt\relax} \fi
 % #4 is just the usual extra ignored arg for parsing this stuff.
 \def\imagexxx#1,#2,#3,#4\finish{%
   \ifpdf
-    \centerline{\dopdfimage{#1}{#2}{#3}}%
+    \noindent\dopdfimage{#1}{#2}{#3}%
   \else
     % \epsfbox itself resets \epsf?size at each figure.
     \setbox0 = \hbox{\ignorespaces #2}\ifdim\wd0 > 0pt \epsfxsize=#2\relax \fi
@@ -5637,11 +5637,11 @@ width0pt\relax} \fi
         % above and below. 
         \nobreak\vskip\parskip
         \nobreak
-        \epsfbox{#1.eps}%
+        \noindent\epsfbox{#1.eps}%
         \bigbreak
       \else
         % In the middle of a paragraph, no extra space.
-        \epsfbox{#1.eps}%
+        \noindent\epsfbox{#1.eps}%
       \fi
     \endgroup
   \fi
