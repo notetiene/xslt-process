@@ -1,3 +1,8 @@
+2001-06-13  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-process.el: Added definitions for
+	line-beginning-position and line-end-position.
+
 2001-06-11  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java/xslt/debugger/xalan/XSLTDebugger.java: Removed debug
