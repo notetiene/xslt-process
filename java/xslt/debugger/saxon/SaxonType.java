@@ -39,7 +39,7 @@ public class SaxonType extends Type
       type = Type.BOOLEAN;
       break;
     case Value.NUMBER:
-      type = Type.BOOLEAN;
+      type = Type.NUMBER;
       break;
     case Value.STRING:
       type = Type.STRING;
