@@ -295,6 +295,8 @@ Emacs configuration file @kbd{~/.emacs} (if you don't have such a file,
 create one now):
 
 @example
+(require 'cl)
+
 (mapc (lambda (x)
         (pushnew (expand-file-name x) load-path))
       (list "~/emacs"
@@ -431,7 +433,8 @@ described in the same chapter.
 
 If you choose to view the results in a buffer, they will be shown in the
 @code{*xslt results*} buffer. If any message are generated during the
-XSLT processing, they are show separately in the @code{*xslt messages*}.
+XSLT processing, they are shown separately in the @code{*xslt
+messages*} buffer.
 
 @c =========================================================================
 @node  Dealing with errors, Associating an XSLT stylesheet with an XML document, Viewing the results of the XSLT processing, Running the XSLT processor
