@@ -1,5 +1,8 @@
 2001-06-01  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el (xslt-process-invoke-browser-view): Check
+	for Emacs variant when getting the temporary directory name.
+
 	* tests/test5.xml: Reference the test5.xsl instead of test.xsl,
 	which doesn't exist.
 
