@@ -1,6 +1,5 @@
 TEXI = xslt-process.texi
-IMAGES = xslt-mode.png xsltd-mode.png processors.png apply-xslt.png \
-	xslt-menu.png xsltd-menu.png
+IMAGES = $(wildcard *.png)
 
 INFO = $(TEXI:.texi=.info)
 DVI = $(TEXI:.texi=.dvi)
@@ -57,7 +56,9 @@ sizes.sed: $(IMAGES)
 	 done) > $@
 
 xslt-process.texi: xslt-process.texi.in sizes.sed
+	rm -f $@
 	sed -f sizes.sed xslt-process.texi.in > $@
+	chmod a-w $@
 
 .png.pdf:
 	@(size=`identify $< | awk '{print $$2}'`; \
