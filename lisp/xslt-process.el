@@ -207,14 +207,30 @@ directory structure looks a little different."
 	   (const :tag "Saxon 6.3" Saxon)
 	   (const :tag "Xalan 2.1.0" Xalan))))
 
-(defcustom xslt-process-pdf-viewer (list 'xpdf)
-  "*The PDF viewer to be used when viewing PDF documents."
-  :group 'xslt-process
-  :type '(list
-	   (radio-button-choice
-	    (const :tag "xpdf" xpdf)
-	    (const :tag "Acrobat Reader" acroread)
-	    (string :tag "Other"))))
+(if (or (eq system-type 'windows-nt)
+	(eq system-type 'cygwin32))
+    (defcustom xslt-process-pdf-viewer (list 'xslt-process-win32-open-file)
+      "*The PDF viewer under Windows platforms."
+      :group 'xslt-process
+      :type '(list
+	      (choice
+	       (const :tag "Default Windows PDF viewer"
+		      xslt-process-win32-open-file)
+	       (string :tag "Other"))))
+  (defcustom xslt-process-pdf-viewer (list 'xpdf)
+    "*The PDF viewer to be used when viewing PDF documents."
+    :group 'xslt-process
+    :type '(list
+	    (choice
+	     (const :tag "xpdf" xpdf)
+	     (const :tag "Acrobat Reader" acroread)
+	     (string :tag "Other")))))
+
+(defun xslt-process-win32-open-file (file)
+  "*Function to invoke the default registered PDF viewer on FILE."
+  (if (featurep 'xemacs)
+      (mswindows-shell-execute "open" file)
+    (w32-shell-execute "open" file)))
 
 (defun xslt-process-create-xslt-processor-submenu ()
   "Return the submenu with the available XSLT processors."
@@ -1051,15 +1067,20 @@ end of the XSLT processing to continue with the FOP processing."
   "Private function invoked at the end of the FOP processing to start
 the PDF viewer."
   (let ((pdf-viewer
-	 (if (symbolp (car xslt-process-pdf-viewer))
-	     (symbol-name (car xslt-process-pdf-viewer))
-	   (car xslt-process-pdf-viewer)))
+	 (cond ((functionp (car xslt-process-pdf-viewer))
+		(car xslt-process-pdf-viewer))
+	       ((symbolp (car xslt-process-pdf-viewer))
+		(symbol-name (car xslt-process-pdf-viewer)))
+	       (else
+		(car xslt-process-pdf-viewer))))
 	(pdf-filename (expand-file-name
 		       "xslt-process-output.pdf"
 		       (xslt-process-temp-directory))))
     (setq xslt-process-xslt-processing-finished-hooks nil)
     (message "Starting '%s'  PDF viewer..." pdf-viewer)
-    (start-process "pdf viewer" "pdf viewer" pdf-viewer pdf-filename)
+    (if (functionp pdf-viewer)
+	(funcall pdf-viewer pdf-filename)
+      (start-process "pdf viewer" nil pdf-viewer pdf-filename))
     (message "Starting PDF viewer '%s'...done." pdf-viewer)))
 
 (defun xslt-process-display-messages (messages msg-buffer out-buffer)
