@@ -9,10 +9,11 @@
 package xslt.debugger;
 
 
-import com.icl.saxon.StyleSheet;
-import java.lang.Runnable;
-import xslt.debugger.Manager;
 import java.util.ArrayList;
+import java.lang.Runnable;
+import java.io.OutputStream;
+
+import xslt.debugger.Manager;
 
 public abstract class AbstractXSLTDebugger implements Runnable
 {
@@ -36,10 +37,11 @@ public abstract class AbstractXSLTDebugger implements Runnable
   
   protected Manager manager = null;
   protected String xmlFilename;
-  protected String outFilename;
+
+  // The default output stream is stdout
+  protected OutputStream outStream = System.out;
 
   protected int state = NOT_RUNNING;
-
   protected int action = DO_NOTHING;
 
   public AbstractXSLTDebugger() {}
@@ -168,8 +170,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
     xmlFilename = filename;
   }
 
-  public void setOutFilename(String out)
+  public void setOutStream(OutputStream stream)
   {
-    outFilename = out;
+    outStream = stream;
   }
 }
