@@ -1,3 +1,49 @@
+2001-05-31  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* Added generic description based on the documentation.
+
+	* README: Added generic description based on the texinfo
+	documentation.
+
+	* INSTALL: Added generic description.
+
+	* lisp/xslt-process.el: Use the plain xalan-2.1.0 jar for now,
+	until the Xalan CVS version builds.
+
+	* doc/Makefile: Generate different picture types from the PNG
+	version. No longer generate the README and INSTALL documents from
+	the texinfo documentation.
+
+	* Added support for displaying global variables.
+
+	* lisp/xslt-speedbar.el: Added support for displaying global
+	variables.
+
+	* lisp/xslt-process.el: Support for global variables (mostly
+	similar with the local variables).
+
+	* java/xslt/debugger/saxon/XSLTDebugger.java (getGlobalVariables):
+	Return null if no style frames.
+
+	* java/xslt/debugger/saxon/SaxonValue.java: Deal with the case
+	when staticContext is null: create a dummy null value.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Implement
+	globalVariablesChanged(). Parametrize the common code from
+	globalVariablesChanged() and localVariablesChanged() in
+	variablesChanged().
+
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Implement
+	globalVariablesChanged().
+
+	* java/xslt/debugger/Observer.java: Added
+	globalVariablesChanged().
+
+	* java/xslt/debugger/Manager.java: Inform the observer when the
+	global variables change.
+
+	* java/Makefile: Updated the xalan jar file.
+
 2001-05-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Updated the Xalan and Saxon version
