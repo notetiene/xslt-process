@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <June  1, 2001 14:43:20 ovidiu>
+;; Time-stamp: <June  2, 2001 14:01:48 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -232,7 +232,8 @@ which make use of your own Java classes."
   :type '(repeat (file :must-match t :tag "Path")))
 
 (defcustom xslt-process-invoke-buffer-view "\C-c\C-xv"
-  "*Keybinding for invoking the XSLT processor.
+  "*Keybinding for invoking the XSLT processor, and viewing the results
+in a buffer.
 To enter a normal key, enter its corresponding character. To enter a
 key with a modifier, either type C-q followed by the desired modified
 keystroke, e.g. C-q C-c to enter Control c. To enter a function key,
@@ -241,7 +242,8 @@ use the [f1], [f2] etc. notation."
   :type '(string :tag "Key"))
 
 (defcustom xslt-process-invoke-browser-view "\C-c\C-xn"
-  "*Keybinding for invoking the XSLT processor and viewing the results in a browser."
+  "*Keybinding for invoking the XSLT processor and viewing the results
+in a browser."
   :group 'xslt-process
   :type '(string :tag "Key"))
 
@@ -607,6 +609,9 @@ hook functions should take no argument.")
 	       :active t]
 	      ["Faces"
 	       (customize-apropos-faces "xslt-process-*")
+	       :active t]
+	      ["Browser"
+	       (customize-variable 'browse-url-browser-function)
 	       :active t])
 	(list "Help"
 	      (concat "XSLT-process " xslt-process-version)
