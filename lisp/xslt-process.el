@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: December 2, 2000
-;; Time-stamp: <April 16, 2001 01:02:38 ovidiu>
+;; Time-stamp: <April 17, 2001 00:29:09 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -44,7 +44,23 @@
 ;;
 
 (require 'cl)
+(require 'browse-url)
 (require 'xslt-speedbar)
+
+(defconst xslt-process-version "2.0"
+  "The version of the XSLT-process mode.")
+
+(defconst xslt-process-home-web-site "http://xslt-process.sourceforge.net"
+  "XSLT-process' home on the Web.")
+
+(defconst xslt-process-web-mailing-list "https://sourceforge.net/mail/?group_id=23425"
+  "The public mailing lists of the XSLT-process mode.")
+
+(defconst xslt-process-maintainer-address "ovidiu@xemacs.org"
+  "The email address of the current maintainer.")
+
+(defconst xslt-process-mailing-list "xslt-process-users@lists.sourceforge.net"
+  "The email address of the mailing list.")
 
 ;; Small function needed later during the customization phase
 (defun xslt-process-find-xslt-directory ()
@@ -85,6 +101,24 @@
 	  (radio-button-choice
 	   (const :tag "Saxon 6.2.2" Saxon)
 	   (const :tag "Xalan 2.0.1" Xalan))))
+
+(defun xslt-process-create-xslt-processor-submenu ()
+  "Return the submenu with the available XSLT processors."
+  (let* ((custom-type (plist-get (symbol-plist 'xslt-process-default-processor)
+				 'custom-type))
+	 (processor-list (cdadr custom-type)))
+    (mapcar
+     (lambda (x)
+       (let ((name (caddr x))
+	     (sym (car (cdddr x))))
+	 (vector name
+		 `(lambda ()
+		    (interactive)
+		    (setq xslt-process-default-processor (list ',sym)))
+		 :style 'radio
+		 :selected `(equal xslt-process-default-processor
+				   (list ',sym)))))
+     processor-list)))
 
 ;;;
 ;;; Disable Cocoon for the moment until we figure out how to hook up
@@ -306,6 +340,26 @@ keep track of the extents created to highlight lines.")
 function should reset the proper state depending on the debugger
 operation that was invoked.")
 
+(defvar xslt-process-results-process nil
+  "The Emacs process object that holds the connection with the socket
+on which the XSLT results come from the XSLT processor.")
+
+(defvar xslt-process-current-processor
+  (symbol-name (car xslt-process-default-processor))
+  "The current XSLT processor being used to do the
+processing. Changing the default processor through customization has
+effect on this variable only the next time the processor starts a new
+job.")
+
+(defvar xslt-process-external-java-libraries
+  (mapcar (lambda (f)
+	    (concat (xslt-process-find-xslt-directory) "java/" f))
+	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
+	    "xalanj1compat.jar" "xerces.jar" ""))
+  "Defines the classpath to the XSLT processors that do the real work
+of processing an XML document. Be sure you know what you're doing when
+you modify this.")
+
 ;; Other definitions
 (defvar xslt-process-comint-process-name "xslt"
   "The name of the comint process.")
@@ -318,30 +372,11 @@ processing.")
   "The name of the buffer to which the output of the XSLT processing
 goes to.")
 
-(defvar xslt-process-results-process nil
-  "The Emacs process object that holds the connection with the socket
-on which the XSLT results come from the XSLT processor.")
-
 (defvar xslt-process-enter-glyph "=>"
   "Graphic indicator for entering inside an element.")
 
 (defvar xslt-process-exit-glyph "<="
   "Graphic indicator for entering inside an element.")
-
-(defvar xslt-process-external-java-libraries
-  (mapcar (lambda (f)
-	    (concat (xslt-process-find-xslt-directory) "java/" f))
-	  '("bsf.jar" "saxon-6.2.2-fix.jar" "xalan-2.0.1.jar"
-	    "xalanj1compat.jar" "xerces.jar" ""))
-  "Defines the classpath to the XSLT processors that do the real work
-of processing an XML document. Be sure you know what you're doing when
-you modify this.")
-
-(defvar xslt-process-current-processor xslt-process-default-processor
-  "The current XSLT processor being used to do the
-processing. Changing the default processor through customization has
-effect on this variable only the next time the processor starts a new
-job.")
 
 (defvar xslt-process-breakpoint-set-hooks nil
   "List of functions to be called after a breakpoint is set.")
@@ -397,6 +432,50 @@ filename line) that indicate the new style frame stack.")
   xslt-process-do-stop 'xslt-process-do-stop)
 (define-key xslt-process-debug-mode-map
   xslt-process-do-quit 'xslt-process-do-quit)
+
+(defun xslt-process-visit-info-file ()
+  "Visit the info file for XSLT-process."
+  (Info-find-file-node (concat (xslt-process-find-xslt-directory)
+			       "doc/xslt-process.info")
+		       "Top"))
+
+(defun xslt-process-dump-hashtable (sym buffer)
+  "Dump a hash table in BUFFER. Used by the
+`xslt-process-submit-bug-report' function."
+  (let* ((symname (symbol-name sym))
+	 (value (symbol-value sym))
+	 (count (hashtable-fullness value)))
+    (insert (format "%s (hash table, %s entries:" symname count))
+    (maphash (lambda (key value)
+	       (insert-string (format " (%s: %s)" key value)))
+	     value)
+    (insert ")\n")))
+
+(defun xslt-process-submit-bug-report ()
+  "Submit a bug report against the current version of XSLT-process."
+  (require 'reporter)
+  (let ((address (concat xslt-process-maintainer-address
+			 ", " xslt-process-mailing-list))
+	(pkgname (concat "XSLT-process " xslt-process-version))
+	(reporter-prompt-for-summary-p "Please enter a short description: "))
+     (reporter-submit-bug-report
+      address
+      pkgname
+      (list (cons 'xslt-process-breakpoints 'xslt-process-dump-hashtable)
+	    'xslt-process-comint-process
+	    'xslt-process-comint-buffer
+	    'xslt-process-style-selected-position
+	    'xslt-process-debugger-process-started
+	    'xslt-process-process-state
+	    'xslt-process-debugger-running
+	    'xslt-process-source-frames-stack
+	    'xslt-process-style-frames-stack
+	    (cons 'xslt-process-breakpoint-extents 'xslt-process-dump-hashtable)
+	    'xslt-process-execution-context-error-function
+	    'xslt-process-results-process
+	    'xslt-process-current-processor
+	    'xslt-process-default-processor
+	    'xslt-process-external-java-libraries))))
 
 ;;;###autoload
 (defun xslt-process-mode (&optional arg)
@@ -501,7 +580,38 @@ xslt-process:    http://www.geocities.com/SiliconValley/Monitor/7464/
 	    :selected (and (boundp 'speedbar-frame)
 			   (frame-live-p speedbar-frame)
 			   (frame-visible-p speedbar-frame))]
-	   )))
+	   ["XSLT Processor" nil :active t]
+	   ["Customize" nil :active t]
+	   ["Help" nil :active t]
+	   ))
+	(add-submenu
+	 '("XSLT")
+	 (cons "XSLT Processor" (xslt-process-create-xslt-processor-submenu)))
+	(add-submenu
+	 '("XSLT")
+	 (list "Customize"
+	       ["XSLT Process"
+		(lambda () (interactive) (customize-group 'xslt-process))
+		:active t]
+	       ["Faces"
+		(lambda ()
+		  (interactive) (customize-apropos-faces "xslt-process-*"))
+		:active t]))
+	(add-submenu
+	 '("XSLT")
+	 (list
+	  "Help"
+	  (concat "XSLT-process " xslt-process-version)
+	  ["--:shadowEtchedIn" nil]
+	  ["Info file" (xslt-process-visit-info-file) :active t]
+	  ["Home Web site"
+	   (lambda () (interactive) (browse-url xslt-process-home-web-site))
+	   :active t]
+	  ["Mailing lists"
+	   (lambda () (interactive) (browse-url xslt-process-web-mailing-list))
+	   :active t]
+	  ["Submit bug report" (xslt-process-submit-bug-report)
+	   :active t])))
     (remassoc 'xslt-process-mode minor-mode-alist)
     (remassoc 'xslt-process-mode minor-mode-map-alist)
     (delete-menu-item '("XSLT"))
@@ -1036,13 +1146,13 @@ already started."
     (message (concat xslt-process-java-program nil " "
 		     "-classpath" " " classpath " "
 		     "xslt.debugger.cmdline.Controller" " " "-emacs"
-		     (concat "-" xslt-process-current-processor)))
+		     (format "-%s" xslt-process-current-processor)))
     (setq xslt-process-comint-buffer
 	  (make-comint xslt-process-comint-process-name
 		       xslt-process-java-program nil
 		       "-classpath" classpath
-		       "xslt.debugger.cmdline.Controller" "-emacs "
-		       (concat "-" xslt-process-current-processor)))
+		       "xslt.debugger.cmdline.Controller" "-emacs"
+		       (format "-%s" xslt-process-current-processor)))
     (message "Starting XSLT process...")
     (setq xslt-process-comint-process
 	  (get-buffer-process xslt-process-comint-buffer))
@@ -1069,7 +1179,7 @@ process."
 	    ;; Insert the text, moving the marker.
 	    (goto-char (point-max))
 	    (insert string))
-	  (switch-to-buffer buffer)))))
+	  (pop-to-buffer buffer)))))
 
 (defvar xslt-process-partial-command nil
   "Holds partial commands as output by the XSLT debugger.")
