@@ -9,20 +9,21 @@
 package xslt.debugger.saxon;
 
 
-
 import com.icl.saxon.Context;
 import com.icl.saxon.handlers.NodeHandler;
 import com.icl.saxon.om.ElementInfo;
 import com.icl.saxon.om.NodeInfo;
 import com.icl.saxon.style.StyleElement;
 import com.icl.saxon.style.XSLApplyTemplates;
-import com.icl.saxon.style.XSLCallTemplate;
 import com.icl.saxon.style.XSLAttribute;
+import com.icl.saxon.style.XSLCallTemplate;
 import com.icl.saxon.trace.TraceListener;
+import java.util.Stack;
 import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
 import xslt.debugger.SourceFrame;
 import xslt.debugger.StyleFrame;
+import xslt.debugger.Observer;
 
 public class SaxonTraceListener implements TraceListener
 {
@@ -33,6 +34,9 @@ public class SaxonTraceListener implements TraceListener
   int currentColumn = -1;
   StyleFrame styleFrameToStop = null;
   String indent = "";
+
+  Stack styleFrames = null;
+  Stack sourceFrames = null;
   
   public SaxonTraceListener (XSLTDebugger debugger)
   {
@@ -58,6 +62,29 @@ public class SaxonTraceListener implements TraceListener
     String filename = element.getSystemId();
     int line = element.getLineNumber();
     int column = element.getColumnNumber();
+
+    // Check the source frame stack and the style frame stack for
+    // modifications
+    Observer observer = manager.getObserver();
+
+    Stack newSourceFrames = manager.getSourceFrames();
+    System.out.println("sourceFrames = " + sourceFrames
+                       + ", newSourceFrames = " + newSourceFrames);
+    
+    if ((sourceFrames == null && newSourceFrames != null)
+        || !sourceFrames.equals(newSourceFrames)) {
+      System.out.println("notifying observer source frames changed: "
+                         + newSourceFrames);
+      sourceFrames = (Stack)newSourceFrames.clone();
+      observer.sourceStackChanged();
+    }
+
+    Stack newStyleFrames = manager.getStyleFrames();
+    if ((styleFrames == null && newStyleFrames != null)
+        || !styleFrames.equals(newStyleFrames)) {
+      styleFrames = (Stack)newStyleFrames.clone();
+      observer.styleStackChanged();
+    }
 
     debugger.debuggerStopped(filename, line, column, message);
     currentFilename = filename;
@@ -105,9 +132,9 @@ public class SaxonTraceListener implements TraceListener
     String filename = curr.getSystemId();
     int line = curr.getLineNumber();
     int column = curr.getColumnNumber();
-//     System.err.println(indent + "<Source node=\""  + curr.getPath()
-// 		       + "\" line=\"" + curr.getLineNumber()
-// 		       + "\" mode=\"" + getModeName(context) + "\">");
+//      System.err.println(indent + "<Source node=\""  + curr.getPath()
+//  		       + "\" line=\"" + curr.getLineNumber()
+//  		       + "\" mode=\"" + getModeName(context) + "\">");
     indent += " ";
 
     SourceFrame frame = new SourceFrame(name, filename, line, column, manager);
@@ -122,9 +149,9 @@ public class SaxonTraceListener implements TraceListener
     debugger.checkRequestToStop();
 
     indent = indent.substring(0, indent.length() - 1);
-    System.err.println(indent + "</Source><!-- "  +
-		       ((NodeInfo)context.getContextNode()).getPath()
-                       + " -->");
+//     System.err.println(indent + "</Source><!-- "  +
+// 		       ((NodeInfo)context.getContextNode()).getPath()
+//                        + " -->");
     manager.popSourceFrame();
   }
 
