@@ -1,3 +1,21 @@
+2001-05-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Invoke observer's
+	processorStarted().
+
+	* java/xslt/debugger/Observer.java: Added processorStarted().
+
+	* java/xslt/debugger/SAXParserErrorHandler.java: Added copyright
+	notice.
+	* java/xslt/debugger/TrAXErrorListener.java: Likewise.
+
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Implemented
+	processorStarted.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Keep track of
+	error messages and display them only once. Clear the error
+	messages set in processorStarted().
+	
 2001-05-23  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* Added automatic rule to correctly convert a PNG image to PDF
