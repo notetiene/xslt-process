@@ -34,7 +34,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public static final int DO_FINISH = 4;
   public static final int DO_CONTINUE = 5;
   public static final int DO_DEFERRED_STOP = 6;
-  
+
+  String processorName = null;
   protected Manager manager = null;
   protected String xmlFilename;
 
@@ -173,5 +174,15 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public void setOutStream(OutputStream stream)
   {
     outStream = stream;
+  }
+
+  public void setProcessorName(String name)
+  {
+    this.processorName = name;
+  }
+
+  public String getProcessorName()
+  {
+    return processorName;
   }
 }
