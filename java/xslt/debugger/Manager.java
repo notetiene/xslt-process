@@ -151,11 +151,13 @@ public class Manager
     catch (ClassNotFoundException e) {
       System.out.println("Cannot find the " + processorName
                          + " XSLT processor for debugging!\n" + e);
+      observer.caughtException(e);
       System.exit(1);
     }
     catch (Exception e) {
       System.out.println("Cannot create instance of the " + processorName
                          + " XSLT processor!\n" + e);
+      observer.caughtException(e);
       System.exit(1);
     }
       
@@ -393,7 +395,7 @@ public class Manager
     lastStyleFrames = null;
     lastSourceFrames = null;
     lastLocalVariables = null;
-    
+
     debugger.setXmlFilename(xmlFilename);
     this.forDebug = forDebug;
     if (!debugger.isStarted()) {
