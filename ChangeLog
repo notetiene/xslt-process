@@ -1,5 +1,17 @@
 2001-05-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-speedbar.el: Display local variables in the speedbar.
+
+	* lisp/xslt-process.el (xslt-process-find-xslt-data-directory):
+	Handle nil value returned by locate-data-directory.
+
+	Define xslt-process-local-variables. Add it in the list of
+	variables dumped in a bug report. Added
+	xslt-process-local-variables-changed-hooks. Call the hooks when
+	notified by the debugger.
+	
+	* java/saxon-6.3.jar: Updated the Saxon version.
+
 	* Check for the existance of the speedbar buffer before trying to
 	do operations on it. Added initial support for coordination
 	between the source and style frames.
