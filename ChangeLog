@@ -1,5 +1,8 @@
 2001-06-19  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* bin/texi2html: Added. This is a slightly modified version of the
+	original one to allow for various variations.
+
 	* lisp/xslt-process.el: Added support for running the XSLT
 	processor while being in an XSLT buffer.
 
