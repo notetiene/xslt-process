@@ -75,15 +75,16 @@ public abstract class AbstractXSLTDebugger implements Runnable
       wait();
   }
 
-  abstract public void run();
-  abstract public TransformerFactory getTransformerFactory();
+  abstract public TransformerFactory getTransformerFactory(boolean forDebug);
+  abstract public void prepareTransformerForDebugging(Transformer transformer);
 
-  public Transformer getTransformer(String xmlFilename)
+  public synchronized void run()
   {
-    Transformer transformer = null;
-    
+    state = RUNNING;
+    notifyAll();
+
     try {
-      TransformerFactory tFactory = getTransformerFactory();
+      TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
       File inFile = new File(xmlFilename);
       StreamSource in = new StreamSource(xmlFilename);
       StreamResult result = new StreamResult(outStream);
@@ -96,7 +97,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
       // Check for a Templates object already created for this
       // stylesheet
       XSLTSheetInfo sheetInfo = (XSLTSheetInfo)sheetCache.get(stylesheetId);
-      Templates template = null;
+      Templates template;
       
       if (sheetInfo == null) {
         sheetInfo = new XSLTSheetInfo(stylesheet);
@@ -106,11 +107,22 @@ public abstract class AbstractXSLTDebugger implements Runnable
       else {
         template = sheetInfo.getTemplates(stylesheet);
       }
+
+      Transformer transformer = template.newTransformer();
+      if (manager.forDebug)
+        prepareTransformerForDebugging(transformer);
+
+      if (transformer != null)
+        transformer.transform(in, result);
+
+      manager.getObserver().processorFinished();
     }
-    catch (Exception e) {
+    catch(Exception e) {
+      manager.getObserver().caughtException(e);
     }
 
-    return transformer;
+    state = NOT_RUNNING;
+    notifyAll();
   }
 
   public synchronized void checkRequestToStop()
@@ -248,8 +260,9 @@ public abstract class AbstractXSLTDebugger implements Runnable
     public XSLTSheetInfo(Source stylesheet)
     {
       try {
+        TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
+        template = tFactory.newTemplates(stylesheet);
         lastModified = getLastModified(stylesheet.getSystemId());
-        template = getTransformerFactory().newTemplates(stylesheet);
       }
       catch (TransformerConfigurationException e) {}
     }
@@ -297,7 +310,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
       // The XSLT sheet has been modified, create a new template
       // and return it
       try {
-        template = getTransformerFactory().newTemplates(stylesheet);
+        TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
+        template = tFactory.newTemplates(stylesheet);
         lastModified = currentTime;
       }
       catch (TransformerConfigurationException e) {
