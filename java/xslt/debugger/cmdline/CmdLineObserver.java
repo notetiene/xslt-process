@@ -107,6 +107,10 @@ public class CmdLineObserver implements Observer
     // No implementation
   }
 
+  public void processorStarted()
+  {
+  }
+  
   public void processorFinished()
   {
   }
