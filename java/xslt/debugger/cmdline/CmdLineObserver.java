@@ -53,11 +53,13 @@ public class CmdLineObserver implements Observer
   public void debuggerStopped(String filename,
                               int line,
                               int column,
+			      int count,
                               String message)
   {
     System.out.println("Debugger stopped at: " + filename
                        + " " + line
                        + ":" + column
+		       + "#" + count
                        + " " + message);
   }
 

@@ -282,6 +282,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
   public synchronized void debuggerStopped(String filename,
                                            int line,
                                            int column,
+					   int count,
                                            String message)
   {
     try {
@@ -293,7 +294,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
       } catch (IOException ioe) { }
       state = STOPPED;
       notifyAll();
-      manager.observer.debuggerStopped(filename, line, column, message);
+      manager.observer.debuggerStopped(filename, line, column, count, message);
       while (state != RUNNING)
         wait();
     }

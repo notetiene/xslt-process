@@ -108,6 +108,7 @@ public class EmacsObserver implements Observer
   public void debuggerStopped(String filename,
                               int line,
                               int column,
+			      int count,
                               String message)
   {
     if (filename.startsWith("file:"))
@@ -116,6 +117,7 @@ public class EmacsObserver implements Observer
                        + "\"" + filename
                        + "\" " + line
                        + " " + column
+                       + " " + count
                        + " \"" + message + "\")$");
   }
 

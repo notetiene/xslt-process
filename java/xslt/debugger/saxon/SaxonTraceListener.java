@@ -51,6 +51,7 @@ public class SaxonTraceListener implements TraceListener
   String currentFilename = null;
   int currentLine = -1;
   int currentColumn = -1;
+  int visitCount = 1;
   SourceFrame sourceFrameToStop = null;
   StyleFrame styleFrameToStop = null;
 
@@ -70,7 +71,13 @@ public class SaxonTraceListener implements TraceListener
     int line = element.getLineNumber();
     int column = -1;
 
-    manager.debuggerStopped(filename, line, column, message);
+    if (filename.equals(currentFilename) && (line == currentLine)) {
+      visitCount++;
+    } else {
+      visitCount = 1;
+    }
+
+    manager.debuggerStopped(filename, line, column, visitCount, message);
     currentFilename = filename;
     currentLine = line;
     currentColumn = column;
@@ -118,6 +125,7 @@ public class SaxonTraceListener implements TraceListener
     debugger.checkRequestToStop();
 
     String name = element.getDisplayName();
+    if (name.equals("") && elementType == SOURCE) name = "#document"; // like Xalan
     String filename = element.getSystemId();
     int line = element.getLineNumber();
     int column = -1;
@@ -134,8 +142,7 @@ public class SaxonTraceListener implements TraceListener
       manager.pushStyleFrame(styleFrame);
     }
 
-    if (manager.isBreakpoint(filename, line)
-        && !(filename.equals(currentFilename) && line == currentLine)) {
+    if (manager.isBreakpoint(filename, line)) {
       debuggerStopped(element, false, elementType, "entering: " + name);
     }
     else {
@@ -188,8 +195,7 @@ public class SaxonTraceListener implements TraceListener
     int line = element.getLineNumber();
     int column = -1;
 
-    if (manager.isBreakpoint(filename, line)
-        && !(filename.equals(currentFilename) && line == currentLine)) {
+    if (manager.isBreakpoint(filename, line)) {
       debuggerStopped(element, true, elementType, "leaving: " + name);
     }
     else {

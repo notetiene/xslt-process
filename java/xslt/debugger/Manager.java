@@ -494,6 +494,7 @@ public class Manager
   public void debuggerStopped(String filename,
                               int line,
                               int column,
+			      int count,
                               String message)
   {
     // Check the source frame stack and the style frame stack for
@@ -508,7 +509,6 @@ public class Manager
         || !styleFrames.equals(lastStyleFrames)) {
       lastStyleFrames = (Stack)styleFrames.clone();
       observer.styleStackChanged();
-
       if (lastStyleFrames.size() > 0) {
         // Check whether the local variables have changed
         ArrayList newLocalVariables
@@ -529,7 +529,7 @@ public class Manager
       observer.globalVariablesChanged(lastGlobalVariables);      
     }
 
-    debugger.debuggerStopped(filename, line, column, message);
+    debugger.debuggerStopped(filename, line, column, count, message);
   }
   
   /**

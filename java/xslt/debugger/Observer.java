@@ -45,7 +45,8 @@ public interface Observer
   /**
    * Called to notify the debugger is stopped, at
    * <code>filename</code> in line <code>line</code> and column
-   * <code>column</code>.
+   * <code>column</code>. It has stopped at this <code>line</code>
+   * for the <code>count</code>th consecutive time.
    *
    * The <code>message</code> contains a string starting either with
    * "entering: " or with "leaving: ", depending on whether the XSLT
@@ -55,11 +56,13 @@ public interface Observer
    * @param filename a <code>String</code> value
    * @param lineno an <code>int</code> value
    * @param column an <code>int</code> value
+   * @param count an <code>int</code> value
    * @param message a <code>String</code> value
    */
   public void debuggerStopped(String filename,
                               int lineno,
                               int column,
+			      int count,
                               String message);
 
   /**
