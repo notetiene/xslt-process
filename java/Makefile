@@ -1,6 +1,14 @@
 JAR = xslt.jar
 
+# The following definition assumes you have Cygwin installed on your
+# computer: uname returns something like: CYGWIN...
+ON_WINDOWS = $(shell uname | tr A-Z a-z | awk '{if ($$0 ~ "win") print 1; else print 0;}')
+
+ifeq ($(ON_WINDOWS), 1)
+SEP = ;
+else
 SEP = :
+endif
 
 JAVA = $(shell find xslt/debugger -name '*.java' -type f -print)
 CLASSES = $(JAVA:.java=.class)
