@@ -1,5 +1,8 @@
 2001-05-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Updated the Xalan and Saxon version
+	numbers.
+
 	* java/xalan-2.1.0-modif.jar: Updated. This version contains my
 	own changes to handle line and column number information for
 	source tree nodes.
