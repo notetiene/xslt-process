@@ -24,15 +24,16 @@
 
 package xslt.debugger.saxon;
 
-import java.util.Enumeration;
-import java.util.ArrayList;
 
-import com.icl.saxon.style.StyleElement;
+
 import com.icl.saxon.Context;
-
-import xslt.debugger.Variable;
-import xslt.debugger.StyleFrame;
+import com.icl.saxon.style.StyleElement;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import xslt.debugger.Manager;
+import xslt.debugger.StyleFrame;
+import xslt.debugger.Variable;
+import com.icl.saxon.om.Name;
 
 public class SaxonStyleFrame extends StyleFrame
 {
@@ -52,6 +53,7 @@ public class SaxonStyleFrame extends StyleFrame
     super(name, filename, line, column, manager);
     this.context = context;
     this.element = element;
+//     System.out.println("StyleFrame: context = " + context);
   }
 
   /**
