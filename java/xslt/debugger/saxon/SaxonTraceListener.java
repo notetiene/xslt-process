@@ -68,13 +68,9 @@ public class SaxonTraceListener implements TraceListener
     Observer observer = manager.getObserver();
 
     Stack newSourceFrames = manager.getSourceFrames();
-    System.out.println("sourceFrames = " + sourceFrames
-                       + ", newSourceFrames = " + newSourceFrames);
     
     if ((sourceFrames == null && newSourceFrames != null)
         || !sourceFrames.equals(newSourceFrames)) {
-      System.out.println("notifying observer source frames changed: "
-                         + newSourceFrames);
       sourceFrames = (Stack)newSourceFrames.clone();
       observer.sourceStackChanged();
     }
@@ -92,8 +88,6 @@ public class SaxonTraceListener implements TraceListener
     currentColumn = column;
 
     if (debugger.getAction() == AbstractXSLTDebugger.DO_NEXT) {
-      System.out.println("Got a NEXT action for element "
-                         + element.getClass());
       if (leaving) {
         // We were invoked when exiting from a frame. We want to
         // continue and enter in the next element or stop again when
@@ -102,7 +96,6 @@ public class SaxonTraceListener implements TraceListener
       }
       else {
         styleFrameToStop = manager.peekStyleFrame();
-        System.out.println("Setting up style frame to stop to " + name);
       }
     }
   }
@@ -199,7 +192,7 @@ public class SaxonTraceListener implements TraceListener
         break;
 
       case AbstractXSLTDebugger.DO_DEFERRED_STOP:
-        System.out.println("stopped in deferred stop with element " + name);
+//        System.out.println("stopped in deferred stop with element " + name);
         debuggerStopped(element, false, "entering: " + name);
         break;
         
@@ -253,14 +246,14 @@ public class SaxonTraceListener implements TraceListener
           // stop. Set the action to STEP so that we stop right after this
           // node and continue
           debuggerStopped(element, true, "leaving: " + name);
-          System.out.println("Leaving " + name
-                             + ", setting up deferred breakpoint");
+          //          System.out.println("Leaving " + name
+          //                             + ", setting up deferred breakpoint");
           styleFrameToStop = null;
         }
         break;
 
       case AbstractXSLTDebugger.DO_DEFERRED_STOP:
-        System.out.println("stopped in deferred stop with element " + name);
+        //        System.out.println("stopped in deferred stop with element " + name);
         debuggerStopped(element, true, "leaving: " + name);
         break;
         
