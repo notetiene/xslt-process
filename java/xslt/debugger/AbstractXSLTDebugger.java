@@ -75,7 +75,8 @@ public abstract class AbstractXSLTDebugger implements Runnable
   }
 
   abstract public TransformerFactory getTransformerFactory(boolean forDebug);
-  abstract public void prepareTransformerForDebugging(Transformer transformer);
+  abstract public void prepareTransformerForDebugging(Transformer transformer,
+                                                      boolean forDebug);
 
   public synchronized void run()
   {
@@ -108,8 +109,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
       }
 
       Transformer transformer = template.newTransformer();
-      if (manager.forDebug)
-        prepareTransformerForDebugging(transformer);
+      prepareTransformerForDebugging(transformer, manager.forDebug);
 
       if (transformer != null)
         transformer.transform(in, result);
