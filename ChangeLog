@@ -1,3 +1,7 @@
+2002-07-10  Tony Addyman  <A.M.Addyman@salford.ac.uk>
+
+	* lisp/xslt-process.el (Repository): Correct error preventing "Other" option working for PDF viewer.
+
 2002-04-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java/avalon-framework-4.0.jar, java/fop-0.20.1.jar,

@@ -1082,7 +1082,7 @@ the PDF viewer."
 		(car xslt-process-pdf-viewer))
 	       ((symbolp (car xslt-process-pdf-viewer))
 		(symbol-name (car xslt-process-pdf-viewer)))
-	       (else
+	       (t
 		(car xslt-process-pdf-viewer))))
 	(pdf-filename (expand-file-name
 		       "xslt-process-output.pdf"
