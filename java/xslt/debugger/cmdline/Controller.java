@@ -166,7 +166,6 @@ public class Controller
     Controller controller = new Controller();
 
     controller.parameters.put("processor", processor);
-    controller.createXSLTDebugger();
 
     Observer observer = null;
     if (useEmacs)
@@ -175,6 +174,8 @@ public class Controller
       observer = new CmdLineObserver(controller);
 
     controller.setObserver(observer);
+
+    controller.createXSLTDebugger();
     observer.debuggerProcessStarted();
     controller.mainLoop();
   }
