@@ -1,5 +1,8 @@
 2001-08-16  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* doc/xslt-process.texi.in: Added change log item about the FOP
+	support.
+
 	* tests/fo/glossary.xsl: Added.
 
 	* tests/fo/glossary.xml: Added.
