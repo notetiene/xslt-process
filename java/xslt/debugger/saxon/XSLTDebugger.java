@@ -50,19 +50,9 @@ public class XSLTDebugger extends AbstractXSLTDebugger
 
       File inFile = new File(xmlFilename);
       StreamSource in = new StreamSource(xmlFilename);
-
-      FileOutputStream outStream = null;
-      StreamResult result;
-
-      if (outFilename != null) {
-        outStream = new FileOutputStream(outFilename);
-        result = new StreamResult(outStream);
-      }
-      else
-        result = new StreamResult(System.out);
+      StreamResult result = new StreamResult(outStream);
 
       String media = null, title = null, charset = null;
-
       Source stylesheet
         = tFactory.getAssociatedStylesheet(in, media, title, charset);
       String stylesheetId = stylesheet.getSystemId();
@@ -71,8 +61,6 @@ public class XSLTDebugger extends AbstractXSLTDebugger
       if (transformer != null)
         transformer.transform(in, result);
 
-      if (outStream != null)
-        outStream.close();
       manager.getObserver().processorFinished();
     }
     catch(Exception e) {
