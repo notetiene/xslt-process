@@ -1,5 +1,7 @@
 2001-04-05  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Removed debug messages.
+
 	* lisp/xslt-process.el: Cleaned up the highlighting code by
 	putting the common functionality in a single function.
 
