@@ -20,12 +20,16 @@
  <xsl:if test="starts-with($vendor, 'SAXON')" >
    <xsl:variable name="sdate" select="Date:new()" xmlns:Date="java:java.util.Date"/>
    <xsl:variable name="snumber" select="string-length($sdate)"/>
-   <xsl:value-of select="."/> as of <xsl:value-of select="$sdate"/>     
+   <xsl:value-of select="."/> as of <xsl:value-of select="$sdate"/>
+   <xsl:text>.
+</xsl:text>    
  </xsl:if>
  <xsl:if test="starts-with($vendor, 'Apache')" >
    <xsl:variable name="xdate" select="Date:new()" xmlns:Date="xalan://java.util.Date"/>
    <xsl:variable name="xnumber" select="string-length($xdate)"/> 
-   <xsl:value-of select="."/> as of <xsl:value-of select="$xdate"/>         
+   <xsl:value-of select="."/> as of <xsl:value-of select="$xdate"/>
+   <xsl:text>.
+</xsl:text>          
  </xsl:if>
  <xsl:variable name="a1" select="."/>
  <xsl:value-of select="."/> as of <xsl:value-of select="'now'"/>
