@@ -59,8 +59,8 @@ version.texi: xslt-process.texi.in
 sizes.sed: $(IMAGES)
 	(scale=0.75; \
 	 for f in $(IMAGES); do \
-	  width=`identify $$f | awk '{print $$2}' | awk -F x '{print $$1}'`; \
-	  height=`identify $$f | awk '{print $$2}' | awk -F x '{print $$2}'`; \
+	  width=`identify $$f | awk '{print $$3}' | awk -F x '{print $$1}'`; \
+	  height=`identify $$f | awk '{print $$3}' | awk -F x '{print $$2}'`; \
 	  scalew=`echo $$scale '*' $$width | bc | awk '{printf "%d", $$0}'`; \
 	  scaleh=`echo $$scale '*' $$height | bc | awk '{printf "%d", $$0}'`; \
 	  var=`echo $$f | sed 's/.png//g'`; \
