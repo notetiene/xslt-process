@@ -4,11 +4,29 @@
     @author: <a href="mailto:ovidiu@cup.hp.com">Ovidiu Predescu</a>
     Date: March 29, 2001
 
+    Copyright (C) 2001 Ovidiu Predescu
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License as
+    published by the Free Software Foundation; either version 2 of the
+    License, or (at your option) any later version.
+   
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    General Public License for more details.
+   
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+    02111-1307, USA.
  */
 
 package xslt.debugger.cmdline;
 
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.StringBuffer;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -19,8 +37,10 @@ import xslt.debugger.Manager;
 import xslt.debugger.Observer;
 import xslt.debugger.SourceFrame;
 import xslt.debugger.StyleFrame;
-import java.io.StringWriter;
-import java.io.PrintWriter;
+import java.util.ArrayList;
+import xslt.debugger.Variable;
+import xslt.debugger.Value;
+import xslt.debugger.Type;
 
 public class EmacsObserver implements Observer
 {
@@ -150,6 +170,56 @@ public class EmacsObserver implements Observer
                     + " " + i
                     + "]");
     }
+    buffer.append("])$");
+    System.out.println(buffer);
+    System.out.flush();
+  }
+
+  public void stackFramesChanged(int sourceFrameNo, int styleFrameNo)
+  {
+    System.out.println("stackFramesChanged " + sourceFrameNo + ", " + styleFrameNo);
+    
+    buffer.delete(0, buffer.length());
+    buffer.append("^(xslt-process-stack-frames-changed ");
+    buffer.append(sourceFrameNo);
+    buffer.append(" ");
+    buffer.append(styleFrameNo);
+    buffer.append(")$");
+    System.out.println(buffer);
+    System.out.flush();
+  }
+  
+  public void localVariablesChanged(ArrayList localVariables)
+  {
+    buffer.delete(0, buffer.length());
+    buffer.append("^(xslt-process-local-variables-changed [");
+    for (int i = 0; i < localVariables.size(); i++) {
+      Variable variable = (Variable)localVariables.get(i);
+      String name = variable.getName();
+      Value value = variable.getValue();
+
+      buffer.append(" [\"" + name + "\"");
+      if (value != null) {
+        Type type = value.getType();
+        String typeName = null;
+        if (type != null)
+          typeName = type.getTypeName();
+
+        // Append the type
+        buffer.append(" \"" + (typeName != null ? typeName : "") + "\"");
+
+        // Now append the value
+        String stringValue = value.getValue();
+        buffer.append(" \"" + (stringValue != null ? stringValue : "") + "\"");
+      }
+      else {
+        // We have no value and no type
+        buffer.append(" \"\" \"\"");
+      }
+
+      buffer.append("]");
+    }
+
     buffer.append("])$");
     System.out.println(buffer);
     System.out.flush();
