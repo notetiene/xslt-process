@@ -3,7 +3,7 @@
 ;; Package: xslt-process
 ;; Author: Ovidiu Predescu <ovidiu@cup.hp.com>
 ;; Created: April 3, 2000
-;; Time-stamp: <April 13, 2001 22:10:06 ovidiu>
+;; Time-stamp: <April 22, 2001 01:18:53 ovidiu>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 20.4
@@ -36,6 +36,11 @@
 
 (or (boundp 'speedbar-dynamic-tags-function-list)
     (error "Speedbar 0.11 or newer is required to use xslt-speedbar."))
+
+(defvar xslt-process-selected-source-frame nil
+  "Pointer in the `xslt-process-source-frames-stack' stack frame to the
+currently selected source frame. A number indicates a given source
+frame; nil always indicates the last source frame in the stack.")
 
 (defvar xslt-process-selected-style-frame nil
   "Pointer in the `xslt-process-style-frames-stack' stack frame to the
@@ -257,31 +262,66 @@ the breakpoints in speedbar."
       (set-buffer buffer)
       (goto-line line))))
 
-(defun xslt-process-speedbar-change-style-frame (text index indent)
-  "Changes the currently selected frame."
-  (let* ((frame (aref xslt-process-style-frames-stack index))
-	 (filename (xslt-process-frame-file-name frame))
-	 (line (xslt-process-frame-line frame))
-	 (is-exiting? (xslt-process-frame-is-exiting? frame)))
+(defun xslt-process-speedbar-show-frame (text frame)
+  "Highlights the line where FRAME points to."
+  (let ((filename (xslt-process-frame-file-name frame))
+	(line (xslt-process-frame-line frame))
+	(is-exiting? (xslt-process-frame-is-exiting? frame)))
     ;; Unselect the previously selected line
     (xslt-process-change-current-line-highlighting nil)
-    ;; Modify the `xslt-process-style-selected-position' to point to
+    ;; Modify the `xslt-process-selected-position' to point to
     ;; this filename/line and highlight the new position
-    (xslt-process-style-selected-position-filename filename)
-    (xslt-process-style-selected-position-line line)
-    (xslt-process-style-selected-position-enter/exit?
+    (xslt-process-selected-position-filename filename)
+    (xslt-process-selected-position-line line)
+    (xslt-process-selected-position-enter/exit?
      (if is-exiting? 'is-exiting 'is-entering))
     (xslt-process-change-current-line-highlighting t)
-    (xslt-process-show-line text (list filename line) indent)
+    (xslt-process-show-line text (list filename line) indent)))
+
+(defun xslt-process-speedbar-change-source-frame (text index indent)
+  "Changes the currently selected frame."
+  (let* ((frame (aref xslt-process-source-frames-stack index)))
+    (xslt-process-speedbar-show-frame text frame)
     ;; Update the currently selected frame in speedbar
-    (if (= index (- (length xslt-process-style-frames-stack) 1))
+    (if (= index (- (length xslt-process-source-frames-stack) 1))
+	(setq xslt-process-selected-source-frame nil)
+      (setq xslt-process-selected-source-frame index))
+    (xslt-process-speedbar-source-frames-changed t)))
+
+(defun xslt-process-speedbar-change-style-frame (text index indent)
+  "Changes the currently selected frame."
+  (let* ((frame (aref xslt-process-style-frames-stack index)))
+    (xslt-process-speedbar-show-frame text frame)
+    ;; Update the currently selected frame in speedbar
+    (if (= index (1- (length xslt-process-style-frames-stack)))
 	(setq xslt-process-selected-style-frame nil)
       (setq xslt-process-selected-style-frame index))
     (xslt-process-speedbar-style-frames-changed t)))
 
 (defun xslt-process-speedbar-show-source-frames-stack (text indent)
   "Show the source stack frames."
-  (message "show source frames '%s' '%s'" text indent))
+  (message "show source frames '%s' '%s'" text indent)
+  (let ((last (- (length xslt-process-source-frames-stack) 1)))
+    (mapvector
+     (lambda (frame)
+       (let* ((display-name (xslt-process-frame-display-name frame))
+	      (index (xslt-process-frame-position frame))
+	      (face (if (not xslt-process-selected-source-frame)
+			(if (= index last)
+			    'xslt-process-speedbar-current-line-face
+			  'speedbar-file-face)
+		      (if (= index xslt-process-selected-source-frame)
+			  'xslt-process-speedbar-current-line-face
+			'speedbar-file-face))))
+	 (speedbar-make-tag-line 'braket ??
+				 'xslt-process-speedbar-change-source-frame
+				 index
+				 display-name
+				 'xslt-process-speedbar-change-source-frame
+				 index
+				 face
+				 (1+ indent))))
+     xslt-process-source-frames-stack)))
 
 (defun xslt-process-speedbar-show-style-frames-stack (text indent)
   "Show the source stack frames."
@@ -308,9 +348,19 @@ the breakpoints in speedbar."
 				 (1+ indent))))
      xslt-process-style-frames-stack)))
 
-(defun xslt-process-speedbar-source-frames-changed ()
+(defun xslt-process-speedbar-source-frames-changed (&optional dont-reset)
   "Called by the debugger when the source frame stack changes."
-  )
+  (if xslt-process-source-frames-item-expanded
+      (speedbar-with-writable
+	(save-excursion
+	  (if (not dont-reset)
+	      (setq xslt-process-selected-source-frame nil))
+	  (set-buffer (get-buffer xslt-process-speedbar-bufname))
+	  (beginning-of-buffer)
+	  (xslt-process-select-menu-item 0 "Source frames")
+	  (speedbar-delete-subblock 0)
+	  (forward-line 1)
+	  (xslt-process-speedbar-show-source-frames-stack "" 0)))))
 
 (defun xslt-process-speedbar-style-frames-changed (&optional dont-reset)
   "Called by the debugger when the style frame stack changes."
