@@ -1,3 +1,66 @@
+2001-05-04  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* Check for the existance of the speedbar buffer before trying to
+	do operations on it. Added initial support for coordination
+	between the source and style frames.
+
+	* lisp/xslt-speedbar.el: Check for the existance of the speedbar
+	buffer before trying to do operations on it. Added initial support
+	for coordination between the source and style frames.
+
+	* lisp/xslt-process.el: Define xslt-process-dir-separator and use
+	it when creating full path names. Added logic to find the
+	installation directory so that it handles installation as an
+	XEmacs package.
+	
+	Define xslt-process-stack-frames-changed, which should modify the
+	selected stack frames.
+	
+	Define xslt-process-local-variables-changed, which should change
+	the display of the local variables in the speedbar.
+
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Moved logic to
+	do the notification of stack and local variable changes in
+	Manager.
+
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Implement
+	stackFramesChanged and localVariablesChanged methods.
+
+	* java/xslt/debugger/cmdline/Controller.java: Inform of stack
+	frame changes whenever they change as a result of xf or sf
+	command.
+
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Added dummy
+	implementations for styleStackChanged, stackFramesChanged and
+	localVariablesChanged.
+
+	* java/xslt/debugger/Observer.java: Added the stackFramesChanged
+	and localVariablesChanged method.
+
+	* java/xslt/debugger/Manager.java: Moved here the logic to check
+	the stack frames and inform the Observer from XSLTDebugger.
+
+	* java/xslt/debugger/Breakpoint.java: Added copyright notice.
+	* java/xslt/debugger/AbstractXSLTDebugger.java: Likewise.
+	* java/xslt/debugger/SourceFrame.java: Likewise.
+	* java/xslt/debugger/Observer.java: Likewise.
+	* java/xslt/debugger/Manager.java: Likewise.
+	* java/xslt/debugger/cmdline/CmdLineObserver.java: Likewise.
+	* java/xslt/debugger/Variable.java: Likewise.
+	* java/xslt/debugger/Value.java: Likewise.
+	* java/xslt/debugger/Utils.java: Likewise.
+	* java/xslt/debugger/Type.java: Likewise.
+	* java/xslt/debugger/StyleFrame.java: Likewise.
+	* java/xslt/debugger/cmdline/Controller.java: Likewise. 
+	* java/xslt/debugger/xalan/XSLTDebugger.java: Likewise.
+	* java/xslt/debugger/saxon/XSLTDebugger.java: Likewise.
+	* java/xslt/debugger/saxon/SaxonStyleFrame.java: Likewise.
+	* java/xslt/debugger/saxon/SaxonVariable.java: Likewise.
+	* java/xslt/debugger/saxon/SaxonTraceListener.java: Likewise.
+	* java/xslt/debugger/saxon/SaxonValue.java: Likewise.
+	* java/xslt/debugger/cmdline/EmacsObserver.java: Likewise.
+	* java/xslt/debugger/saxon/SaxonType.java: Likewise.
+
 2001-04-30  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* java\Makefile: Define ON_WINDOWS; based on it define SEP (the
