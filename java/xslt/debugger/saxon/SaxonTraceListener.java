@@ -76,19 +76,36 @@ public class SaxonTraceListener implements TraceListener
     currentLine = line;
     currentColumn = column;
 
-    if (debugger.getAction() == AbstractXSLTDebugger.DO_NEXT) {
+    switch (debugger.getAction()) {
+    case AbstractXSLTDebugger.DO_NEXT:
       if (leaving) {
         // We were invoked when exiting from a frame. We want to
         // continue and enter in the next element or stop again when
         // we exit from the next element.
         debugger.setAction(AbstractXSLTDebugger.DO_DEFERRED_STOP);
       }
-      else {
+      break;
+
+    case AbstractXSLTDebugger.DO_FINISH:
+      // Find the xsl:template instruction we are in currently, and
+      // setup styleFrameToStop at this one.
+      styleFrameToStop = null;
+      Stack styleFrames = manager.getStyleFrames();
+      for (int i = styleFrames.size() - 1; i >= 0; i--) {
+        StyleFrame frame = (StyleFrame)styleFrames.get(i);
+        if (frame.isTemplate()) {
+          styleFrameToStop = frame;
+          break;
+        }
+      }
+      break;
+
+    default:
         if (elementType == SOURCE)
           sourceFrameToStop = manager.peekSourceFrame();
         else if (elementType == STYLE)
           styleFrameToStop = manager.peekStyleFrame();
-      }
+        break;
     }
   }
 
@@ -201,6 +218,12 @@ public class SaxonTraceListener implements TraceListener
           else if (elementType == STYLE)
             styleFrameToStop = null;
         }
+        break;
+
+      case AbstractXSLTDebugger.DO_FINISH:
+        if (elementType == STYLE
+            && styleFrameToStop != null && styleFrameToStop == frame)
+          debuggerStopped(element, true, elementType, "leaving: " + name);
         break;
 
       case AbstractXSLTDebugger.DO_DEFERRED_STOP:
