@@ -67,7 +67,7 @@ public class CmdLineObserver implements Observer
   /**
    *
    */
-  public void stackChanged()
+  public void sourceStackChanged()
   {
     // TODO: implement this xslt.debugger.Observer method
   }
@@ -75,7 +75,7 @@ public class CmdLineObserver implements Observer
   /**
    *
    */
-  public void frameChanged()
+  public void styleStackChanged()
   {
     // TODO: implement this xslt.debugger.Observer method
   }
