@@ -34,7 +34,6 @@ import java.util.TooManyListenersException;
 import java.util.Stack;
 import java.util.ArrayList;
 import java.lang.Runnable;
-import java.io.PrintWriter;
 import java.io.FileOutputStream;
 import java.io.File;
 
@@ -63,17 +62,10 @@ public class XSLTDebugger extends AbstractXSLTDebugger
                                              boolean forDebug)
   {
     if (forDebug) {
-      PrintWriter diagnosticsWriter = new PrintWriter(System.err, true);
-      PrintTraceListener traceListener
-        = new PrintTraceListener(diagnosticsWriter);
-      traceListener.m_traceTemplates = true;
-      traceListener.m_traceElements = true;
-      traceListener.m_traceGeneration = true;
-      traceListener.m_traceSelection = true;
-
-      TransformerImpl transformerImpl = (TransformerImpl)transformer;
-      // Register the TraceListener with a TraceManager associated
+      // Register a TraceListener with a TraceManager associated
       // with the TransformerImpl.
+      XalanTraceListener traceListener = new XalanTraceListener();
+      TransformerImpl transformerImpl = (TransformerImpl)transformer;
       TraceManager trMgr = transformerImpl.getTraceManager();
       try {
         trMgr.addTraceListener(traceListener);
