@@ -11,10 +11,12 @@ doc/version.texi:
 
 dist:
 	@(repository=`cat CVS/Root`; \
-	 mkdir -p /tmp/xslt-process-$(VERSION); \
-	 cp -rf . /tmp/xslt-process-$(VERSION); \
+	 export CVSROOT=$$repository; \
+	 rm -rf /tmp/xslt-process-$(VERSION); \
+	 cd /tmp; \
+	 cvs checkout -d xslt-process-$(VERSION) xslt-process; \
 	 cd /tmp/xslt-process-$(VERSION); \
-	 make distclean; make all; make clean; \
+	 make all; make clean; \
 	 find . -name 'CVS' -prune -exec rm -rf {} \; ;\
 	 cd /tmp; \
 	 tar zcf xslt-process-$(VERSION).tar.gz xslt-process-$(VERSION); \
