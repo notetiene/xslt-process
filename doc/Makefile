@@ -8,7 +8,7 @@ PDF = $(TEXI:.texi=.pdf)
 PDFIMAGES = $(IMAGES:.png=.pdf)
 HTML = $(TEXI:.texi=.html)
 
-.SUFFIXES: .texi .info .dvi .ps .pdf .html
+.SUFFIXES: .texi .png .info .dvi .ps .pdf .html
 
 .texi.info:
 	makeinfo $<
@@ -41,8 +41,10 @@ ps: $(PS)
 pdf: $(PDFIMAGES) $(PDF)
 html: $(HTML)
 
-xslt-process-mode.pdf: xslt-process-mode.png
-	convert -page 256x120 $< $@
+.png.pdf:
+	@(size=`identify $< | awk '{print $$2}'`; \
+	  echo convert -page $$size $< $@; \
+	  convert -page $$size $< $@)
 
 homepage: html
 	sed -e 's/<BODY[^>]*>/<BODY>/g' \
@@ -50,7 +52,8 @@ homepage: html
 	mv $(HTML).tmp index.html
 
 clean:
-	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr version.texi
+	rm -f *.aux *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr version.texi \
+	    $(PDFIMAGES)
 
 distclean: clean
 	rm -f *.dvi *.html *.pdf *.ps *.info
