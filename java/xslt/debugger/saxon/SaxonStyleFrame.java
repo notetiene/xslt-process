@@ -24,10 +24,9 @@
 
 package xslt.debugger.saxon;
 
-
-
 import com.icl.saxon.Context;
 import com.icl.saxon.style.StyleElement;
+import com.icl.saxon.style.XSLTemplate;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import xslt.debugger.Manager;
@@ -53,6 +52,7 @@ public class SaxonStyleFrame extends StyleFrame
     super(name, filename, line, column, manager);
     this.context = context;
     this.element = element;
+    isTemplate = element instanceof XSLTemplate;
 //     System.out.println("StyleFrame: context = " + context);
   }
 
