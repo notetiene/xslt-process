@@ -69,6 +69,7 @@ public class Controller
     = "Usage: ena (<breakpoint number> | filename lineno)";
   static final String debugUsage = "Usage: debug -xml filename [-a | -xsl filename] [-o <output filename>]";
   static final String runUsage = "Usage: run -xml filename [-a | -xsl filename] [-o <output filename>]";
+  static final String toPDFUsage = "Usage: toPDF -xml filename -o <output filename>";
   static final String setSourceFrameUsage = "Usage: sf <framenumber>";
   static final String setStyleFrameUsage = "Usage: xf <framenumber>";
   static final String printLocalVariableUsage = "Usage: pl <name>";
@@ -99,6 +100,7 @@ public class Controller
     commands.put("lb", getMethod("listBreakpoints"));
     commands.put("debug", getMethod("debugXSLTProcessor"));
     commands.put("run", getMethod("runXSLTProcessor"));
+    commands.put("toPDF", getMethod("convertToPDF"));
     commands.put("s", getMethod("doStep"));
     commands.put("n", getMethod("doNext"));
     commands.put("f", getMethod("doFinish"));
@@ -135,6 +137,7 @@ public class Controller
                        + "lb\t list breakpoints\n"
                        + "debug\t run the XSLT debugger\n"
                        + "run\t run the XSLT processor without debugging\n"
+                       + "toPDF\t convert an XML FO document to PDF\n"
                        + "s\t step\n"
                        + "n\t next\n"
                        + "c\t continue\n"
@@ -401,7 +404,7 @@ public class Controller
     }
   }
 
-  protected void parseArguments(Vector args)
+  protected boolean parseArguments(Vector args, String helpString)
     throws Exception
   {
     boolean foundXML = false;
@@ -418,7 +421,8 @@ public class Controller
       if (arg.equals("-xsl")) {
         if (i + 1 >= size) {
           System.out.println("Required XSLT stylesheet argument is missing!");
-          throw new Exception("Required XSLT stylesheet argument is missing!");
+          System.out.println(helpString);
+          return false;
         }
         manager.setXSLTStylesheet(getAbsoluteFilename((String)args.get(i + 1),
                                                       true));
@@ -428,7 +432,8 @@ public class Controller
         foundXML = true;
         if (i + 1 >= size) {
           System.out.println("Required XML file name argument is missing!");
-          throw new Exception("Required XML filename argument is missing!");
+          System.out.println(helpString);
+          return false;
         }
         manager.setXMLFilename(getAbsoluteFilename((String)args.get(i + 1),
                                                    true));
@@ -437,7 +442,8 @@ public class Controller
       else if (arg.equals("-o")) {
         if (i + 1 >= size) {
           System.out.println("Required output filename argument is missing!");
-          throw new Exception("Required output filename argument is missing!");
+          System.out.println(helpString);
+          return false;
         }
           
         String outputFilename = (String)args.get(i + 1);
@@ -453,20 +459,22 @@ public class Controller
         i++;
       }
       else {
-        System.out.println("Unknown argument: " + arg + "\n" + runUsage);
-        throw new Exception("Unknown argument: " + arg + "\n" + runUsage);
+        System.out.println("Unknown argument: " + arg + "\n" + helpString);
+        System.out.println(helpString);
+        return false;
       }
     }
 
     if (!foundXML) {
-      System.out.println("No XML document to process was specified!");
-      throw new Exception("No XML document to process was specified!");
+      System.out.println(helpString);
+      return false;
     }
     
     if (debugger.isStarted()) {
       System.out.print("XSLT processor already running, aborting.");
       debugger.stopProcessing();
     }
+    return true;
   }
   
   /**
@@ -483,7 +491,8 @@ public class Controller
   public void debugXSLTProcessor(Vector args)
     throws Exception
   {
-    parseArguments(args);
+    if (!parseArguments(args, debugUsage))
+      return;
 
     // Clear the current source and style frames
     currentSourceFrame = -1;
@@ -500,13 +509,67 @@ public class Controller
   public void runXSLTProcessor(Vector args)
     throws Exception
   {
-    parseArguments(args);
+    if (!parseArguments(args, runUsage))
+      return;
 
     String currentProcessorName = (String)parameters.get("processor");
     if (!currentProcessorName.equalsIgnoreCase(debugger.getProcessorName()))
       createXSLTDebugger();
 
     manager.startProcessor();
+  }
+
+  public void convertToPDF(Vector args)
+    throws Exception
+  {
+    boolean foundXML = false;
+    boolean foundOutputFile = false;
+    int i = 1;
+    int size = args.size();
+    String outputFilename = null;
+    
+    while (i < size) {
+      String arg = (String)args.get(i);
+      if (arg.equals("-xml")) {
+        foundXML = true;
+        if (i + 1 >= size) {
+          System.out.println("Required XML file name argument is missing!");
+          System.out.println(toPDFUsage);
+          return;
+        }
+        manager.setXMLFilename(getAbsoluteFilename((String)args.get(i + 1),
+                                                   true));
+        i += 2;
+      }
+      else if (arg.equals("-o")) {
+        if (i + 1 >= size) {
+          System.out.println("Required output filename argument is missing!");
+          System.out.println(toPDFUsage);
+          return;
+        }
+
+        foundOutputFile = true;
+        outputFilename = (String)args.get(i + 1);
+        i += 2;
+      }
+      else {
+        System.out.println("Unknown argument: " + arg + "\n" + toPDFUsage);
+        return;
+      }
+    }
+
+    if (!foundXML) {
+      System.out.println("No XML document to process was specified!");
+      System.out.println(toPDFUsage);
+      return;
+    }
+    if (!foundOutputFile) {
+      System.out.println("No output file specified!");
+      System.out.println(toPDFUsage);
+      return;
+    }
+
+    manager.convertToPDF(outputFilename);
   }
   
   public void doStep(Vector args)
