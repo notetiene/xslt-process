@@ -113,7 +113,15 @@ This document describes XSLT-process, a minor mode for XEmacs/GNU Emacs
 that enables it for XSLT processing and debugging.
 @end ifinfo
 
+@html
+You can download this document in different formats:
 
+<ul>
+<li>PDF: <a href="xslt-process.pdf">xslt-process.pdf</a>
+<li>Postscript: <a href="xslt-process.ps">xslt-process.ps</a>
+</ul>
+
+@end html
 
 @c =========================================================================
 @node What is it?, Installation and setup, top, top
@@ -136,18 +144,13 @@ frame in the XSLT program, the current XML context node being processed,
 what are the local and global variables, set breakpoints in both the XML
 source file and the XSLT program.
 
-@html
-<a href="http://sourceforge.net/projects/xslt-process/"> <img src="sflogo.jpg" width="88" height="31" border="0" alt="SourceForge
-Logo"></a>
-@end html
-
 The author of the @emph{XSLT-process} package is
-@email{ovidiu@@xemacs.org, Ovidiu Predescu}, and the package is
+@email{ovidiu@@cup.hp.com, Ovidiu Predescu}, and the package is
 distributed under the terms of
 @uref{http://www.gnu.org/copyleft/gpl.html, GNU General Public
 License}. The project is graciously hosted by SourceForge, and could be
-found at @uref{http://sourceforge.net/projects/xslt-process/,
-http://sourceforge.net/projects/xslt-process/}. The current version is
+found at @uref{http://xslt-process.sourceforge.net/index.php,
+http://xslt-process.sourceforge.net/index.php}. The current version is
 @value{version}.
 
 @c =========================================================================
