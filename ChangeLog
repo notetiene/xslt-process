@@ -1,3 +1,33 @@
+2002-0804  Tony Addyman   <A.M.Addyman@salford.ac.uk>
+	
+	* java/Makefile: Updated CLASSPATH to point to new jar files. Saxon jar
+	at start to provide line numbers for Xalan debugger.
+
+	* tests/test5.xsl: Modified to suit Xalan as well as Saxon: different
+	Java interface and lazy evaluation.
+
+	* lisp/xslt-process.el: Xalan version now 2.4.D1 and Xalan1compat removed.
+	Add visit count to breakpoints. Saxon at start of classpath to provide
+	line numbers for Xalan debugger.
+
+	* java/xslt/debugger/xalan/XSLTDebugger.java,
+	java/xslt/debugger/xalan/XalanTraceListener: Updated to add support for use
+	of debugger with Xalan.
+
+	* java/xslt/debugger/xalan/XalanType, java/xslt/debugger/XalanValue,
+	java/xslt/debugger/xalan/XalanVariable, java/xslt/debugger/xalan/XalanStyleFrame:
+	new files created to add support for use of debugger with Xalan.
+
+	* java/xalan-2.4.D1.jar: updated to new version.
+
+	* java/xalan1compat.jar: removed - no longer supported by Apache.
+
+	* java/xslt/debugger/AbstractXSLTDebugger.java,
+	java/xslt/debugger/Manager.java, java/xslt/debugger/Observer.java,
+	java/xslt/debugger/cmdline/EmacsObserver.java,
+	java/xslt/debugger/cmdline/CmdLineObserver.java,
+	java/xslt/debugger/saxon/SaxonTraceListener: Add visit count to breakpoints.
+
 2002-07-21  Tony Addyman  <A.M.Addyman@salford.ac.uk>
 
 	* java/xslt/debugger/saxon/SaxonValue.java: Restrict the size of string
