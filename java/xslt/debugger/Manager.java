@@ -28,6 +28,10 @@ import java.io.OutputStream;
  */
 public class Manager
 {
+  public final static boolean runningWindows
+    = System.getProperties().getProperty("os.name")
+      .toLowerCase().indexOf("windows") != -1;
+
   /**
    * <code>styleFrames</code> maintains the stack of frames in the
    * XSLT sheet traversed during the XSLT processing. These are
@@ -165,6 +169,8 @@ public class Manager
    */
   public Breakpoint getBreakpointAt(String filename, int line)
   {
+    if (runningWindows)
+      filename = filename.toLowerCase();
     String key = filename + ":" + line;
     return (Breakpoint)breakpoints.get(key);
   }
@@ -178,6 +184,8 @@ public class Manager
    */
   public void setBreakpoint (String filename, int line)
   {
+    if (runningWindows)
+      filename = filename.toLowerCase();
     String key = filename + ":" + line;
     Breakpoint breakpoint = new Breakpoint(filename, line, this);
     breakpoints.put(key, breakpoint);
@@ -193,6 +201,8 @@ public class Manager
    */
   public void removeBreakpoint (String filename, int line)
   {
+    if (runningWindows)
+      filename = filename.toLowerCase();
     String key = filename + ":" + line;
     breakpoints.remove(key);
   }
