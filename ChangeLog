@@ -1,3 +1,13 @@
+2002-04-15  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* java/avalon-framework-4.0.jar, java/fop-0.20.1.jar,
+	java/fop-0.20.3.jar, java/logkit-1.0.jar, java/saxon-6.3.jar,
+	java/saxon-6.5.2.jar, java/xerces-1.2.3.jar, java/xerces.jar,
+	java/xslt.jar: Updated to new versions.
+
+	* java/Makefile: Updated CLASSPATH to point to the latest jar
+	files.
+
 2001-08-20  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-process.el: Check if xslt-process-docbook-install-dir
