@@ -39,6 +39,9 @@ import java.io.File;
 
 import xslt.debugger.Manager;
 import xslt.debugger.AbstractXSLTDebugger;
+import xslt.debugger.TrAXErrorListener;
+import xslt.debugger.SAXParserErrorHandler;
+
 import org.apache.xalan.transformer.TransformerImpl;
 import org.apache.xalan.trace.TraceManager;
 import org.apache.xalan.trace.TraceListener;
@@ -54,6 +57,7 @@ public class XSLTDebugger extends AbstractXSLTDebugger
   {
     if (tFactory == null)
       tFactory = new org.apache.xalan.processor.TransformerFactoryImpl();
+    System.out.println("tFactory = " + tFactory);
 
     return tFactory;
   }
@@ -76,26 +80,13 @@ public class XSLTDebugger extends AbstractXSLTDebugger
     }
   }
 
+  public SAXParserErrorHandler getSAXParserErrorHandler(Manager manager)
+  {
+    return new XalanSAXParserErrorHandler(manager);
+  }
+  
   public ArrayList getGlobalVariables()
   {
     return null;
   }
-//   /**
-//    * Return the list of global variables.
-//    *
-//    * @return an <code>ArrayList</code> value
-//    */
-//   public ArrayList getGlobalVariables()
-//   {
-//     // With Saxon we obtain the list of global variables by asking a
-//     // SaxonStyleFrame object for it. We need to find a StyleElement
-//     // in the style frames stack to be able to ask for global
-//     // variables.
-//     Stack styleFrames = manager.getStyleFrames();
-//     StyleFrame styleFrame = (StyleFrame)styleFrames.get(0);
-//     if (styleFrame.getElement() instanceof StyleElement)
-//       return styleFrame.getGlobalVariables();
-//     else
-//       return null;
-//   }
 }

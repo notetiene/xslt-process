@@ -30,10 +30,12 @@ import com.icl.saxon.FeatureKeys;
 import com.icl.saxon.ParameterSet;
 import com.icl.saxon.StyleSheet;
 import com.icl.saxon.output.Emitter;
+import com.icl.saxon.output.MessageEmitter;
 import com.icl.saxon.style.StyleElement;
 import com.icl.saxon.trace.TraceListener;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.lang.Runnable;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -47,8 +49,7 @@ import xslt.debugger.AbstractXSLTDebugger;
 import xslt.debugger.Manager;
 import xslt.debugger.Observer;
 import xslt.debugger.cmdline.EmacsObserver;
-import com.icl.saxon.output.MessageEmitter;
-import java.io.PrintWriter;
+import xslt.debugger.SAXParserErrorHandler;
 
 public class XSLTDebugger extends AbstractXSLTDebugger
 {
@@ -88,6 +89,11 @@ public class XSLTDebugger extends AbstractXSLTDebugger
       controller.setTraceListener(traceListener);
       controller.setLineNumbering(true);
     }
+  }
+
+  public SAXParserErrorHandler getSAXParserErrorHandler(Manager manager)
+  {
+    return new SaxonSAXParserErrorHandler(manager);
   }
 
   /**
