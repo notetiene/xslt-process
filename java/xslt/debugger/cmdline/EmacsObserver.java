@@ -8,19 +8,19 @@
 
 package xslt.debugger.cmdline;
 
-
-import java.util.Stack;
-import java.net.Socket;
-import java.net.ServerSocket;
-import java.net.InetAddress;
-import java.lang.StringBuffer;
 import java.io.OutputStream;
-
-import xslt.debugger.StyleFrame;
-import xslt.debugger.SourceFrame;
-import xslt.debugger.Observer;
-import xslt.debugger.Manager;
+import java.lang.StringBuffer;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Stack;
 import xslt.debugger.AbstractXSLTDebugger;
+import xslt.debugger.Manager;
+import xslt.debugger.Observer;
+import xslt.debugger.SourceFrame;
+import xslt.debugger.StyleFrame;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 public class EmacsObserver implements Observer
 {
@@ -41,11 +41,24 @@ public class EmacsObserver implements Observer
       int port = serverSocket.getLocalPort();
       System.out.println("<<(xslt-process-set-output-port " + port + ")>>");
       System.out.flush();
-      Socket clientSocket = serverSocket.accept();
-      OutputStream outputStream = clientSocket.getOutputStream();
+
       AbstractXSLTDebugger debugger = controller.getDebugger();
       Manager manager = controller.getManager();
+      Socket clientSocket;
+
+      // Wait for an incoming connection. The first client socket
+      // created is used for the XSLT generated output.
+      clientSocket = serverSocket.accept();
+      OutputStream outputStream = clientSocket.getOutputStream();
       manager.setOutStream(outputStream);
+
+      // Wait for another incoming connection. This second client
+      // socket connection is for outputing xsl:message.
+      clientSocket = serverSocket.accept();
+      OutputStream messageStream = clientSocket.getOutputStream();
+      manager.setMessageStream(messageStream);
+
+      // Close the server socket
       serverSocket.close();
     }
     catch (Exception e) {
@@ -149,8 +162,14 @@ public class EmacsObserver implements Observer
 
   public void caughtException(Exception e)
   {
+    StringWriter strWriter = new StringWriter();
+    PrintWriter pWriter = new PrintWriter(strWriter);
+    e.printStackTrace(pWriter);
+    pWriter.flush();
     System.out.println("<<(xslt-process-report-error \""
                        + e.getMessage()
+                       + "\" \""
+                       + strWriter.getBuffer().toString()
                        + "\")>>");
   }
 }
