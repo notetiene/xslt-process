@@ -14,3 +14,6 @@ $(JAR): $(CLASSES)
 $(CLASSES): $(JAVA)
 	javac -classpath $(CLASSPATH) $(JAVA)
 
+clean:
+	find . -name '*.class' -exec rm -f {} \;
+	rm -f $(JAR)
