@@ -82,6 +82,7 @@ public abstract class AbstractXSLTDebugger implements Runnable
   
   protected Manager manager = null;
   protected String xmlFilename;
+  protected String xslFilename;
 
   protected int state = NOT_RUNNING;
   protected int action = DO_NOTHING;
@@ -128,30 +129,41 @@ public abstract class AbstractXSLTDebugger implements Runnable
     try {
       TransformerFactory tFactory = getTransformerFactory(manager.forDebug);
       tFactory.setErrorListener(getTrAXErrorListener(manager));
+      InputSource stylesheetInputSource;
+      Source stylesheetSource;
 
-      InputSource is = new InputSource(new URL(xmlFilename).toString());
-      saxSource = new SAXSource(is);
+      InputSource xmlSource = new InputSource(new URL(xmlFilename).toString());
+      saxSource = new SAXSource(xmlSource);
       setupXMLReader(saxSource);
-      
-      String media = null, title = null, charset = null;
-      Source stylesheetSource
-        = tFactory.getAssociatedStylesheet(saxSource, media, title, charset);
-      if (stylesheetSource == null)
-        throw new
-          TransformerConfigurationException
-          ("No matching <?xml-stylesheet?> processing instruction found");
 
-      // Create a new Source for the stylesheet to avoid problems with
-      // different types of Source objects returned by different XSLT
-      // processors
-      InputSource stylesheetInputSource
-        = new InputSource(stylesheetSource.getSystemId());
+      if (xslFilename == null) {
+        // Use the associated stylesheet
+        String media = null, title = null, charset = null;
+        stylesheetSource
+          = tFactory.getAssociatedStylesheet(saxSource, media, title, charset);
+        if (stylesheetSource == null)
+          throw new
+            TransformerConfigurationException
+            ("No matching <?xml-stylesheet?> processing instruction found");
+
+        // Create a new Source for the stylesheet to avoid problems with
+        // different types of Source objects returned by different XSLT
+        // processors
+        stylesheetInputSource
+          = new InputSource(stylesheetSource.getSystemId());
+      }
+      else {
+        stylesheetInputSource
+          = new InputSource(new URL(xslFilename).toString());
+        stylesheetSource = new SAXSource(stylesheetInputSource);
+      }
+
       SAXSource stylesheetSAXSource = new SAXSource(stylesheetInputSource);
       // Set an error handler for the stylesheet parser
       setupXMLReader(stylesheetSAXSource);
 
       StreamResult result = new StreamResult(manager.getOutputStream());
-      String stylesheetId = stylesheetSource.getSystemId();
+      String stylesheetId = stylesheetInputSource.getSystemId();
 
       // Check for a Templates object already created for this
       // stylesheet
@@ -358,9 +370,14 @@ public abstract class AbstractXSLTDebugger implements Runnable
     return manager;
   }
 
-  public void setXmlFilename(String filename)
+  public void setXMLFilename(String filename)
   {
     xmlFilename = filename;
+  }
+
+  public void setXSLTStylesheet(String filename)
+  {
+    xslFilename = filename;
   }
 
   public void setProcessorName(String name)
