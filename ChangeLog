@@ -1,5 +1,8 @@
 2001-08-20  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
+	* lisp/xslt-process.el: Check if xslt-process-docbook-install-dir
+	is defined before accessing its value.
+
 	* lisp/xslt-process.el: Moved around function definitions to avoid
 	undefined function messages.
 
