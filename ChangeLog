@@ -1,3 +1,20 @@
+2001-06-06  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* lisp/xslt-speedbar.el: Display the type of global variables as
+	icons as well.
+
+	* java/xslt/debugger/saxon/SaxonType.java: Fixed typo bug due to
+	copy/paste.
+
+	* etc/boolean.xpm: Made numbers larger.
+	* etc/object.xpm: Drew a picture of a sphere.
+	* etc/tree.xpm: Drew a tree.
+	* etc/type.xpm: A question mark.
+
+	* tests/test5.xsl: Define variables of different types.
+
+	* tests/test5.xml: Put the i element inside the h1 element.
+
 2001-06-05  Ovidiu Predescu  <ovidiu@cup.hp.com>
 
 	* lisp/xslt-speedbar.el: Use images to denote the type instead of
