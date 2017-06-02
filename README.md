@@ -1,9 +1,8 @@
-What is it?
-***********
+# XSLT-process
 
-XSLT-process is a minor mode for XEmacs or GNU Emacs which transforms
-it into a powerful XML editor with XSLT processing and debugging
-capabilities.
+> XSLT-process is a minor mode for XEmacs or GNU Emacs which
+> transforms it into a powerful XML editor with XSLT processing and
+> debugging capabilities.
 
 You can invoke an XSLT processor of choice on the current XML file
 you're editing, and see the results in another buffer. In case of
@@ -17,12 +16,13 @@ stack frame in the XSLT program, the current XML context node being
 processed, what are the local and global variables, set breakpoints in
 both the XML source file and the XSLT program.
 
-The author of the XSLT-process package is Ovidiu Predescu
-<ovidiu@cup.hp.com>. The package is distributed under the terms of GNU
-General Public License.
-
-The project is graciously hosted by SourceForge, and could be found at
-http://sourceforge.net/projects/xslt-process/.
+The original project is hosted
+on [SourceForge](http://sourceforge.net/projects/xslt-process/). Many
+thanks to Ovidiu Predescu for the work done.
 
 For more information on the how to setup and use XSLT-process, please
 refer to the documentation in the doc/ directory.
+
+## License
+
+This directory and the whole project is distributed under the GPLv2.
