@@ -5,7 +5,7 @@
 ;; Author: Tony Addyman <A.M.Addyman@salford.ac.uk>
 
 ;; Created: December 2, 2000
-;; Time-stamp: <2003-09-16 19:27:27 ovidiu>
+;; Time-stamp: <2020-03-11 17:27:35 etienne>
 ;; Keywords: XML, XSLT
 ;; URL: http://www.geocities.com/SiliconValley/Monitor/7464/
 ;; Compatibility: XEmacs 21.1, Emacs 21.2
@@ -55,7 +55,6 @@
 (require 'cl)
 (require 'browse-url)
 (require 'easymenu)
-(require 'string)
 (require 'widget)
 
 (defconst xslt-process-version "2.2.1"
@@ -90,7 +89,7 @@ the results."
 	"Replace a series of \\\\ with a single /, so that the file
 names conform to the URI definition."
 	(if (null filename) filename
-	  (let ((new (string-replace-match "\\\\" filename "/" t t)))
+	  (let ((new (replace-regexp-in-string "\\\\" "/" filename)))
 	    (if new new filename))))
     (defun urlize (filename)
       "On Unix systems the file names already conform to the URI definition."
